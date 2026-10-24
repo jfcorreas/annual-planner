@@ -27,4 +27,7 @@ Webapp for create, customize and fill an annual planner
 -🚫 Never: add by your own new dependencies, frameworks or build steps
 
 ## Verify
-- Test the application and give me a brief of the tests
+- Run `npm test` (unit + component). It must pass before you finish a task.
+- Run `npm run test:e2e` before finishing a feature or UI change (builds and runs `vite preview`).
+- Test naming/location: unit and component tests live next to the code they cover (`src/**/*.test.ts(x)`); e2e tests live in `tests/e2e/`.
+- Give a brief of the tests (counts, what they cover, anything left untested).

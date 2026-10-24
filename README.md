@@ -27,13 +27,27 @@ npm install     # first time only
 npm run dev     # dev server with HMR
 ```
 
-Build / preview:
+Build / preview / lint:
 
 ```bash
 npm run build   # type-check + production build
 npm run preview # serve the production build
 npm run lint    # oxlint
 ```
+
+## Tests
+
+```bash
+npm test         # unit + component (Vitest + Testing Library, jsdom)
+npm run test:watch   # watch mode
+npm run test:e2e     # end-to-end (Playwright; builds + runs vite preview on :4173)
+npm run test:all     # unit + component, then e2e
+```
+
+- Unit/component tests sit next to the code (`src/**/*.test.ts(x)`), driven by
+  `vite.config.ts` (`test` block) and `src/test/setup.ts`.
+- The e2e suite lives in `tests/e2e/` and is configured by `playwright.config.ts`.
+  First run only: `npx playwright install chromium`.
 
 Open the printed URL (default http://localhost:5173).
 
@@ -48,9 +62,12 @@ src/
   utils/dates.ts           # ES/ES names, Monday-first weeks, ISO keys
   utils/stats.ts           # tag counts per period
   utils/print.ts           # A4/A5 landscape print (PDF)
+  test/setup.ts            # Vitest setup (crypto polyfill, localStorage reset)
   components/              # TopBar, TagPalette, YearView, MonthColumn,
                            # WeekRow, DayCell, MonthZoom, StatsBar,
                            # PlannersPanel, TagsEditor
+tests/
+  e2e/                     # Playwright end-to-end specs
 ```
 
 ## Data & privacy

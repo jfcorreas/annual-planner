@@ -26,3 +26,8 @@ dist-ssr
 # Project
 # Original repo ignores docs/
 docs/
+
+# Test artifacts
+test-results/
+playwright-report/
+coverage/
