@@ -31,3 +31,10 @@ Webapp for create, customize and fill an annual planner
 - Run `npm run test:e2e` before finishing a feature or UI change (builds and runs `vite preview`).
 - Test naming/location: unit and component tests live next to the code they cover (`src/**/*.test.ts(x)`); e2e tests live in `tests/e2e/`.
 - Give a brief of the tests (counts, what they cover, anything left untested).
+
+## Installed webapp (Omarchy)
+- The app is installed as an Omarchy web app ("Annual Planner", http://localhost:4830),
+  served from a snapshot copy by the systemd user service `annual-planner`.
+- After every `npm run build` that must reach the installed webapp, re-copy the dist:
+  `cp -a dist/. ~/.local/share/annual-planner/`
+  (Browsers cache assets: hard-reload the webapp window, Ctrl+Shift+R.)

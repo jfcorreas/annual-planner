@@ -4,7 +4,10 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
 ## Current Status
 - v0.1.0 implemented and passing: build (`tsc -b`), oxlint, `npm test` (60 unit+component),
   `npm run test:e2e` (Playwright full flow), A4/A5 PDFs single-page landscape, mobile + touch OK.
-- Test artifacts (screenshots/attachments): `test-results/` (gitignored).
+- Installed as Omarchy web app "Annual Planner": launcher in ~/.local/share/applications,
+  snapshot in ~/.local/share/annual-planner, systemd user service `annual-planner`
+  (python3 http.server, 127.0.0.1:4830, enabled at login). Verified rendering in --app window.
+- **Re-copy `dist/.` to `~/.local/share/annual-planner/` after each build** (see AGENTS.md).
 
 ## Decisions (and why)
 - Stack: Vite + React 19 + TS + date-fns, plain CSS (user picked in plan mode).
