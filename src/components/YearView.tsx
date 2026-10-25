@@ -1,14 +1,16 @@
-import type { Tag } from '../types'
+import type { DayTag, Tag } from '../types'
 import { MONTH_NAMES } from '../utils/dates'
 import { MonthColumn } from './MonthColumn'
 
 interface YearViewProps {
   year: number
-  daysData: Record<string, string[]>
+  daysData: Record<string, DayTag[]>
   tags: Tag[]
   readOnly: boolean
+  clearing: boolean
   onDayClick: (date: string) => void
-  onTagClick: (date: string, tagId: string) => void
+  onTagOpen: (date: string, tagId: string) => void
+  onTagRemove: (date: string, tagId: string) => void
   onZoom: (month: number) => void
 }
 
@@ -18,8 +20,10 @@ export function YearView({
   daysData,
   tags,
   readOnly,
+  clearing,
   onDayClick,
-  onTagClick,
+  onTagOpen,
+  onTagRemove,
   onZoom,
 }: YearViewProps) {
   return (
@@ -32,8 +36,10 @@ export function YearView({
           daysData={daysData}
           tags={tags}
           readOnly={readOnly}
+          clearing={clearing}
           onDayClick={onDayClick}
-          onTagClick={onTagClick}
+          onTagOpen={onTagOpen}
+          onTagRemove={onTagRemove}
           onZoom={onZoom}
         />
       ))}

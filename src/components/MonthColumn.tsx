@@ -1,4 +1,4 @@
-import type { Tag } from '../types'
+import type { DayTag, Tag } from '../types'
 import { MONTH_NAMES, weeksOfMonth } from '../utils/dates'
 import { WeekRow } from './WeekRow'
 
@@ -6,11 +6,13 @@ interface MonthColumnProps {
   year: number
   /** Month index 0-11. */
   month: number
-  daysData: Record<string, string[]>
+  daysData: Record<string, DayTag[]>
   tags: Tag[]
   readOnly: boolean
+  clearing: boolean
   onDayClick: (date: string) => void
-  onTagClick: (date: string, tagId: string) => void
+  onTagOpen: (date: string, tagId: string) => void
+  onTagRemove: (date: string, tagId: string) => void
   /** Click on the month title: zoom into the month. */
   onZoom: (month: number) => void
 }
@@ -22,8 +24,10 @@ export function MonthColumn({
   daysData,
   tags,
   readOnly,
+  clearing,
   onDayClick,
-  onTagClick,
+  onTagOpen,
+  onTagRemove,
   onZoom,
 }: MonthColumnProps) {
   const weeks = weeksOfMonth(year, month)
@@ -48,9 +52,11 @@ export function MonthColumn({
             daysData={daysData}
             tags={tags}
             readOnly={readOnly}
+            clearing={clearing}
             variant="year"
             onDayClick={onDayClick}
-            onTagClick={onTagClick}
+            onTagOpen={onTagOpen}
+            onTagRemove={onTagRemove}
           />
         ))}
       </div>

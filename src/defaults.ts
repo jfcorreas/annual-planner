@@ -1,4 +1,12 @@
-import type { Planner, Tag } from './types'
+import type { Planner, Tag, TagType } from './types'
+
+/** Default tag types of a new planner (same ids as the legacy literals). */
+export const DEFAULT_TAG_TYPES: TagType[] = [
+  { id: 'trabajo', label: 'Trabajo' },
+  { id: 'local', label: 'Festivo local' },
+  { id: 'regional', label: 'Festivo regional' },
+  { id: 'nacional', label: 'Festivo nacional' },
+]
 
 /** Default tags of a new planner (labels in ES/ES, colors approved in the sketch). */
 export const DEFAULT_TAGS: Tag[] = [
@@ -19,6 +27,7 @@ export function createPlanner(year: number): Planner {
     name: `Planificador ${year}`,
     status: 'activo',
     tags: DEFAULT_TAGS.map((tag) => ({ ...tag })),
+    tagTypes: DEFAULT_TAG_TYPES.map((type) => ({ ...type })),
     days: {},
   }
 }

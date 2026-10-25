@@ -1,4 +1,4 @@
-import type { Tag } from '../types'
+import type { DayTag, Tag } from '../types'
 
 export interface Stats {
   /** Count per tag id, in planner tag order. */
@@ -12,7 +12,7 @@ export interface Stats {
  * Untagged counts the days of `isoDays` with no tags.
  */
 export function computeStats(
-  tagIdsByDay: Record<string, string[]>,
+  tagIdsByDay: Record<string, DayTag[]>,
   tags: Tag[],
   isoDays: string[],
 ): Stats {
@@ -26,9 +26,9 @@ export function computeStats(
       continue
     }
     let counted = false
-    for (const id of dayTags) {
-      if (counts.has(id)) {
-        counts.set(id, (counts.get(id) ?? 0) + 1)
+    for (const entry of dayTags) {
+      if (counts.has(entry.tagId)) {
+        counts.set(entry.tagId, (counts.get(entry.tagId) ?? 0) + 1)
         counted = true
       }
     }

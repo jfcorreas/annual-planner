@@ -7,9 +7,12 @@ const TAGS: Tag[] = [
   { id: 'b', label: 'Etiqueta B', category: 'local', color: '#86efac' },
 ]
 
+/** Build a day entry list from plain tag ids (like the app does after load). */
+const day = (...ids: string[]) => ids.map((tagId) => ({ tagId }))
+
 describe('computeStats', () => {
   it('counts one occurrence per day, even with 2 tags on it', () => {
-    const days = { '2026-01-01': ['a'], '2026-01-02': ['a', 'b'] }
+    const days = { '2026-01-01': day('a'), '2026-01-02': day('a', 'b') }
     const stats = computeStats(days, TAGS, ['2026-01-01', '2026-01-02'])
 
     expect(stats.counts.find((c) => c.tag.id === 'a')?.count).toBe(2)
@@ -23,7 +26,7 @@ describe('computeStats', () => {
   })
 
   it('only counts the requested period (year vs month subset)', () => {
-    const days = { '2026-01-01': ['a'], '2026-02-01': ['a'] }
+    const days = { '2026-01-01': day('a'), '2026-02-01': day('a') }
     const january = computeStats(days, TAGS, ['2026-01-01'])
     expect(january.counts[0].count).toBe(1)
 
@@ -32,11 +35,17 @@ describe('computeStats', () => {
   })
 
   it('ignores unknown tag ids (corrupt data) without crashing', () => {
-    const days = { '2026-01-01': ['ghost'] }
+    const days = { '2026-01-01': day('ghost') }
     const stats = computeStats(days, TAGS, ['2026-01-01'])
     expect(stats.counts.every((c) => c.count === 0)).toBe(true)
     // A day whose only ids are unknown counts as untagged.
     expect(stats.untagged).toBe(1)
+  })
+
+  it('ignores subtitles when counting (they belong to the application)', () => {
+    const days = { '2026-01-01': [{ tagId: 'a', subtitle: 'tarde' }] }
+    const stats = computeStats(days, TAGS, ['2026-01-01'])
+    expect(stats.counts.find((c) => c.tag.id === 'a')?.count).toBe(1)
   })
 
   it('keeps planner tag order in the counts', () => {

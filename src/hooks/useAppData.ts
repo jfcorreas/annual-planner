@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { AppData, Planner, PlannerStatus, Tag, TagCategory } from '../types'
-import { MAX_TAGS_PER_DAY } from '../types'
+import type { AppData, DayTag, Planner, PlannerStatus, Tag, TagType } from '../types'
+import { MAX_TAGS_PER_DAY, SUBTITLE_MAX_LENGTH } from '../types'
 import { createPlanner } from '../defaults'
 import { loadData, saveData } from '../storage'
 
@@ -70,8 +70,8 @@ export function useAppData() {
       if (!planner) return false
       const current = planner.days[date] ?? []
 
-      if (current.includes(tagId)) {
-        const rest = current.filter((id) => id !== tagId)
+      if (current.some((entry) => entry.tagId === tagId)) {
+        const rest = current.filter((entry) => entry.tagId !== tagId)
         setData((prev) => ({
           ...prev,
           planners: prev.planners.map((p) =>
@@ -82,7 +82,7 @@ export function useAppData() {
       }
       if (current.length >= MAX_TAGS_PER_DAY) return false
 
-      const next = [...current, tagId]
+      const next = [...current, { tagId }]
       setData((prev) => ({
         ...prev,
         planners: prev.planners.map((p) =>
@@ -94,12 +94,32 @@ export function useAppData() {
     [data.planners],
   )
 
-  /** Remove one tag from a day (click on the applied tag chip). */
+  /** Remove one tag from a day (double-click / long-press on the chip). */
   const removeDayTag = useCallback(
     (plannerId: string, date: string, tagId: string) => {
       updatePlanner(plannerId, (planner) => {
-        const rest = (planner.days[date] ?? []).filter((id) => id !== tagId)
+        const rest = (planner.days[date] ?? []).filter((entry) => entry.tagId !== tagId)
         return { ...planner, days: { ...planner.days, [date]: rest } }
+      })
+    },
+    [updatePlanner],
+  )
+
+  /**
+   * Set (or clear with an empty string) the subtitle of one tag application.
+   * The subtitle belongs to the (date, tagId) pair, not to the tag itself.
+   */
+  const setDayTagSubtitle = useCallback(
+    (plannerId: string, date: string, tagId: string, subtitle: string) => {
+      const trimmed = subtitle.trim().slice(0, SUBTITLE_MAX_LENGTH)
+      updatePlanner(plannerId, (planner) => {
+        const entries = planner.days[date]
+        if (!entries) return planner
+        const next = entries.map((entry) => {
+          if (entry.tagId !== tagId) return entry
+          return trimmed ? { ...entry, subtitle: trimmed } : { tagId: entry.tagId }
+        })
+        return { ...planner, days: { ...planner.days, [date]: next } }
       })
     },
     [updatePlanner],
@@ -121,7 +141,7 @@ export function useAppData() {
   /* ---------------- Tags ---------------- */
 
   const addTag = useCallback(
-    (plannerId: string, label: string, category: TagCategory, color: string) => {
+    (plannerId: string, label: string, category: string, color: string) => {
       const tag: Tag = { id: crypto.randomUUID(), label, category, color }
       updatePlanner(plannerId, (planner) => ({ ...planner, tags: [...planner.tags, tag] }))
       return tag
@@ -143,15 +163,61 @@ export function useAppData() {
   const removeTag = useCallback(
     (plannerId: string, tagId: string) => {
       updatePlanner(plannerId, (planner) => {
-        const days: Record<string, string[]> = {}
-        for (const [date, ids] of Object.entries(planner.days)) {
-          const rest = ids.filter((id) => id !== tagId)
+        const days: Record<string, DayTag[]> = {}
+        for (const [date, entries] of Object.entries(planner.days)) {
+          const rest = entries.filter((entry) => entry.tagId !== tagId)
           if (rest.length > 0) days[date] = rest
         }
         return { ...planner, tags: planner.tags.filter((t) => t.id !== tagId), days }
       })
     },
     [updatePlanner],
+  )
+
+  /* ---------------- Tag types (CRUD) ---------------- */
+
+  /** Create a tag type and return it (empty labels are ignored). */
+  const addTagType = useCallback(
+    (plannerId: string, label: string): TagType | null => {
+      const trimmed = label.trim()
+      if (!trimmed) return null
+      const type: TagType = { id: crypto.randomUUID(), label: trimmed }
+      updatePlanner(plannerId, (planner) => ({ ...planner, tagTypes: [...planner.tagTypes, type] }))
+      return type
+    },
+    [updatePlanner],
+  )
+
+  /** Rename a tag type (empty labels are ignored). */
+  const updateTagType = useCallback(
+    (plannerId: string, typeId: string, label: string) => {
+      const trimmed = label.trim()
+      if (!trimmed) return
+      updatePlanner(plannerId, (planner) => ({
+        ...planner,
+        tagTypes: planner.tagTypes.map((t) => (t.id === typeId ? { ...t, label: trimmed } : t)),
+      }))
+    },
+    [updatePlanner],
+  )
+
+  /**
+   * Delete a tag type only when no tag uses it. Returns the number of tags
+   * still using it (0 = deleted), so the caller can explain the block.
+   */
+  const removeTagType = useCallback(
+    (plannerId: string, typeId: string): number => {
+      const planner = data.planners.find((p) => p.id === plannerId)
+      if (!planner) return 0
+      const used = planner.tags.filter((t) => t.category === typeId).length
+      if (used > 0) return used
+      updatePlanner(plannerId, (p) => ({
+        ...p,
+        tagTypes: p.tagTypes.filter((t) => t.id !== typeId),
+      }))
+      return 0
+    },
+    [data.planners, updatePlanner],
   )
 
   /**
@@ -181,10 +247,14 @@ export function useAppData() {
     setPlannerStatus,
     toggleDayTag,
     removeDayTag,
+    setDayTagSubtitle,
     clearDay,
     addTag,
     updateTag,
     removeTag,
+    addTagType,
+    updateTagType,
+    removeTagType,
     mergePlanners,
   }
 }

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { Planner, PlannerStatus, TagCategory } from './types'
+import type { Planner, PlannerStatus } from './types'
+import { tagTypeLabel } from './types'
 import { useAppData } from './hooks/useAppData'
 import { exportToJson, importFromJson } from './storage'
 import { daysOfMonth, daysOfYear, isoDate } from './utils/dates'
@@ -12,6 +13,7 @@ import { MonthZoom } from './components/MonthZoom'
 import { StatsBar } from './components/StatsBar'
 import { PlannersPanel } from './components/PlannersPanel'
 import { TagsEditor } from './components/TagsEditor'
+import { TagDetailModal } from './components/TagDetailModal'
 
 export default function App() {
   const store = useAppData()
@@ -21,6 +23,7 @@ export default function App() {
   const [clearing, setClearing] = useState(false)
   const [zoomMonth, setZoomMonth] = useState<number | null>(null)
   const [tagsOpen, setTagsOpen] = useState(false)
+  const [tagDetail, setTagDetail] = useState<{ date: string; tagId: string } | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -32,12 +35,13 @@ export default function App() {
       ? activeTagId
       : (planner?.tags[0]?.id ?? null)
 
-  /* Esc closes the month zoom and the tags editor. */
+  /* Esc closes the month zoom, the tags editor and the tag detail modal. */
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key !== 'Escape') return
       setZoomMonth(null)
       setTagsOpen(false)
+      setTagDetail(null)
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
@@ -81,6 +85,24 @@ export default function App() {
     )
   }
 
+  /* ---------------- detail modal data ---------------- */
+
+  const detail = tagDetail
+    ? (() => {
+        const tag = planner.tags.find((t) => t.id === tagDetail.tagId)
+        const entry = planner.days[tagDetail.date]?.find((e) => e.tagId === tagDetail.tagId)
+        if (!tag || !entry) return null
+        return { date: tagDetail.date, tagId: tagDetail.tagId, tag, subtitle: entry.subtitle ?? '' }
+      })()
+    : null
+  const detailOccurrences = detail
+    ? Object.values(planner.days).reduce(
+        (total, entries) =>
+          total + entries.filter((e) => e.tagId === detail.tagId).length,
+        0,
+      )
+    : 0
+
   /* ---------------- day editing ---------------- */
 
   function handleDayClick(date: string) {
@@ -97,18 +119,45 @@ export default function App() {
     if (!applied) setNotice(`Máximo 2 etiquetas por día (${date}). Quita una primero.`)
   }
 
-  function handleTagClick(date: string, tagId: string) {
+  function handleTagOpen(date: string, tagId: string) {
+    if (readOnly) return
+    setTagDetail({ date, tagId })
+  }
+
+  function handleTagRemove(date: string, tagId: string) {
     if (readOnly) return
     // In clearing mode any click empties the day; otherwise the chip is removed.
     if (clearing) store.clearDay(planner!.id, date)
     else store.removeDayTag(planner!.id, date, tagId)
+    setTagDetail(null)
   }
 
   /* ---------------- tags ---------------- */
 
-  function saveTag(label: string, category: TagCategory, color: string, tagId?: string) {
+  function saveTag(label: string, category: string, color: string, tagId?: string) {
     if (tagId) store.updateTag(planner!.id, tagId, { label, category, color })
     else store.addTag(planner!.id, label, category, color)
+  }
+
+  /* ---------------- tag types ---------------- */
+
+  function addType(label: string) {
+    store.addTagType(planner!.id, label)
+  }
+
+  function renameType(typeId: string, label: string) {
+    store.updateTagType(planner!.id, typeId, label)
+  }
+
+  function removeType(typeId: string) {
+    const used = store.removeTagType(planner!.id, typeId)
+    if (used > 0) {
+      setNotice(
+        used === 1
+          ? '⚠️ El tipo lo usa 1 etiqueta: reasígnala antes de eliminarlo.'
+          : `⚠️ El tipo lo usan ${used} etiquetas: reasígnalas antes de eliminarlo.`,
+      )
+    }
   }
 
   /* ---------------- planners ---------------- */
@@ -204,8 +253,10 @@ export default function App() {
           daysData={planner.days}
           tags={planner.tags}
           readOnly={Boolean(readOnly)}
+          clearing={clearing}
           onDayClick={handleDayClick}
-          onTagClick={handleTagClick}
+          onTagOpen={handleTagOpen}
+          onTagRemove={handleTagRemove}
           onZoom={setZoomMonth}
         />
         <StatsBar stats={yearStats} year={planner.year} />
@@ -217,9 +268,11 @@ export default function App() {
             daysData={planner.days}
             tags={planner.tags}
             readOnly={Boolean(readOnly)}
+            clearing={clearing}
             stats={monthStats}
             onDayClick={handleDayClick}
-            onTagClick={handleTagClick}
+            onTagOpen={handleTagOpen}
+            onTagRemove={handleTagRemove}
             onClose={() => setZoomMonth(null)}
           />
         )}
@@ -231,25 +284,47 @@ export default function App() {
         onSelect={(id) => {
           store.setActivePlannerId(id)
           setZoomMonth(null)
+          setTagDetail(null)
         }}
         onCreate={(year) => {
           store.addPlanner(year)
           setZoomMonth(null)
+          setTagDetail(null)
           setNotice(`＋ Planificador ${year} creado.`)
         }}
         onToggleStatus={toggleStatus}
         onDelete={(id) => {
           store.removePlanner(id)
           setZoomMonth(null)
+          setTagDetail(null)
         }}
       />
 
       {tagsOpen && (
         <TagsEditor
           tags={planner.tags}
+          tagTypes={planner.tagTypes}
           onSave={saveTag}
           onRemove={(tagId) => store.removeTag(planner.id, tagId)}
+          onAddType={addType}
+          onRenameType={renameType}
+          onRemoveType={removeType}
           onClose={() => setTagsOpen(false)}
+        />
+      )}
+
+      {detail && (
+        <TagDetailModal
+          tag={detail.tag}
+          date={detail.date}
+          subtitle={detail.subtitle}
+          typeLabel={tagTypeLabel(planner.tagTypes, detail.tag.category)}
+          occurrences={detailOccurrences}
+          onSaveSubtitle={(subtitle) =>
+            store.setDayTagSubtitle(planner.id, detail.date, detail.tagId, subtitle)
+          }
+          onRemove={() => handleTagRemove(detail.date, detail.tagId)}
+          onClose={() => setTagDetail(null)}
         />
       )}
 

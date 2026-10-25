@@ -1,15 +1,18 @@
-import type { Tag } from '../types'
+import type { DayTag, Tag } from '../types'
 import { isoDate } from '../utils/dates'
 import { DayCell } from './DayCell'
+import type { DayEntry } from './DayCell'
 
 interface WeekRowProps {
   days: (Date | null)[]
-  daysData: Record<string, string[]>
+  daysData: Record<string, DayTag[]>
   tags: Tag[]
   readOnly: boolean
+  clearing: boolean
   variant: 'year' | 'month'
   onDayClick: (date: string) => void
-  onTagClick: (date: string, tagId: string) => void
+  onTagOpen: (date: string, tagId: string) => void
+  onTagRemove: (date: string, tagId: string) => void
 }
 
 /** One Monday-first week: 7 day slots (null = outside the month). */
@@ -18,9 +21,11 @@ export function WeekRow({
   daysData,
   tags,
   readOnly,
+  clearing,
   variant,
   onDayClick,
-  onTagClick,
+  onTagOpen,
+  onTagRemove,
 }: WeekRowProps) {
   const tagById = new Map(tags.map((tag) => [tag.id, tag]))
 
@@ -34,18 +39,23 @@ export function WeekRow({
           ) : null
         }
         const iso = isoDate(date)
-        const dayTags = (daysData[iso] ?? [])
-          .map((id) => tagById.get(id))
-          .filter((tag): tag is Tag => tag !== undefined)
+        const entries: DayEntry[] = (daysData[iso] ?? [])
+          .map((entry): DayEntry | null => {
+            const tag = tagById.get(entry.tagId)
+            return tag ? { tag, subtitle: entry.subtitle } : null
+          })
+          .filter((entry): entry is DayEntry => entry !== null)
         return (
           <DayCell
             key={iso}
             date={date}
-            tags={dayTags}
+            entries={entries}
             readOnly={readOnly}
+            clearing={clearing}
             variant={variant}
             onDayClick={onDayClick}
-            onTagClick={onTagClick}
+            onTagOpen={onTagOpen}
+            onTagRemove={onTagRemove}
           />
         )
       })}

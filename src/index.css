@@ -401,6 +401,32 @@ button {
   font-size: 10.5px;
   font-weight: 600;
   text-align: left;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  line-height: 1.2;
+  transition: transform 80ms ease-out;
+}
+
+/* Press feedback while removing with a long press. */
+.tag-chip--removable:active {
+  transform: scale(0.94);
+}
+
+.tag-chip__label,
+.tag-chip__sub {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Day subtitle of a month chip: smaller, slightly faded. */
+.tag-chip__sub {
+  font-size: 8.5px;
+  font-weight: 500;
+  opacity: 0.85;
 }
 
 /* ============================================================
@@ -807,6 +833,118 @@ button {
   display: flex;
   gap: 8px;
   justify-content: flex-end;
+}
+
+/* ---- Tag types management (inside the tags editor) ---- */
+
+.types-editor {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.types-editor h3 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.types-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.types-list__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 8px;
+  padding: 4px 8px;
+}
+
+.types-list__label {
+  font-weight: 600;
+  font-size: 13px;
+  flex: 1;
+}
+
+.types-list__count {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.types-editor__form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ============================================================
+   Tag detail modal (one click on a day chip)
+   ============================================================ */
+
+.modal--tag-detail {
+  width: min(380px, 100%);
+}
+
+.tag-detail__title {
+  margin: 0;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tag-detail__meta {
+  margin: 0 0 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tag-detail__row {
+  display: flex;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.tag-detail__row dt {
+  margin: 0;
+  width: 108px;
+  flex: none;
+  color: var(--muted);
+}
+
+.tag-detail__row dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.tag-detail__form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.tag-detail__form .btn {
+  align-self: flex-end;
+}
+
+.tag-detail__actions {
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid var(--line);
+  margin-top: 12px;
+  padding-top: 12px;
 }
 
 /* ============================================================

@@ -1,12 +1,26 @@
-/** Category of a tag: work shift or a kind of public holiday. */
-export type TagCategory = 'trabajo' | 'local' | 'regional' | 'nacional'
+/** User-managed category of tags. Default ids keep the legacy literal values. */
+export interface TagType {
+  id: string
+  label: string
+}
 
 export interface Tag {
   id: string
   label: string
-  category: TagCategory
+  /** Id of the TagType that classifies this tag. */
+  category: string
   /** Hex color, e.g. "#facc15" */
   color: string
+}
+
+/**
+ * One tag applied on a day. The subtitle belongs to this application
+ * (each day can carry its own text for the same tag).
+ */
+export interface DayTag {
+  tagId: string
+  /** Optional short text shown in the day chip and the detail modal. */
+  subtitle?: string
 }
 
 export type PlannerStatus = 'activo' | 'archivado'
@@ -17,8 +31,10 @@ export interface Planner {
   name: string
   status: PlannerStatus
   tags: Tag[]
-  /** ISO date (yyyy-MM-dd) -> up to MAX_TAGS_PER_DAY tag ids */
-  days: Record<string, string[]>
+  /** Types usable in the "Tipo" select (CRUD managed by the user). */
+  tagTypes: TagType[]
+  /** ISO date (yyyy-MM-dd) -> up to MAX_TAGS_PER_DAY applied tags */
+  days: Record<string, DayTag[]>
 }
 
 export interface AppData {
@@ -28,9 +44,13 @@ export interface AppData {
 
 export const MAX_TAGS_PER_DAY = 2
 
-export const CATEGORY_LABELS: Record<TagCategory, string> = {
-  trabajo: 'Trabajo',
-  local: 'Festivo local',
-  regional: 'Festivo regional',
-  nacional: 'Festivo nacional',
+/** Maximum length of a day-application subtitle. */
+export const SUBTITLE_MAX_LENGTH = 60
+
+/** Label shown when a tag points to a type id that no longer exists. */
+export const NO_TYPE_LABEL = 'Sin tipo'
+
+/** Display label of a tag type id, with a safe fallback. */
+export function tagTypeLabel(tagTypes: TagType[], id: string): string {
+  return tagTypes.find((t) => t.id === id)?.label ?? NO_TYPE_LABEL
 }

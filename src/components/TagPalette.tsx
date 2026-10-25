@@ -27,7 +27,7 @@ export function TagPalette({
       <span className="palette__label">
         {clearing
           ? 'Modo limpiar: clic en un día para vaciarlo'
-          : 'Etiqueta activa: clic en un día para aplicarla · clic en la etiqueta del día para quitarla'}
+          : 'Etiqueta activa: clic en un día para aplicarla · clic en la etiqueta = detalle · doble clic o mantener pulsado = quitarla'}
       </span>
       <div className="palette__chips">
         {tags.map((tag) => (

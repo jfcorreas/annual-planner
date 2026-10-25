@@ -32,9 +32,44 @@ describe('loadData / saveData', () => {
 
   it('returns null when a day holds more tags than allowed', () => {
     const data = sampleData()
-    data.planners[0].days['2026-01-01'] = ['a', 'b', 'c']
+    data.planners[0].days['2026-01-01'] = [{ tagId: 'a' }, { tagId: 'b' }, { tagId: 'c' }]
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
     expect(loadData()).toBeNull()
+  })
+
+  it('round-trips day subtitles through localStorage', () => {
+    const data = sampleData()
+    data.planners[0].days['2026-01-01'] = [{ tagId: 'guardia-24h', subtitle: 'de tarde' }]
+    saveData(data)
+    expect(loadData()?.planners[0].days['2026-01-01']).toEqual([
+      { tagId: 'guardia-24h', subtitle: 'de tarde' },
+    ])
+  })
+
+  it('normalizes legacy data (string day ids, no tagTypes) on load', () => {
+    const legacy = {
+      version: 1,
+      planners: [
+        {
+          id: 'p1',
+          year: 2026,
+          name: 'Planificador 2026',
+          status: 'activo',
+          tags: [{ id: 'a', label: 'A', category: 'trabajo', color: '#fff' }],
+          days: { '2026-01-01': ['a'] },
+        },
+      ],
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(legacy))
+
+    const loaded = loadData()
+    expect(loaded?.planners[0].days['2026-01-01']).toEqual([{ tagId: 'a' }])
+    expect(loaded?.planners[0].tagTypes.map((t) => t.id)).toEqual([
+      'trabajo',
+      'local',
+      'regional',
+      'nacional',
+    ])
   })
 })
 
@@ -60,21 +95,53 @@ describe('exportToJson / importFromJson', () => {
 
   it('rejects a planner with malformed dates', () => {
     const data = sampleData()
-    data.planners[0].days['01-01-2026'] = ['a']
+    data.planners[0].days['01-01-2026'] = [{ tagId: 'a' }]
     expect(() => importFromJson(JSON.stringify(data))).toThrow(
       'El archivo no tiene el formato de un export del planificador.',
     )
   })
 
-  it('rejects a planner with an invalid tag category', () => {
+  it('rejects a tag with an empty category', () => {
     const data = sampleData()
     const bad = data.planners[0]
-    bad.tags = [
-      { id: 'x', label: 'X', category: 'comunidad' as never, color: '#fff' },
-    ]
+    bad.tags = [{ id: 'x', label: 'X', category: '', color: '#fff' }]
     expect(() => importFromJson(JSON.stringify(data))).toThrow(
       'El archivo no tiene el formato de un export del planificador.',
     )
+  })
+
+  it('accepts a tag with a user-defined type id', () => {
+    const data = sampleData()
+    const planner = data.planners[0]
+    planner.tagTypes = [...planner.tagTypes, { id: 'turno', label: 'Turno' }]
+    planner.tags = [{ id: 'x', label: 'X', category: 'turno', color: '#fff' }]
+    expect(importFromJson(JSON.stringify(data))[0].tags[0].category).toBe('turno')
+  })
+
+  it('normalizes a legacy export (string day ids, no tagTypes)', () => {
+    const legacy = {
+      version: 1,
+      planners: [
+        {
+          id: 'p1',
+          year: 2026,
+          name: 'Planificador 2026',
+          status: 'activo',
+          tags: [{ id: 'a', label: 'A', category: 'trabajo', color: '#fff' }],
+          days: { '2026-01-01': ['a'], '2026-01-02': ['a'] },
+        },
+      ],
+    }
+    const imported = importFromJson(JSON.stringify(legacy))
+    expect(imported[0].days['2026-01-01']).toEqual([{ tagId: 'a' }])
+    expect(imported[0].tagTypes).toHaveLength(4)
+  })
+
+  it('trims and shortens oversized subtitles on import', () => {
+    const data = sampleData()
+    data.planners[0].days['2026-01-01'] = [{ tagId: 'a', subtitle: `  ${'x'.repeat(120)}  ` }]
+    const imported = importFromJson(JSON.stringify(data))
+    expect(imported[0].days['2026-01-01'][0].subtitle).toHaveLength(60)
   })
 
   it('accepts an empty planner list', () => {

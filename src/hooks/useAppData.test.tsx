@@ -34,7 +34,9 @@ describe('initial state', () => {
     })
     const stored = localStorage.getItem(STORAGE_KEY)
     expect(stored).not.toBeNull()
-    expect(JSON.parse(stored!).planners[0].days['2026-01-01']).toEqual(['guardia-24h'])
+    expect(JSON.parse(stored!).planners[0].days['2026-01-01']).toEqual([
+      { tagId: 'guardia-24h' },
+    ])
   })
 })
 
@@ -48,7 +50,7 @@ describe('toggleDayTag', () => {
       applied = result.current.toggleDayTag(id, '2026-01-01', 'guardia-24h')
     })
     expect(applied).toBe(true)
-    expect(result.current.activePlanner?.days['2026-01-01']).toEqual(['guardia-24h'])
+    expect(result.current.activePlanner?.days['2026-01-01']).toEqual([{ tagId: 'guardia-24h' }])
   })
 
   it('allows up to 2 tags and rejects the 3rd without changing state', () => {
@@ -67,7 +69,10 @@ describe('toggleDayTag', () => {
       third = result.current.toggleDayTag(id, '2026-01-01', 'turno-24h')
     })
     expect(third).toBe(false)
-    expect(result.current.activePlanner?.days['2026-01-01']).toEqual(['guardia-24h', 'diurno-12h'])
+    expect(result.current.activePlanner?.days['2026-01-01']).toEqual([
+      { tagId: 'guardia-24h' },
+      { tagId: 'diurno-12h' },
+    ])
   })
 
   it('removes the tag when toggled again', () => {
@@ -93,7 +98,7 @@ describe('toggleDayTag', () => {
   })
 })
 
-describe('removeDayTag / clearDay', () => {
+describe('removeDayTag / clearDay / setDayTagSubtitle', () => {
   it('removes one tag from a day', () => {
     const { result } = setup()
     const id = result.current.activePlanner!.id
@@ -104,7 +109,9 @@ describe('removeDayTag / clearDay', () => {
     act(() => {
       result.current.removeDayTag(id, '2026-01-01', 'guardia-24h')
     })
-    expect(result.current.activePlanner?.days['2026-01-01']).toEqual(['diurno-12h'])
+    expect(result.current.activePlanner?.days['2026-01-01']).toEqual([
+      { tagId: 'diurno-12h' },
+    ])
   })
 
   it('clears every tag of a day', () => {
@@ -118,6 +125,50 @@ describe('removeDayTag / clearDay', () => {
       result.current.clearDay(id, '2026-01-01')
     })
     expect(result.current.activePlanner?.days['2026-01-01']).toBeUndefined()
+  })
+
+  it('sets, updates and clears the subtitle of one application', () => {
+    const { result } = setup()
+    const id = result.current.activePlanner!.id
+    act(() => {
+      result.current.toggleDayTag(id, '2026-01-01', 'guardia-24h')
+    })
+    act(() => {
+      result.current.toggleDayTag(id, '2026-01-01', 'diurno-12h')
+    })
+
+    act(() => {
+      result.current.setDayTagSubtitle(id, '2026-01-01', 'guardia-24h', '  de tarde  ')
+    })
+    expect(result.current.activePlanner?.days['2026-01-01']).toEqual([
+      { tagId: 'guardia-24h', subtitle: 'de tarde' },
+      { tagId: 'diurno-12h' },
+    ])
+
+    act(() => {
+      result.current.setDayTagSubtitle(id, '2026-01-01', 'guardia-24h', '')
+    })
+    expect(result.current.activePlanner?.days['2026-01-01'][0]).toEqual({
+      tagId: 'guardia-24h',
+    })
+  })
+
+  it('keeps other days untouched when editing a subtitle', () => {
+    const { result } = setup()
+    const id = result.current.activePlanner!.id
+    act(() => {
+      result.current.toggleDayTag(id, '2026-01-01', 'guardia-24h')
+    })
+    act(() => {
+      result.current.toggleDayTag(id, '2026-01-02', 'guardia-24h')
+    })
+    act(() => {
+      result.current.setDayTagSubtitle(id, '2026-01-01', 'guardia-24h', 'uno')
+    })
+    expect(result.current.activePlanner?.days['2026-01-02']).toEqual([{ tagId: 'guardia-24h' }])
+    expect(result.current.activePlanner?.days['2026-01-01']).toEqual([
+      { tagId: 'guardia-24h', subtitle: 'uno' },
+    ])
   })
 })
 
@@ -183,7 +234,65 @@ describe('tags', () => {
     expect(result.current.activePlanner?.tags.find((t) => t.id === 'guardia-24h')).toBeUndefined()
     // The day that only had the removed tag is dropped entirely.
     expect(result.current.activePlanner?.days['2026-01-01']).toBeUndefined()
-    expect(result.current.activePlanner?.days['2026-01-02']).toEqual(['diurno-12h'])
+    expect(result.current.activePlanner?.days['2026-01-02']).toEqual([{ tagId: 'diurno-12h' }])
+  })
+})
+
+describe('tag types (CRUD)', () => {
+  it('creates a type with a trimmed label and ignores empty ones', () => {
+    const { result } = setup()
+    const id = result.current.activePlanner!.id
+    let created: { id: string } | null = { id: 'x' }
+    act(() => {
+      created = result.current.addTagType(id, '  Comunidad  ')
+    })
+    expect(result.current.activePlanner?.tagTypes).toHaveLength(5)
+    expect(result.current.activePlanner?.tagTypes.at(-1)?.label).toBe('Comunidad')
+
+    act(() => {
+      created = result.current.addTagType(id, '   ')
+    })
+    expect(created).toBeNull()
+    expect(result.current.activePlanner?.tagTypes).toHaveLength(5)
+  })
+
+  it('renames a type by id', () => {
+    const { result } = setup()
+    const id = result.current.activePlanner!.id
+    act(() => {
+      result.current.updateTagType(id, 'local', 'Festivo municipal')
+    })
+    expect(result.current.activePlanner?.tagTypes.find((t) => t.id === 'local')?.label).toBe(
+      'Festivo municipal',
+    )
+  })
+
+  it('blocks deleting a type that tags still use, reporting the count', () => {
+    const { result } = setup()
+    const id = result.current.activePlanner!.id
+
+    let used = 0
+    act(() => {
+      used = result.current.removeTagType(id, 'trabajo') // used by 5 default tags
+    })
+    expect(used).toBe(5)
+    expect(result.current.activePlanner?.tagTypes).toHaveLength(4)
+
+    // Reassign every tag to another type, then the delete goes through.
+    act(() => {
+      for (const tag of result.current.activePlanner!.tags) {
+        result.current.updateTag(id, tag.id, { category: 'local' })
+      }
+    })
+    act(() => {
+      used = result.current.removeTagType(id, 'trabajo')
+    })
+    expect(used).toBe(0)
+    expect(result.current.activePlanner?.tagTypes.map((t) => t.id)).toEqual([
+      'local',
+      'regional',
+      'nacional',
+    ])
   })
 })
 
