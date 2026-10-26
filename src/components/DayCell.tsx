@@ -182,10 +182,10 @@ function TagChip({ entry, iso, readOnly, clearing, variant, onOpen, onRemove }: 
   }
 
   const title = readOnly
-    ? `${tag.label} — solo lectura`
+    ? `${tag.label}\nsolo lectura`
     : clearing
-      ? `${tag.label} — clic para vaciar el día`
-      : `${tag.label}${subtitle ? ` — ${subtitle}` : ''} · Clic: detalle · Doble clic: quitar`
+      ? `${tag.label}\nclic para vaciar el día`
+      : `${tag.label}${subtitle ? ` — ${subtitle}` : ''}\nClic: detalle\nDoble clic: quitar`
 
   return (
     <button
