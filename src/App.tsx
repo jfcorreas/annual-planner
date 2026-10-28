@@ -274,6 +274,8 @@ export default function App() {
             onTagOpen={handleTagOpen}
             onTagRemove={handleTagRemove}
             onClose={() => setZoomMonth(null)}
+            onPrev={() => setZoomMonth((m) => (m ?? 0) - 1)}
+            onNext={() => setZoomMonth((m) => (m ?? 0) + 1)}
           />
         )}
       </div>

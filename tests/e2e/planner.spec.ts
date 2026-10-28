@@ -104,6 +104,13 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
       contentType: 'image/png',
     })
 
+    // navigate between months (stays within the year)
+    await expect(page.locator('.zoom__bar .btn', { hasText: '◀ Diciembre' })).toBeDisabled()
+    await page.locator('.zoom__bar .btn', { hasText: 'Febrero ▶' }).click()
+    expect((await page.locator('.zoom__title').innerText()).toLowerCase()).toContain('febrero')
+    await page.locator('.zoom__bar .btn', { hasText: '◀ Enero' }).click()
+    expect((await page.locator('.zoom__title').innerText()).toLowerCase()).toContain('enero')
+
     // fill inside zoom
     const zoomDay = page.locator('.zoom .day[data-iso]').first()
     const before = await zoomDay.locator('.tag-chip').count()

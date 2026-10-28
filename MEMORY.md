@@ -26,6 +26,8 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
 - Chip interaction: 250ms click debounce (double-click detection), 600ms hold,
   document-level swallow of the release click after a hold (the chip unmounts,
   so the click could land on the day underneath and fill it).
+- Month zoom navigation: prev/next stay within the planner's year (disabled at
+  Jan/Dec); buttons labeled with the target month.
 - Delete type in use = blocked with toast showing usage count (user choice);
   types CRUD UI lives inside TagsEditor.
 

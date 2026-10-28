@@ -19,6 +19,10 @@ interface MonthZoomProps {
   onTagRemove: (date: string, tagId: string) => void
   /** Close the zoom and go back to the year view. */
   onClose: () => void
+  /** Show the previous month of the same year. */
+  onPrev: () => void
+  /** Show the next month of the same year. */
+  onNext: () => void
 }
 
 /**
@@ -37,6 +41,8 @@ export function MonthZoom({
   onTagOpen,
   onTagRemove,
   onClose,
+  onPrev,
+  onNext,
 }: MonthZoomProps) {
   const weeks = weeksOfMonth(year, month)
 
@@ -46,9 +52,25 @@ export function MonthZoom({
         <button type="button" className="btn" onClick={onClose}>
           ← Volver al año
         </button>
+        <button
+          type="button"
+          className="btn"
+          onClick={onPrev}
+          disabled={month === 0}
+        >
+          ◀ {MONTH_NAMES[(month + 11) % 12]}
+        </button>
         <h2 className="zoom__title">
           {MONTH_NAMES[month]} {year}
         </h2>
+        <button
+          type="button"
+          className="btn"
+          onClick={onNext}
+          disabled={month === 11}
+        >
+          {MONTH_NAMES[(month + 1) % 12]} ▶
+        </button>
         <span className="spacer" />
         <span className="zoom__hint">
           {readOnly

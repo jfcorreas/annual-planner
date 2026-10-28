@@ -29,6 +29,13 @@ function fillDay(container: HTMLElement, iso: string) {
   fireEvent.click(dayCell(container, iso).querySelector('.day__number')!)
 }
 
+/** "Sin etiqueta" count shown in the month zoom stats footer. */
+function zoomUntagged(container: HTMLElement): string | undefined {
+  const items = [...container.querySelectorAll('.zoom__stats .stats__item')]
+  const item = items.find((li) => li.textContent?.includes('Sin etiqueta'))
+  return item?.querySelector('.stats__count')?.textContent
+}
+
 describe('render', () => {
   it('shows 12 months, the year and the stats footer', () => {
     const { container } = renderApp()
@@ -226,6 +233,45 @@ describe('month zoom', () => {
 
     fireEvent.keyDown(window, { key: 'Escape' })
     expect(container.querySelector('.zoom')).toBeNull()
+  })
+
+  it('navigating to the next month updates the title and the stats shown', () => {
+    const { container } = renderApp()
+
+    fireEvent.click(container.querySelectorAll('.month-col__zoom')[5]) // Junio
+    expect(container.querySelector('.zoom__title')?.textContent).toBe(`Junio ${YEAR}`)
+    expect(zoomUntagged(container)).toBe('30') // junio tiene 30 días
+
+    const next = [...container.querySelectorAll('.zoom__bar button')].find((b) =>
+      b.textContent?.includes('Julio'),
+    )!
+    fireEvent.click(next)
+
+    expect(container.querySelector('.zoom__title')?.textContent).toBe(`Julio ${YEAR}`)
+    expect(zoomUntagged(container)).toBe('31') // julio tiene 31 días
+  })
+
+  it('a tag filled after navigating is saved on the displayed month', () => {
+    const { container } = renderApp()
+
+    fireEvent.click(container.querySelectorAll('.month-col__zoom')[5]) // Junio
+    const next = [...container.querySelectorAll('.zoom__bar button')].find((b) =>
+      b.textContent?.includes('Julio'),
+    )!
+    fireEvent.click(next)
+
+    const july = `${YEAR}-07-01`
+    const june = `${YEAR}-06-01`
+    fireEvent.click(
+      container.querySelector(`.zoom .day[data-iso="${july}"] .day__number`)!,
+    )
+
+    // The chip lands on July 1st (zoom + year view), not on June 1st.
+    expect(
+      container.querySelector(`.zoom .day[data-iso="${july}"]`)!.querySelectorAll('.tag-chip'),
+    ).toHaveLength(1)
+    expect(chipsOf(dayCell(container, july))).toHaveLength(1)
+    expect(chipsOf(dayCell(container, june))).toHaveLength(0)
   })
 })
 
