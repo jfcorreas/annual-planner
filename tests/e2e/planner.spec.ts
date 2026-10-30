@@ -10,7 +10,7 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
   page.on('pageerror', (e) => errors.push(String(e)))
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()))
 
-  // Every confirm() of the run (type deletion, import…) is accepted and recorded.
+  // Every confirm() of the run (import…) is accepted and recorded.
   const dialogs: string[] = []
   page.on('dialog', (d) => {
     dialogs.push(d.message())
@@ -57,7 +57,6 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
     await chip.click()
     await expect(page.locator('.modal--tag-detail')).toHaveCount(1)
     await expect(page.locator('.tag-detail__title')).toContainText('Guardia 24h')
-    await expect(page.locator('.tag-detail__meta')).toContainText('Trabajo')
 
     // Edit the subtitle of this application
     await page.locator('.tag-detail__form input').fill('de tarde')
@@ -137,48 +136,14 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
     expect(stored).toContain('"version":1')
   })
 
-  await test.step('8. Tags editor: manage types and create a tag', async () => {
+  await test.step('8. Tags editor: create → apply → rename', async () => {
     await page.locator('.chip--add').click()
     await expect(page.locator('.modal')).toHaveCount(1)
+    await expect(page.locator('.modal select')).toHaveCount(0) // no type field
 
-    // Add a new type and see it offered in the "Tipo" select
-    await page.locator('.types-editor__form input[type="text"]').fill('Comunidad')
-    await page.locator('.types-editor__form button[type="submit"]').click()
-    await expect(page.locator('.types-list__item')).toHaveCount(5)
-    await expect(page.locator('.tag-form select option', { hasText: 'Comunidad' })).toHaveCount(1)
-
-    // Rename it
-    await page
-      .locator('.types-list__item', { hasText: 'Comunidad' })
-      .locator('button')
-      .first()
-      .click()
-    await page.locator('.types-editor__form input[type="text"]').fill('Comunidad autónoma')
-    await page.locator('.types-editor__form button[type="submit"]').click()
-    await expect(
-      page.locator('.types-list__item', { hasText: 'Comunidad autónoma' }),
-    ).toHaveCount(1)
-
-    // Deleting a type in use is blocked with an explanatory toast
-    await page
-      .locator('.types-list__item', { hasText: 'Trabajo' })
-      .locator('button')
-      .nth(1)
-      .click()
-    await expect(page.locator('.types-list__item')).toHaveCount(5)
-    await expect(page.locator('.toast', { hasText: 'lo usan 5 etiquetas' })).toHaveCount(1)
-    expect(dialogs.some((m) => m.includes('Eliminar el tipo'))).toBe(true)
-
-    // An unused type can be deleted
-    await page
-      .locator('.types-list__item', { hasText: 'Comunidad autónoma' })
-      .locator('button')
-      .nth(1)
-      .click()
-    await expect(page.locator('.types-list__item')).toHaveCount(4)
-
-    // Create a tag as before
+    // Create a tag with a name and a color
     await page.locator('.tag-form input[type="text"]').fill('Prueba tag')
+    await page.locator('[aria-label="Color #0891b2"]').click()
     await page.locator('.tag-form button[type="submit"]').click()
     await expect(page.locator('.tags-list__item', { hasText: 'Prueba tag' })).toHaveCount(1)
     await testInfo.attach('tags-editor.png', {
@@ -188,6 +153,32 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
     await page.locator('.modal__head .btn').click()
     await expect(page.locator('.modal')).toHaveCount(0)
     await expect(page.locator('.palette .chip', { hasText: 'Prueba tag' })).toHaveCount(1)
+
+    // Apply it to a free day
+    await page.locator('.palette .chip', { hasText: 'Prueba tag' }).click()
+    const tagDay = page.locator('.day[data-iso]').nth(4)
+    await tagDay.locator('.day__number').click()
+    await expect(tagDay.locator('.tag-chip')).toHaveCount(1)
+    await expect(tagDay.locator('.tag-chip')).toHaveAttribute('title', /^Prueba tag/)
+
+    // Rename it: the palette, the day chip and the detail view follow
+    await page.locator('.chip--add').click()
+    await page
+      .locator('.tags-list__item', { hasText: 'Prueba tag' })
+      .locator('button')
+      .first()
+      .click()
+    await page.locator('.tag-form input[type="text"]').fill('Prueba renombrada')
+    await page.locator('.tag-form button[type="submit"]').click()
+    await expect(page.locator('.tags-list__item', { hasText: 'Prueba renombrada' })).toHaveCount(1)
+    await page.locator('.modal__head .btn').click()
+    await expect(page.locator('.palette .chip', { hasText: 'Prueba renombrada' })).toHaveCount(1)
+    await expect(tagDay.locator('.tag-chip')).toHaveAttribute('title', /^Prueba renombrada/)
+
+    await tagDay.locator('.tag-chip').click()
+    await expect(page.locator('.tag-detail__title')).toContainText('Prueba renombrada')
+    await page.keyboard.press('Escape')
+    await expect(page.locator('.modal--tag-detail')).toHaveCount(0)
   })
 
   await test.step('9. Archive: read-only', async () => {

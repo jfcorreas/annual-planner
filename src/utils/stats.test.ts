@@ -3,8 +3,8 @@ import type { Tag } from '../types'
 import { computeStats } from './stats'
 
 const TAGS: Tag[] = [
-  { id: 'a', label: 'Etiqueta A', category: 'trabajo', color: '#facc15' },
-  { id: 'b', label: 'Etiqueta B', category: 'local', color: '#86efac' },
+  { id: 'a', label: 'Etiqueta A', color: '#facc15' },
+  { id: 'b', label: 'Etiqueta B', color: '#86efac' },
 ]
 
 /** Build a day entry list from plain tag ids (like the app does after load). */

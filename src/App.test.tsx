@@ -146,7 +146,6 @@ describe('tag detail modal', () => {
 
     const modal = container.querySelector('.modal--tag-detail')!
     expect(modal.textContent).toContain('Guardia 24h')
-    expect(modal.textContent).toContain('Trabajo')
     expect(modal.textContent).toContain('1 vez este año')
     expect((modal.querySelector('.tag-detail__form input') as HTMLInputElement).value).toBe('')
   })
@@ -294,7 +293,18 @@ describe('archive (read-only)', () => {
 })
 
 describe('tags editor', () => {
-  it('creates a new tag shown in the list and the palette', () => {
+  it('shows the tags editor without a type field or types section', () => {
+    const { container } = renderApp()
+
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const modal = container.querySelector('.modal')!
+
+    expect(modal.querySelector('select')).toBeNull()
+    expect(modal.querySelector('.types-editor')).toBeNull()
+    expect(modal.querySelector('.tags-list__cat')).toBeNull()
+  })
+
+  it('creates a tag with name and color shown in list and palette', () => {
     const { container } = renderApp()
 
     fireEvent.click(container.querySelector('.chip--add')!)
@@ -302,20 +312,91 @@ describe('tags editor', () => {
 
     const input = container.querySelector('.tag-form input[type="text"]') as HTMLInputElement
     fireEvent.change(input, { target: { value: 'Prueba tag' } })
+    // Pick a non-default color (the form starts on the first swatch).
+    fireEvent.click(container.querySelector('[aria-label="Color #db2777"]')!)
     fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
 
-    const rows = [...container.querySelectorAll('.tags-list__item')]
-    expect(rows.some((li) => li.textContent?.includes('Prueba tag'))).toBe(true)
-    expect(
-      [...container.querySelectorAll('.palette .chip')].some((c) =>
-        c.textContent?.includes('Prueba tag'),
-      ),
-    ).toBe(true)
+    const row = [...container.querySelectorAll('.tags-list__item')].find((li) =>
+      li.textContent?.includes('Prueba tag'),
+    )
+    expect(row).toBeTruthy()
+    // jsdom serializes #db2777 as rgb() in the style attribute.
+    expect(row!.querySelector('.stats__swatch')!.getAttribute('style')).toContain(
+      'rgb(219, 39, 119)',
+    )
+
+    const chip = [...container.querySelectorAll('.palette .chip')].find((c) =>
+      c.textContent?.includes('Prueba tag'),
+    )
+    expect(chip).toBeTruthy()
+    expect(chip!.querySelector('.chip__dot')!.getAttribute('style')).toContain('rgb(219, 39, 119)')
   })
 
-  it('deletes a tag after confirmation', () => {
+  it('applies the newly created tag to a day with its color on the chip', () => {
+    const { container } = renderApp()
+
+    // Create the tag.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const input = container.querySelector('.tag-form input[type="text"]') as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'Etiqueta nueva' } })
+    fireEvent.click(container.querySelector('[aria-label="Color #0891b2"]')!)
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close
+
+    // Select it in the palette and fill a day.
+    const paletteChip = [...container.querySelectorAll('.palette .chip')].find((c) =>
+      c.textContent?.includes('Etiqueta nueva'),
+    )!
+    fireEvent.click(paletteChip)
+    fillDay(container, firstIso())
+
+    const chips = chipsOf(dayCell(container, firstIso()))
+    // Year-view chips carry the label in the title attribute, not as text.
+    const applied = chips.find((c) => c.getAttribute('title')?.startsWith('Etiqueta nueva'))
+    expect(applied).toBeTruthy()
+    expect(applied!.getAttribute('style')).toContain('rgb(8, 145, 178)')
+  })
+
+  it('propagates a rename and recolor to day chips and the detail view', async () => {
+    const { container } = renderApp()
+
+    // Apply the default first tag (Guardia 24h) to a day.
+    fillDay(container, firstIso())
+    const chip = chipsOf(dayCell(container, firstIso()))[0]
+    expect(chip.getAttribute('title')?.startsWith('Guardia 24h')).toBe(true)
+
+    // Rename and recolor it in the editor.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const row = [...container.querySelectorAll('.tags-list__item')].find((li) =>
+      li.textContent?.includes('Guardia 24h'),
+    )!
+    fireEvent.click(row.querySelectorAll('button')[0]) // ✏️
+    const input = container.querySelector('.tag-form input[type="text"]') as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'Guardia renombrada' } })
+    fireEvent.click(container.querySelector('[aria-label="Color #db2777"]')!)
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close
+
+    // The day chip shows the new name and color with no extra step.
+    const renamed = chipsOf(dayCell(container, firstIso()))[0]
+    expect(renamed.getAttribute('title')?.startsWith('Guardia renombrada')).toBe(true)
+    expect(renamed.getAttribute('style')).toContain('rgb(219, 39, 119)')
+
+    // The detail view shows the new name and color too (click = 250ms debounce).
+    fireEvent.click(renamed)
+    await waitFor(() => expect(container.querySelector('.modal--tag-detail')).not.toBeNull())
+    const modal = container.querySelector('.modal--tag-detail')!
+    expect(modal.querySelector('.tag-detail__title')!.textContent).toContain('Guardia renombrada')
+    expect(modal.textContent).toContain('#db2777')
+  })
+
+  it('deletes a tag from the list, the palette and every day', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true)
     const { container } = renderApp()
+
+    // Apply the tag to a day before deleting it.
+    fillDay(container, firstIso())
+    expect(chipsOf(dayCell(container, firstIso()))).toHaveLength(1)
 
     fireEvent.click(container.querySelector('.chip--add')!)
     const row = [...container.querySelectorAll('.tags-list__item')].find((li) =>
@@ -325,46 +406,20 @@ describe('tags editor', () => {
 
     fireEvent.click(row.querySelectorAll('button')[1]) // 🗑️
     expect(container.querySelectorAll('.tags-list__item')).toHaveLength(before - 1)
-    vi.restoreAllMocks()
-  })
 
-  it('manages tag types: add, rename and block deletion while in use', () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
-    const { container } = renderApp()
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close
 
-    fireEvent.click(container.querySelector('.chip--add')!)
-    const typeInput = container.querySelector(
-      '.types-editor__form input[type="text"]',
-    ) as HTMLInputElement
-    const typeSubmit = container.querySelector(
-      '.types-editor__form button[type="submit"]',
-    ) as HTMLButtonElement
-
-    // Add a new type
-    fireEvent.change(typeInput, { target: { value: 'Comunidad' } })
-    fireEvent.click(typeSubmit)
-    let rows = [...container.querySelectorAll('.types-list__item')]
-    expect(rows).toHaveLength(5)
-    expect(rows.some((li) => li.textContent?.includes('Comunidad'))).toBe(true)
-
-    // It shows up in the tag form's "Tipo" select
-    const select = container.querySelector('.tag-form select') as HTMLSelectElement
-    expect([...select.options].some((o) => o.text === 'Comunidad')).toBe(true)
-
-    // Rename it
-    const communityRow = rows.find((li) => li.textContent?.includes('Comunidad'))!
-    fireEvent.click(communityRow.querySelectorAll('button')[0]) // ✏️
-    fireEvent.change(typeInput, { target: { value: 'Comunidad autónoma' } })
-    fireEvent.click(typeSubmit)
-    rows = [...container.querySelectorAll('.types-list__item')]
-    expect(rows.some((li) => li.textContent?.includes('Comunidad autónoma'))).toBe(true)
-
-    // Deleting a type still used by tags is blocked with a notice
-    const usedRow = rows.find((li) => li.textContent?.startsWith('Trabajo'))!
-    fireEvent.click(usedRow.querySelectorAll('button')[1]) // 🗑️
-    expect(container.querySelectorAll('.types-list__item')).toHaveLength(5)
-    expect(container.querySelector('.toast')?.textContent).toContain('lo usan 5 etiquetas')
-
+    // Gone from the palette and from every day that used it.
+    expect(
+      [...container.querySelectorAll('.palette .chip')].some((c) =>
+        c.textContent?.includes('Guardia 24h'),
+      ),
+    ).toBe(false)
+    expect(
+      chipsOf(dayCell(container, firstIso())).some((c) =>
+        c.getAttribute('title')?.startsWith('Guardia 24h'),
+      ),
+    ).toBe(false)
     vi.restoreAllMocks()
   })
 })

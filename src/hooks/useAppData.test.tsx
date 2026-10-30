@@ -215,7 +215,7 @@ describe('tags', () => {
   it('adds a tag to the active planner', () => {
     const { result } = setup()
     act(() => {
-      result.current.addTag(result.current.activePlanner!.id, 'Prueba', 'trabajo', '#0891b2')
+      result.current.addTag(result.current.activePlanner!.id, 'Prueba', '#0891b2')
     })
     expect(result.current.activePlanner?.tags).toHaveLength(9)
     expect(result.current.activePlanner?.tags.at(-1)?.label).toBe('Prueba')
@@ -235,64 +235,6 @@ describe('tags', () => {
     // The day that only had the removed tag is dropped entirely.
     expect(result.current.activePlanner?.days['2026-01-01']).toBeUndefined()
     expect(result.current.activePlanner?.days['2026-01-02']).toEqual([{ tagId: 'diurno-12h' }])
-  })
-})
-
-describe('tag types (CRUD)', () => {
-  it('creates a type with a trimmed label and ignores empty ones', () => {
-    const { result } = setup()
-    const id = result.current.activePlanner!.id
-    let created: { id: string } | null = { id: 'x' }
-    act(() => {
-      created = result.current.addTagType(id, '  Comunidad  ')
-    })
-    expect(result.current.activePlanner?.tagTypes).toHaveLength(5)
-    expect(result.current.activePlanner?.tagTypes.at(-1)?.label).toBe('Comunidad')
-
-    act(() => {
-      created = result.current.addTagType(id, '   ')
-    })
-    expect(created).toBeNull()
-    expect(result.current.activePlanner?.tagTypes).toHaveLength(5)
-  })
-
-  it('renames a type by id', () => {
-    const { result } = setup()
-    const id = result.current.activePlanner!.id
-    act(() => {
-      result.current.updateTagType(id, 'local', 'Festivo municipal')
-    })
-    expect(result.current.activePlanner?.tagTypes.find((t) => t.id === 'local')?.label).toBe(
-      'Festivo municipal',
-    )
-  })
-
-  it('blocks deleting a type that tags still use, reporting the count', () => {
-    const { result } = setup()
-    const id = result.current.activePlanner!.id
-
-    let used = 0
-    act(() => {
-      used = result.current.removeTagType(id, 'trabajo') // used by 5 default tags
-    })
-    expect(used).toBe(5)
-    expect(result.current.activePlanner?.tagTypes).toHaveLength(4)
-
-    // Reassign every tag to another type, then the delete goes through.
-    act(() => {
-      for (const tag of result.current.activePlanner!.tags) {
-        result.current.updateTag(id, tag.id, { category: 'local' })
-      }
-    })
-    act(() => {
-      used = result.current.removeTagType(id, 'trabajo')
-    })
-    expect(used).toBe(0)
-    expect(result.current.activePlanner?.tagTypes.map((t) => t.id)).toEqual([
-      'local',
-      'regional',
-      'nacional',
-    ])
   })
 })
 

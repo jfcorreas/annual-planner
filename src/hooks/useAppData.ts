@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { AppData, DayTag, Planner, PlannerStatus, Tag, TagType } from '../types'
+import type { AppData, DayTag, Planner, PlannerStatus, Tag } from '../types'
 import { MAX_TAGS_PER_DAY, SUBTITLE_MAX_LENGTH } from '../types'
 import { createPlanner } from '../defaults'
 import { loadData, saveData } from '../storage'
@@ -141,8 +141,8 @@ export function useAppData() {
   /* ---------------- Tags ---------------- */
 
   const addTag = useCallback(
-    (plannerId: string, label: string, category: string, color: string) => {
-      const tag: Tag = { id: crypto.randomUUID(), label, category, color }
+    (plannerId: string, label: string, color: string) => {
+      const tag: Tag = { id: crypto.randomUUID(), label, color }
       updatePlanner(plannerId, (planner) => ({ ...planner, tags: [...planner.tags, tag] }))
       return tag
     },
@@ -172,52 +172,6 @@ export function useAppData() {
       })
     },
     [updatePlanner],
-  )
-
-  /* ---------------- Tag types (CRUD) ---------------- */
-
-  /** Create a tag type and return it (empty labels are ignored). */
-  const addTagType = useCallback(
-    (plannerId: string, label: string): TagType | null => {
-      const trimmed = label.trim()
-      if (!trimmed) return null
-      const type: TagType = { id: crypto.randomUUID(), label: trimmed }
-      updatePlanner(plannerId, (planner) => ({ ...planner, tagTypes: [...planner.tagTypes, type] }))
-      return type
-    },
-    [updatePlanner],
-  )
-
-  /** Rename a tag type (empty labels are ignored). */
-  const updateTagType = useCallback(
-    (plannerId: string, typeId: string, label: string) => {
-      const trimmed = label.trim()
-      if (!trimmed) return
-      updatePlanner(plannerId, (planner) => ({
-        ...planner,
-        tagTypes: planner.tagTypes.map((t) => (t.id === typeId ? { ...t, label: trimmed } : t)),
-      }))
-    },
-    [updatePlanner],
-  )
-
-  /**
-   * Delete a tag type only when no tag uses it. Returns the number of tags
-   * still using it (0 = deleted), so the caller can explain the block.
-   */
-  const removeTagType = useCallback(
-    (plannerId: string, typeId: string): number => {
-      const planner = data.planners.find((p) => p.id === plannerId)
-      if (!planner) return 0
-      const used = planner.tags.filter((t) => t.category === typeId).length
-      if (used > 0) return used
-      updatePlanner(plannerId, (p) => ({
-        ...p,
-        tagTypes: p.tagTypes.filter((t) => t.id !== typeId),
-      }))
-      return 0
-    },
-    [data.planners, updatePlanner],
   )
 
   /**
@@ -252,9 +206,6 @@ export function useAppData() {
     addTag,
     updateTag,
     removeTag,
-    addTagType,
-    updateTagType,
-    removeTagType,
     mergePlanners,
   }
 }

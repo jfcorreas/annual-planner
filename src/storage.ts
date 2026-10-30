@@ -1,6 +1,5 @@
 import type { AppData, DayTag, Planner, Tag } from './types'
 import { MAX_TAGS_PER_DAY, SUBTITLE_MAX_LENGTH } from './types'
-import { DEFAULT_TAG_TYPES } from './defaults'
 
 const STORAGE_KEY = 'annual-planner:v1'
 
@@ -39,7 +38,7 @@ export function exportToJson(planners: Planner[]): string {
 /**
  * Parse and validate an imported JSON string.
  * Throws an Error with a user-facing (ES/ES) message when invalid.
- * Legacy exports (string day ids, no tagTypes) are accepted and normalized.
+ * Legacy exports (string day ids) are accepted and normalized.
  */
 export function importFromJson(json: string): Planner[] {
   let parsed: unknown
@@ -60,8 +59,8 @@ export function importFromJson(json: string): Planner[] {
 
 /**
  * Shape check only: accepts both the current format and the legacy one
- * (days as plain tag-id arrays, missing tagTypes). `normalizeData`
- * upgrades the legacy shape right after this passes.
+ * (days as plain tag-id arrays). `normalizeData` upgrades the legacy
+ * shape right after this passes.
  */
 function isAppData(value: unknown): value is AppData {
   if (typeof value !== 'object' || value === null) return false
@@ -82,8 +81,6 @@ function isPlanner(value: unknown): value is Planner {
     (planner.status === 'activo' || planner.status === 'archivado') &&
     Array.isArray(planner.tags) &&
     planner.tags.every(isTag) &&
-    (planner.tagTypes === undefined ||
-      (Array.isArray(planner.tagTypes) && planner.tagTypes.every(isTagType))) &&
     typeof planner.days === 'object' &&
     planner.days !== null &&
     isValidDays(planner.days)
@@ -96,21 +93,7 @@ function isTag(value: unknown): value is Tag {
   return (
     typeof tag.id === 'string' &&
     typeof tag.label === 'string' &&
-    // Types are user-managed: any non-empty id string is valid here.
-    typeof tag.category === 'string' &&
-    tag.category.length > 0 &&
     typeof tag.color === 'string'
-  )
-}
-
-function isTagType(value: unknown): boolean {
-  if (typeof value !== 'object' || value === null) return false
-  const type = value as { id?: unknown; label?: unknown }
-  return (
-    typeof type.id === 'string' &&
-    type.id.length > 0 &&
-    typeof type.label === 'string' &&
-    type.label.length > 0
   )
 }
 
@@ -146,17 +129,12 @@ function normalizeData(data: AppData): AppData {
 }
 
 function normalizePlanner(planner: Planner): Planner {
-  const tagTypes =
-    Array.isArray(planner.tagTypes) && planner.tagTypes.length > 0
-      ? planner.tagTypes.map((t) => ({ id: t.id, label: t.label }))
-      : DEFAULT_TAG_TYPES.map((t) => ({ ...t }))
-
   const days: Record<string, DayTag[]> = {}
   for (const [date, entries] of Object.entries(planner.days ?? {})) {
     days[date] = entries.map(normalizeDayTag)
   }
 
-  return { ...planner, tagTypes, days }
+  return { ...planner, days }
 }
 
 function normalizeDayTag(entry: DayTag | string): DayTag {

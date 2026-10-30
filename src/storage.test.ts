@@ -37,6 +37,26 @@ describe('loadData / saveData', () => {
     expect(loadData()).toBeNull()
   })
 
+  it('accepts and round-trips the new tag shape without category or tagTypes', () => {
+    const data: AppData = {
+      version: 1,
+      planners: [
+        {
+          id: 'p1',
+          year: 2026,
+          name: 'Planificador 2026',
+          status: 'activo',
+          tags: [{ id: 'x', label: 'Sin tipo', color: '#fff' }],
+          days: { '2026-01-01': [{ tagId: 'x' }] },
+        },
+      ],
+    }
+
+    saveData(data)
+    expect(loadData()).toEqual(data)
+    expect(importFromJson(JSON.stringify(data))).toEqual(data.planners)
+  })
+
   it('round-trips day subtitles through localStorage', () => {
     const data = sampleData()
     data.planners[0].days['2026-01-01'] = [{ tagId: 'guardia-24h', subtitle: 'de tarde' }]
@@ -46,7 +66,7 @@ describe('loadData / saveData', () => {
     ])
   })
 
-  it('normalizes legacy data (string day ids, no tagTypes) on load', () => {
+  it('normalizes legacy data (string day ids) on load', () => {
     const legacy = {
       version: 1,
       planners: [
@@ -64,12 +84,6 @@ describe('loadData / saveData', () => {
 
     const loaded = loadData()
     expect(loaded?.planners[0].days['2026-01-01']).toEqual([{ tagId: 'a' }])
-    expect(loaded?.planners[0].tagTypes.map((t) => t.id)).toEqual([
-      'trabajo',
-      'local',
-      'regional',
-      'nacional',
-    ])
   })
 })
 
@@ -101,24 +115,7 @@ describe('exportToJson / importFromJson', () => {
     )
   })
 
-  it('rejects a tag with an empty category', () => {
-    const data = sampleData()
-    const bad = data.planners[0]
-    bad.tags = [{ id: 'x', label: 'X', category: '', color: '#fff' }]
-    expect(() => importFromJson(JSON.stringify(data))).toThrow(
-      'El archivo no tiene el formato de un export del planificador.',
-    )
-  })
-
-  it('accepts a tag with a user-defined type id', () => {
-    const data = sampleData()
-    const planner = data.planners[0]
-    planner.tagTypes = [...planner.tagTypes, { id: 'turno', label: 'Turno' }]
-    planner.tags = [{ id: 'x', label: 'X', category: 'turno', color: '#fff' }]
-    expect(importFromJson(JSON.stringify(data))[0].tags[0].category).toBe('turno')
-  })
-
-  it('normalizes a legacy export (string day ids, no tagTypes)', () => {
+  it('normalizes a legacy export (string day ids)', () => {
     const legacy = {
       version: 1,
       planners: [
@@ -134,7 +131,6 @@ describe('exportToJson / importFromJson', () => {
     }
     const imported = importFromJson(JSON.stringify(legacy))
     expect(imported[0].days['2026-01-01']).toEqual([{ tagId: 'a' }])
-    expect(imported[0].tagTypes).toHaveLength(4)
   })
 
   it('trims and shortens oversized subtitles on import', () => {

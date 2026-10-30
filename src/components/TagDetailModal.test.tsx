@@ -3,7 +3,7 @@ import { fireEvent, render } from '@testing-library/react'
 import { TagDetailModal } from './TagDetailModal'
 import type { Tag } from '../types'
 
-const TAG: Tag = { id: 'g24', label: 'Guardia 24h', category: 'trabajo', color: '#facc15' }
+const TAG: Tag = { id: 'g24', label: 'Guardia 24h', color: '#facc15' }
 
 function renderModal(overrides: Partial<Parameters<typeof TagDetailModal>[0]> = {}) {
   const onSaveSubtitle = vi.fn()
@@ -14,7 +14,6 @@ function renderModal(overrides: Partial<Parameters<typeof TagDetailModal>[0]> = 
       tag={TAG}
       date="2026-01-05"
       subtitle=""
-      typeLabel="Trabajo"
       occurrences={3}
       onSaveSubtitle={onSaveSubtitle}
       onRemove={onRemove}
@@ -26,12 +25,19 @@ function renderModal(overrides: Partial<Parameters<typeof TagDetailModal>[0]> = 
 }
 
 describe('TagDetailModal', () => {
+  it('shows no type row in the detail view', () => {
+    const { container } = renderModal()
+    const modal = container.querySelector('.modal--tag-detail')!
+
+    expect(modal.textContent).not.toContain('Tipo')
+    expect(modal.querySelectorAll('.tag-detail__row dt')[0]?.textContent).not.toBe('Tipo')
+  })
+
   it('shows every detail of the application', () => {
     const { container } = renderModal()
     const modal = container.querySelector('.modal--tag-detail')!
 
     expect(modal.textContent).toContain('Guardia 24h')
-    expect(modal.textContent).toContain('Trabajo')
     expect(modal.textContent).toContain('#facc15')
     expect(modal.textContent).toContain('5 de enero de 2026')
     expect(modal.textContent).toContain('3 veces este año')

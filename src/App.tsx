@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Planner, PlannerStatus } from './types'
-import { tagTypeLabel } from './types'
 import { useAppData } from './hooks/useAppData'
 import { exportToJson, importFromJson } from './storage'
 import { daysOfMonth, daysOfYear, isoDate } from './utils/dates'
@@ -134,30 +133,9 @@ export default function App() {
 
   /* ---------------- tags ---------------- */
 
-  function saveTag(label: string, category: string, color: string, tagId?: string) {
-    if (tagId) store.updateTag(planner!.id, tagId, { label, category, color })
-    else store.addTag(planner!.id, label, category, color)
-  }
-
-  /* ---------------- tag types ---------------- */
-
-  function addType(label: string) {
-    store.addTagType(planner!.id, label)
-  }
-
-  function renameType(typeId: string, label: string) {
-    store.updateTagType(planner!.id, typeId, label)
-  }
-
-  function removeType(typeId: string) {
-    const used = store.removeTagType(planner!.id, typeId)
-    if (used > 0) {
-      setNotice(
-        used === 1
-          ? '⚠️ El tipo lo usa 1 etiqueta: reasígnala antes de eliminarlo.'
-          : `⚠️ El tipo lo usan ${used} etiquetas: reasígnalas antes de eliminarlo.`,
-      )
-    }
+  function saveTag(label: string, color: string, tagId?: string) {
+    if (tagId) store.updateTag(planner!.id, tagId, { label, color })
+    else store.addTag(planner!.id, label, color)
   }
 
   /* ---------------- planners ---------------- */
@@ -305,12 +283,8 @@ export default function App() {
       {tagsOpen && (
         <TagsEditor
           tags={planner.tags}
-          tagTypes={planner.tagTypes}
           onSave={saveTag}
           onRemove={(tagId) => store.removeTag(planner.id, tagId)}
-          onAddType={addType}
-          onRenameType={renameType}
-          onRemoveType={removeType}
           onClose={() => setTagsOpen(false)}
         />
       )}
@@ -320,7 +294,6 @@ export default function App() {
           tag={detail.tag}
           date={detail.date}
           subtitle={detail.subtitle}
-          typeLabel={tagTypeLabel(planner.tagTypes, detail.tag.category)}
           occurrences={detailOccurrences}
           onSaveSubtitle={(subtitle) =>
             store.setDayTagSubtitle(planner.id, detail.date, detail.tagId, subtitle)

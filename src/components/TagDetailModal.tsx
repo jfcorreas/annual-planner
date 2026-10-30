@@ -11,8 +11,6 @@ interface TagDetailModalProps {
   date: string
   /** Subtitle currently stored on this application (may be empty). */
   subtitle: string
-  /** Display label of the tag type. */
-  typeLabel: string
   /** How many times the tag is applied in the year. */
   occurrences: number
   onSaveSubtitle: (subtitle: string) => void
@@ -30,7 +28,6 @@ export function TagDetailModal({
   tag,
   date,
   subtitle,
-  typeLabel,
   occurrences,
   onSaveSubtitle,
   onRemove,
@@ -66,10 +63,6 @@ export function TagDetailModal({
         </header>
 
         <dl className="tag-detail__meta">
-          <div className="tag-detail__row">
-            <dt>Tipo</dt>
-            <dd>{typeLabel}</dd>
-          </div>
           <div className="tag-detail__row">
             <dt>Color</dt>
             <dd>{tag.color}</dd>
