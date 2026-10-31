@@ -4,8 +4,12 @@ import type { Tag } from '../types'
 
 interface TagsEditorProps {
   tags: Tag[]
+  /** Days each tag is applied on (usage count per tag id). */
+  usage: Record<string, number>
   onSave: (label: string, color: string, tagId?: string) => void
   onRemove: (tagId: string) => void
+  /** Called instead of removing when the tag is applied on at least one day. */
+  onBlocked: (tagId: string) => void
   onClose: () => void
 }
 
@@ -16,7 +20,7 @@ const COLOR_SWATCHES = [
 ]
 
 /** Modal to create, rename, recolor and delete tags. */
-export function TagsEditor({ tags, onSave, onRemove, onClose }: TagsEditorProps) {
+export function TagsEditor({ tags, usage, onSave, onRemove, onBlocked, onClose }: TagsEditorProps) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [label, setLabel] = useState('')
   const [color, setColor] = useState(COLOR_SWATCHES[0])
@@ -72,7 +76,11 @@ export function TagsEditor({ tags, onSave, onRemove, onClose }: TagsEditorProps)
                 className="btn"
                 title="Eliminar etiqueta (se quita de todos los días)"
                 onClick={() => {
-                  if (window.confirm(`¿Eliminar la etiqueta “${tag.label}”? Se quitará de todos los días.`)) {
+                  if ((usage[tag.id] ?? 0) > 0) {
+                    onBlocked(tag.id)
+                    return
+                  }
+                  if (window.confirm(`¿Eliminar la etiqueta “${tag.label}”?`)) {
                     onRemove(tag.id)
                     if (editingId === tag.id) startNew()
                   }

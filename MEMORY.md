@@ -2,21 +2,24 @@
 Project Memory between sessions. Maximum ~50 lines: summarize or remove anything that no longer adds value.
 
 ## Current Status
-- PENDING: tags re-implemented from scratch (backlog agreed, stories sent to
-  the user's tracker — NOT saved in this repo).
+- v0.3.0 in progress (tags rework from scratch): story #1 DONE + committed —
+  flat tags {id, label, color}, no types; stories #2–#9 overview in backlog.md.
 - v0.2.0: subtitle per day application + tag types CRUD + new chip interaction
   (1 click = detail modal, double click / 600ms hold = remove from the day).
-- Green: `tsc -b`, oxlint, `npm test` (86 unit+component), `npm run test:e2e`
-  (Playwright flow incl. modal, subtitle, long-press, types CRUD).
+- Green: `tsc -b`, oxlint, `npm test` (88 unit+component), `npm run test:e2e`
+  (Playwright flow incl. modal, subtitle, long-press, create→apply→rename).
 - Installed as Omarchy web app "Annual Planner": snapshot in
   ~/.local/share/annual-planner, systemd service `annual-planner` (:4830).
 - **Re-copy `dist/.` to `~/.local/share/annual-planner/` after each build** (AGENTS).
-- Nothing committed yet — user to review + commit.
+- Story #1 committed by the user; next up: #2 (delete blocked if in use).
 
 ## Decisions (and why)
-- Tags rework agreed (not built yet): CLEAN BREAK — no migration, old data and
-  0.2.0 exports are rejected; subtitle stays per-day on DayTag (the spec that
-  put it on Tag was a mistake); color kept; tag types removed (flat list).
+- Tags rework: CLEAN BREAK — final state rejects old data/0.2.0 exports;
+  subtitle stays per-day on DayTag (the spec that put it on Tag was a
+  mistake); color kept; tag types removed (flat list).
+- v0.3.0 Tag = {id, label, color}; tagTypes/category are gone. Legacy data
+  with stray fields still LOADS and the fields are ignored — active refusal
+  is story #9's job, don't remove day-string normalization early.
 - Tag = name (always shown) + color + statistics bool + holiday bool (forces
   statistics=false, icon) + work license bool (always in stats but separated,
   icon, max/year showing used/remaining, can go negative) + global bool
@@ -24,15 +27,12 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
   (global: if used in any planner).
 - Stack: Vite + React 19 + TS + date-fns, plain CSS (unchanged since 0.1.0;
   approved default tags/colors and planner UX live in release-notes.md).
-- Until the rework lands, v0.2.0 code still has `Planner.tagTypes` + legacy
-  normalization on load/import; the clean break deletes all of that.
 - Chip interaction: 250ms click debounce (double-click detection), 600ms hold,
   document-level swallow of the release click after a hold (the chip unmounts,
   so the click could land on the day underneath and fill it).
 - Month zoom navigation: prev/next stay within the planner's year (disabled at
   Jan/Dec); buttons labeled with the target month.
-- Delete rule (current + future): blocked with toast showing usage count;
-  types CRUD UI lives inside TagsEditor (removed by the rework).
+- Delete rule (current + future): blocked with toast showing usage count.
 
 ## Lessons Learned and Mistakes to Avoid
 - Don't compute "did it apply" inside setState updaters (lazy/possibly twice):
@@ -45,5 +45,6 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
 - pt→px in print: A5 landscape content ≈515px tall; keep print styles compact.
 
 ## Next Steps
-- User to review + commit. Optional: add the interaction rule (1 click =
-  details, dblclick/hold = destructive) to AGENTS.md if it becomes a rule.
+- Story #2: delete blocked when in use; then #3–#9. release-notes.md pending
+  for v0.3.0. Optional: interaction rule (1 click = details, dblclick/hold =
+  destructive) to AGENTS.md if it becomes a rule.

@@ -57,6 +57,16 @@ export default function App() {
     () => (planner ? daysOfYear(planner.year).map(isoDate) : []),
     [planner],
   )
+
+  /** Days each tag of the active planner is applied on. */
+  const tagUsage = useMemo(() => {
+    const counts: Record<string, number> = {}
+    if (!planner) return counts
+    for (const entries of Object.values(planner.days)) {
+      for (const entry of entries) counts[entry.tagId] = (counts[entry.tagId] ?? 0) + 1
+    }
+    return counts
+  }, [planner])
   const monthIso = useMemo(
     () =>
       planner && zoomMonth !== null ? daysOfMonth(planner.year, zoomMonth).map(isoDate) : [],
@@ -283,8 +293,17 @@ export default function App() {
       {tagsOpen && (
         <TagsEditor
           tags={planner.tags}
+          usage={tagUsage}
           onSave={saveTag}
           onRemove={(tagId) => store.removeTag(planner.id, tagId)}
+          onBlocked={(tagId) => {
+            const tag = planner.tags.find((t) => t.id === tagId)
+            if (!tag) return
+            const count = tagUsage[tagId] ?? 0
+            setNotice(
+              `🔒 “${tag.label}” se usa en ${count} ${count === 1 ? 'día' : 'días'}: quítala de todos los días antes de eliminarla.`,
+            )
+          }}
           onClose={() => setTagsOpen(false)}
         />
       )}

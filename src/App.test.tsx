@@ -390,14 +390,12 @@ describe('tags editor', () => {
     expect(modal.textContent).toContain('#db2777')
   })
 
-  it('deletes a tag from the list, the palette and every day', () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
+  it('blocks deleting a tag in use with a usage-count toast', () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
     const { container } = renderApp()
 
-    // Apply the tag to a day before deleting it.
+    // Apply the tag to a day, then try to delete it from the editor.
     fillDay(container, firstIso())
-    expect(chipsOf(dayCell(container, firstIso()))).toHaveLength(1)
-
     fireEvent.click(container.querySelector('.chip--add')!)
     const row = [...container.querySelectorAll('.tags-list__item')].find((li) =>
       li.textContent?.includes('Guardia 24h'),
@@ -405,19 +403,45 @@ describe('tags editor', () => {
     const before = container.querySelectorAll('.tags-list__item').length
 
     fireEvent.click(row.querySelectorAll('button')[1]) // 🗑️
+
+    // Blocked: no confirmation asked, toast shows the usage count, list intact.
+    expect(confirmSpy).not.toHaveBeenCalled()
+    const toast = container.querySelector('.toast')
+    expect(toast?.textContent).toContain('Guardia 24h')
+    expect(toast?.textContent).toContain('1 día')
+    expect(container.querySelectorAll('.tags-list__item')).toHaveLength(before)
+
+    // Still on its day after closing the editor.
+    fireEvent.click(container.querySelector('.modal__head .btn')!)
+    expect(
+      chipsOf(dayCell(container, firstIso())).some((c) =>
+        c.getAttribute('title')?.startsWith('Guardia 24h'),
+      ),
+    ).toBe(true)
+    vi.restoreAllMocks()
+  })
+
+  it('deletes an unused tag from the list and the palette', () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const { container } = renderApp()
+
+    // The tag is not applied on any day, so deletion is allowed after confirm.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const row = [...container.querySelectorAll('.tags-list__item')].find((li) =>
+      li.textContent?.includes('Guardia 24h'),
+    )!
+    const before = container.querySelectorAll('.tags-list__item').length
+
+    fireEvent.click(row.querySelectorAll('button')[1]) // 🗑️
+    expect(confirmSpy).toHaveBeenCalledWith('¿Eliminar la etiqueta “Guardia 24h”?')
     expect(container.querySelectorAll('.tags-list__item')).toHaveLength(before - 1)
 
     fireEvent.click(container.querySelector('.modal__head .btn')!) // close
 
-    // Gone from the palette and from every day that used it.
+    // Gone from the palette too.
     expect(
       [...container.querySelectorAll('.palette .chip')].some((c) =>
         c.textContent?.includes('Guardia 24h'),
-      ),
-    ).toBe(false)
-    expect(
-      chipsOf(dayCell(container, firstIso())).some((c) =>
-        c.getAttribute('title')?.startsWith('Guardia 24h'),
       ),
     ).toBe(false)
     vi.restoreAllMocks()

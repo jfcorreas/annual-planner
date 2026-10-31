@@ -179,6 +179,20 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
     await expect(page.locator('.tag-detail__title')).toContainText('Prueba renombrada')
     await page.keyboard.press('Escape')
     await expect(page.locator('.modal--tag-detail')).toHaveCount(0)
+
+    // Deleting the in-use tag is blocked with a usage-count toast (no confirm)
+    await page.locator('.chip--add').click()
+    await page
+      .locator('.tags-list__item', { hasText: 'Prueba renombrada' })
+      .locator('button')
+      .nth(1)
+      .click()
+    await expect(page.locator('.toast')).toContainText('Prueba renombrada')
+    await expect(page.locator('.toast')).toContainText('1 día')
+    expect(dialogs.some((m) => m.includes('Prueba renombrada'))).toBe(false)
+    await expect(page.locator('.tags-list__item', { hasText: 'Prueba renombrada' })).toHaveCount(1)
+    await page.locator('.modal__head .btn').click()
+    await expect(tagDay.locator('.tag-chip')).toHaveCount(1) // still applied
   })
 
   await test.step('9. Archive: read-only', async () => {
