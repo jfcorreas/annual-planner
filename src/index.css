@@ -472,11 +472,6 @@ button {
   flex: none;
 }
 
-.stats__swatch--none {
-  background: #eef1f5;
-  border: 1px solid var(--line);
-}
-
 .stats__count {
   font-size: 16px;
 }
