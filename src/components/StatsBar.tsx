@@ -21,13 +21,6 @@ export function StatsBar({ stats, year, className = '' }: StatsBarProps) {
             <b className={`stats__count${count === 0 ? ' stats__count--zero' : ''}`}>{count}</b>
           </li>
         ))}
-        <li className="stats__item" title="Días sin ninguna etiqueta">
-          <span className="stats__swatch stats__swatch--none" />
-          <span className="stats__label">Sin etiqueta</span>
-          <b className={`stats__count${stats.untagged === 0 ? ' stats__count--zero' : ''}`}>
-            {stats.untagged}
-          </b>
-        </li>
       </ul>
     </footer>
   )

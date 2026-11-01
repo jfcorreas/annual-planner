@@ -143,9 +143,9 @@ export default function App() {
 
   /* ---------------- tags ---------------- */
 
-  function saveTag(label: string, color: string, tagId?: string) {
-    if (tagId) store.updateTag(planner!.id, tagId, { label, color })
-    else store.addTag(planner!.id, label, color)
+  function saveTag(label: string, color: string, inStats: boolean, tagId?: string) {
+    if (tagId) store.updateTag(planner!.id, tagId, { label, color, inStats })
+    else store.addTag(planner!.id, label, color, inStats)
   }
 
   /* ---------------- planners ---------------- */

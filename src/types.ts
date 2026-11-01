@@ -3,6 +3,8 @@ export interface Tag {
   label: string
   /** Hex color, e.g. "#facc15" */
   color: string
+  /** Counted in the statistics bars. Missing (old data) means included. */
+  inStats?: boolean
 }
 
 /**

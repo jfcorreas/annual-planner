@@ -66,6 +66,19 @@ describe('loadData / saveData', () => {
     ])
   })
 
+  it('round-trips the statistics flag through localStorage', () => {
+    const data = sampleData()
+    data.planners[0].tags = [
+      { id: 'counted', label: 'Contada', color: '#facc15', inStats: true },
+      { id: 'skipped', label: 'Saltada', color: '#86efac', inStats: false },
+      { id: 'legacy', label: 'Sin bandera', color: '#2f6fed' }, // old data: no flag
+    ]
+
+    saveData(data)
+    expect(loadData()).toEqual(data)
+    expect(importFromJson(JSON.stringify(data))).toEqual(data.planners)
+  })
+
   it('normalizes legacy data (string day ids) on load', () => {
     const legacy = {
       version: 1,

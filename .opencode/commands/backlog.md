@@ -43,4 +43,4 @@ Expensive decisions: <the ones that apply, or "none">
 
 Add `Requires: #N` only when a story makes no sense without another.
 
-When done, offer to save the context and stack in `MEMORY.md`. The stories go to my tracker; don't save them to files unless I ask.
+When done, offer to save the context and stack in `MEMORY.md`. At the end, also offer to save the backlog into `backlog.md`. If backlog.md has content, replace it with the new backlog.

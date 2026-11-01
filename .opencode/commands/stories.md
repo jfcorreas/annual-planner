@@ -15,6 +15,7 @@ We refine a single story, right before building it. You propose and I decide.
 3. **If it needs more than 3 criteria, don't bloat it: propose splitting it.** Deliver the new stories in backlog format (`As a…, I want…, so that…`) for me to add to the tracker, and we continue with the first one.
 4. **Mini plan.** 5 bullets max, no code or file names. How it cuts through the layers, with the minimum that meets the criteria.
 5. **Wait for my approval.** We adjust until I say yes.
+6. **Offer to Save the story** into `current-plan.md`. If current-plan.md has content, overwrite it.
 
 ## Rules
 
@@ -43,4 +44,4 @@ As a <actor>, I want <action>, so that <benefit>.
 
 ## Suggestions (your call)
 - <optional>
-```
+

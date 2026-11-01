@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { act, fireEvent, render, waitFor } from '@testing-library/react'
 import App from './App'
+import { DEFAULT_TAGS } from './defaults'
 import { daysOfYear, isoDate } from './utils/dates'
 
 const YEAR = new Date().getFullYear()
@@ -29,10 +30,10 @@ function fillDay(container: HTMLElement, iso: string) {
   fireEvent.click(dayCell(container, iso).querySelector('.day__number')!)
 }
 
-/** "Sin etiqueta" count shown in the month zoom stats footer. */
-function zoomUntagged(container: HTMLElement): string | undefined {
+/** Count shown for a tag in the month zoom stats footer. */
+function zoomCount(container: HTMLElement, label: string): string | undefined {
   const items = [...container.querySelectorAll('.zoom__stats .stats__item')]
-  const item = items.find((li) => li.textContent?.includes('Sin etiqueta'))
+  const item = items.find((li) => li.textContent?.includes(label))
   return item?.querySelector('.stats__count')?.textContent
 }
 
@@ -44,11 +45,14 @@ describe('render', () => {
     expect(container.querySelector('.stats__year')?.textContent).toBe(String(YEAR))
   })
 
-  it('starts with every day untagged', () => {
+  it('footer lists only included tags with no "Sin etiqueta" row', () => {
     const { container } = renderApp()
     const items = [...container.querySelectorAll('.stats__item')]
-    const untagged = items.find((li) => li.textContent?.includes('Sin etiqueta'))
-    expect(untagged?.textContent).toContain(String(daysOfYear(YEAR).length))
+    // All default tags are included (missing flag counts as included).
+    expect(items.map((li) => li.querySelector('.stats__label')?.textContent)).toEqual(
+      DEFAULT_TAGS.map((tag) => tag.label),
+    )
+    expect(items.some((li) => li.textContent?.includes('Sin etiqueta'))).toBe(false)
   })
 })
 
@@ -234,12 +238,13 @@ describe('month zoom', () => {
     expect(container.querySelector('.zoom')).toBeNull()
   })
 
-  it('navigating to the next month updates the title and the stats shown', () => {
+  it('navigating to the next month updates the title and the stats', () => {
     const { container } = renderApp()
+    fillDay(container, `${YEAR}-06-01`) // Guardia 24h on June 1st
 
     fireEvent.click(container.querySelectorAll('.month-col__zoom')[5]) // Junio
     expect(container.querySelector('.zoom__title')?.textContent).toBe(`Junio ${YEAR}`)
-    expect(zoomUntagged(container)).toBe('30') // junio tiene 30 días
+    expect(zoomCount(container, 'Guardia 24h')).toBe('1')
 
     const next = [...container.querySelectorAll('.zoom__bar button')].find((b) =>
       b.textContent?.includes('Julio'),
@@ -247,7 +252,7 @@ describe('month zoom', () => {
     fireEvent.click(next)
 
     expect(container.querySelector('.zoom__title')?.textContent).toBe(`Julio ${YEAR}`)
-    expect(zoomUntagged(container)).toBe('31') // julio tiene 31 días
+    expect(zoomCount(container, 'Guardia 24h')).toBe('0')
   })
 
   it('a tag filled after navigating is saved on the displayed month', () => {
@@ -302,6 +307,127 @@ describe('tags editor', () => {
     expect(modal.querySelector('select')).toBeNull()
     expect(modal.querySelector('.types-editor')).toBeNull()
     expect(modal.querySelector('.tags-list__cat')).toBeNull()
+  })
+
+  it('new tag form shows the statistics checkbox checked by default', () => {
+    const { container } = renderApp()
+
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const checkbox = container.querySelector(
+      '.tag-form input[type="checkbox"]',
+    ) as HTMLInputElement
+
+    expect(checkbox).not.toBeNull()
+    expect(checkbox.closest('label')?.textContent).toContain('Incluir en estadísticas')
+    expect(checkbox.checked).toBe(true)
+  })
+
+  it('creating a tag unchecked keeps it out of the stats but in the palette and on days', () => {
+    const { container } = renderApp()
+
+    // Create the tag with the statistics flag off.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const input = container.querySelector('.tag-form input[type="text"]') as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'Sin contar' } })
+    const checkbox = container.querySelector(
+      '.tag-form input[type="checkbox"]',
+    ) as HTMLInputElement
+    fireEvent.click(checkbox)
+    expect(checkbox.checked).toBe(false)
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close
+
+    // Not in the year stats…
+    const items = [...container.querySelectorAll('.stats__item')]
+    expect(items.some((li) => li.textContent?.includes('Sin contar'))).toBe(false)
+
+    // …but in the palette, and it applies to days like any other tag.
+    const paletteChip = [...container.querySelectorAll('.palette .chip')].find((c) =>
+      c.textContent?.includes('Sin contar'),
+    )
+    expect(paletteChip).toBeTruthy()
+    fireEvent.click(paletteChip!)
+    fillDay(container, firstIso())
+    expect(
+      chipsOf(dayCell(container, firstIso())).some((c) =>
+        c.getAttribute('title')?.startsWith('Sin contar'),
+      ),
+    ).toBe(true)
+  })
+
+  it('editing a tag loads its flag and hides it from the year and zoom bars', () => {
+    const { container } = renderApp()
+
+    // Uncheck a default tag (missing flag = included) while editing it.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const row = [...container.querySelectorAll('.tags-list__item')].find((li) =>
+      li.textContent?.includes('Guardia 24h'),
+    )!
+    fireEvent.click(row.querySelectorAll('button')[0]) // ✏️
+    const checkbox = container.querySelector(
+      '.tag-form input[type="checkbox"]',
+    ) as HTMLInputElement
+    expect(checkbox.checked).toBe(true) // old data: no flag shows as included
+    fireEvent.click(checkbox)
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close
+
+    // Its row is gone from the year footer…
+    const footerItems = [...container.querySelectorAll('.stats__item')]
+    expect(footerItems.some((li) => li.textContent?.includes('Guardia 24h'))).toBe(false)
+
+    // Reopen and edit it again: the saved flag is loaded back as unchecked.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const savedRow = [...container.querySelectorAll('.tags-list__item')].find((li) =>
+      li.textContent?.includes('Guardia 24h'),
+    )!
+    fireEvent.click(savedRow.querySelectorAll('button')[0]) // ✏️
+    const savedCheckbox = container.querySelector(
+      '.tag-form input[type="checkbox"]',
+    ) as HTMLInputElement
+    expect(savedCheckbox.checked).toBe(false)
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close
+
+    // …and from the month zoom bar too.
+    fireEvent.click(container.querySelectorAll('.month-col__zoom')[0]) // Enero
+    const zoomItems = [...container.querySelectorAll('.zoom__stats .stats__item')]
+    expect(zoomItems.some((li) => li.textContent?.includes('Guardia 24h'))).toBe(false)
+  })
+
+  it('loads old data without the flag counting every tag', () => {
+    // Data saved before the flag existed: tags carry no `inStats` at all.
+    const oldData = {
+      version: 1,
+      planners: [
+        {
+          id: 'planner-old',
+          year: YEAR,
+          name: 'Planificador viejo',
+          status: 'activo',
+          tags: [{ id: 'old-tag', label: 'Etiqueta vieja', color: '#facc15' }],
+          days: { [`${YEAR}-01-01`]: [{ tagId: 'old-tag' }] },
+        },
+      ],
+    }
+    localStorage.setItem('annual-planner:v1', JSON.stringify(oldData))
+
+    const { container } = renderApp()
+
+    // The counter keeps counting it: applied on Jan 1st, it shows 1.
+    const items = [...container.querySelectorAll('.stats__item')]
+    const oldRow = items.find((li) => li.textContent?.includes('Etiqueta vieja'))
+    expect(oldRow?.querySelector('.stats__count')?.textContent).toBe('1')
+
+    // And the editor shows it as included (checked).
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const row = [...container.querySelectorAll('.tags-list__item')].find((li) =>
+      li.textContent?.includes('Etiqueta vieja'),
+    )!
+    fireEvent.click(row.querySelectorAll('button')[0]) // ✏️
+    const checkbox = container.querySelector(
+      '.tag-form input[type="checkbox"]',
+    ) as HTMLInputElement
+    expect(checkbox.checked).toBe(true)
   })
 
   it('creates a tag with name and color shown in list and palette', () => {

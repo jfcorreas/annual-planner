@@ -6,7 +6,7 @@ interface TagsEditorProps {
   tags: Tag[]
   /** Days each tag is applied on (usage count per tag id). */
   usage: Record<string, number>
-  onSave: (label: string, color: string, tagId?: string) => void
+  onSave: (label: string, color: string, inStats: boolean, tagId?: string) => void
   onRemove: (tagId: string) => void
   /** Called instead of removing when the tag is applied on at least one day. */
   onBlocked: (tagId: string) => void
@@ -24,11 +24,13 @@ export function TagsEditor({ tags, usage, onSave, onRemove, onBlocked, onClose }
   const [editingId, setEditingId] = useState<string | null>(null)
   const [label, setLabel] = useState('')
   const [color, setColor] = useState(COLOR_SWATCHES[0])
+  const [inStats, setInStats] = useState(true)
 
   function startEdit(tag: Tag) {
     setEditingId(tag.id)
     setLabel(tag.label)
     setColor(tag.color)
+    setInStats(tag.inStats !== false)
   }
 
   function startNew() {
@@ -41,7 +43,7 @@ export function TagsEditor({ tags, usage, onSave, onRemove, onBlocked, onClose }
     event.preventDefault()
     const trimmed = label.trim()
     if (!trimmed) return
-    onSave(trimmed, color, editingId ?? undefined)
+    onSave(trimmed, color, inStats, editingId ?? undefined)
     startNew()
   }
 
@@ -126,6 +128,14 @@ export function TagsEditor({ tags, usage, onSave, onRemove, onBlocked, onClose }
               />
             </div>
           </fieldset>
+          <label className="field field--inline">
+            <span>Incluir en estadísticas</span>
+            <input
+              type="checkbox"
+              checked={inStats}
+              onChange={(e) => setInStats(e.target.checked)}
+            />
+          </label>
           <div className="tag-form__actions">
             {editingId && (
               <button type="button" className="btn" onClick={startNew}>
