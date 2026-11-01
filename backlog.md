@@ -14,7 +14,7 @@ the fields are ignored until #9.
 |----|-------------------------------------------------------------------|--------------------|
 | 1  | Flat tags: name + color only, no types (editor, detail, stats)    | ✅ Done (committed)|
 | 2  | Delete blocked with usage-count toast when the tag is in use      | ✅ Done (committed)|
-| 3  | Statistics flag: per-tag checkbox; bars list only included tags, "Sin etiqueta" row removed | 🔄 In progress (`current-plan.md`) |
+| 3  | Statistics flag: per-tag checkbox; bars list only included tags, "Sin etiqueta" row removed | ✅ Done (committed)|
 | 4  | Holiday flag (forces statistics = false, shows icon)              | ⬜ Pending         |
 | 5  | Work-license flag + max per year (icon, always in stats, apart)   | ⬜ Pending         |
 | 6  | Used/remaining counter for the work license (can go negative)     | ⬜ Pending         |
@@ -26,9 +26,10 @@ the fields are ignored until #9.
 showing the usage count (global tag: used in *any* planner) — implemented in
 story #2.
 
-**Story #3 status detail:** uncommitted work in the tree — `inStats?: boolean`
-on the tag model, statistics filtered to included tags, and a unit test for it.
-Still pending: editor checkbox, "Sin etiqueta" row removal, affected tests.
+**Story #3 status detail:** shipped — `inStats?: boolean` on the tag model
+(missing = included, no migration), editor checkbox ("Incluir en
+estadísticas"), statistics filtered to included tags, "Sin etiqueta" row and
+its dead styles removed.
 
 **Out of scope of the rework (unchanged):** day-chip interactions (1 click =
 detail modal, double click / 600 ms hold = remove from day), 2 tags max per
