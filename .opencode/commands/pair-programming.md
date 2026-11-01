@@ -67,3 +67,4 @@ When the list is green:
 ## 5. Commit
 
 **Never commit.** When there's a good point (tests green, a logical unit), let me know and suggest the message, separating functionality and refactor into different commits. I make the commit.
+After I notice you that I have commited, update `backlog.md`

@@ -37,6 +37,7 @@ export function TagsEditor({ tags, usage, onSave, onRemove, onBlocked, onClose }
     setEditingId(null)
     setLabel('')
     setColor(COLOR_SWATCHES[0])
+    setInStats(true)
   }
 
   function handleSubmit(event: FormEvent) {

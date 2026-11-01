@@ -430,6 +430,25 @@ describe('tags editor', () => {
     expect(checkbox.checked).toBe(true)
   })
 
+  it('new tag form defaults to checked again after saving an edit', () => {
+    const { container } = renderApp()
+
+    // Uncheck an existing tag and save; the form returns to create mode.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const row = [...container.querySelectorAll('.tags-list__item')].find((li) =>
+      li.textContent?.includes('Guardia 24h'),
+    )!
+    fireEvent.click(row.querySelectorAll('button')[0]) // ✏️
+    fireEvent.click(container.querySelector('.tag-form input[type="checkbox"]')!)
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+
+    // Still in the editor: the new-tag form starts checked (AC1 default).
+    const checkbox = container.querySelector(
+      '.tag-form input[type="checkbox"]',
+    ) as HTMLInputElement
+    expect(checkbox.checked).toBe(true)
+  })
+
   it('creates a tag with name and color shown in list and palette', () => {
     const { container } = renderApp()
 
