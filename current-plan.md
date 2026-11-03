@@ -1,52 +1,61 @@
-# Current plan — Story #3: Statistics flag
+# Current plan — Story #4: Holiday flag
 
-Approved story for the next `/pair` session (backlog #3, v0.3.0 tags rework).
+Approved story for the next `/pair` session (backlog #4, v0.3.0 tags rework).
 
 ## Story
-As a planner user, I want to mark each tag as counted or not counted in the
-statistics, so that the counters only show the tags I care about.
+As a planner user, I want to mark a tag as a holiday, so that it's identifiable
+at a glance on the planner and stays out of the statistics.
 
 ## Acceptance criteria
-- [ ] Given the tags editor, when I create or edit a tag, then I can mark
-      "Incluir en estadísticas" — checked by default for new tags.
-- [ ] Given the statistics bars (year view and month zoom), when they render,
-      then they list only tags marked as included and no longer show the
-      "Sin etiqueta" row — while chips, palette and day usage stay untouched.
-- [ ] Given data saved before this change (tags with no flag), when it loads,
-      then every existing tag counts as included, so the counters don't change
-      until I uncheck a tag.
+- [ ] Given the tags editor, when I create or edit a tag, then I can mark it as
+      a holiday with the "Día Festivo" box (unchecked by default) and it keeps
+      its name and color.
+- [ ] Given a tag marked as a holiday, when it appears anywhere in the app
+      (year-view chips, month-view chips, palette, editor list, detail modal
+      title), then it shows the 🏖️ icon next to its name/chip, and it behaves
+      like any other tag for applying, renaming and deleting.
+- [ ] Given I mark a tag as a holiday and save it, then it does not appear in
+      the statistics bars and "Incluir en estadísticas" is forced off
+      (disabled) while "Día Festivo" is checked; if I later uncheck the
+      holiday box, the tag stays out of the statistics until I re-check
+      "Incluir en estadísticas".
 
 ## Plan
-- Add an "included in statistics" boolean to the tag model; missing value means
-  included (old data and imports stay valid, no migration).
-- Editor form: a checkbox next to the color, loaded and saved with the name and
-  color for both create and edit.
-- Statistics: rows are built only for included tags; the untagged count goes
-  away together with its row.
-- Both bars (year footer and month zoom) share the same computation, so one
-  change covers both.
-- Chips, palette and the detail modal stay as they are — the flag is about the
-  bars only.
+- Add a holiday boolean to the tag model; missing value means "not a holiday",
+  so old data and imports stay valid (no migration).
+- Editor: "Día Festivo" checkbox that, while checked, disables and unchecks
+  "Incluir en estadísticas" before saving.
+- Render 🏖️ next to the tag wherever it is listed: year chips (their first
+  content — today they are pure color blocks), month chips, palette, editor
+  list and detail modal title.
+- Statistics need no new logic: they already skip tags excluded from stats.
+- Default tags for new planners: "Festivo local / regional / nacional" ship
+  already marked as holidays (hence out of stats); existing planners untouched.
 
 ## Out of scope
-- Holiday and work-license flags, icons and counters (#4–#6), including any
-  automatic forcing of this flag.
+- Work-license flag, max per year and used/remaining counter (#5–#6).
 - Global tag across planners (#7) and refusal of previous-version data (#9).
-- Any indicator in the tag list for excluded tags (form only).
-- Day chips, palette, subtitles and the 2-tags-per-day limit (unchanged).
-- README / release-notes wording about "untagged days" — updated with the
-  release notes, not in this story.
+- Any change to chip colors, chip interactions, subtitles or the delete rule.
+- Backfilling existing planners: their tags keep whatever they have today.
+
+## Suggestions (your call)
+- None yet. If #5–#6 add more fields to this form, grouping the flags in one
+  fieldset will be worth it then.
 
 ## Decisions taken during refinement
-1. Flag scope: the statistics bars only (detail modal's "N veces este año" is
-   unaffected).
-2. The "Sin etiqueta" row is removed from the statistics entirely; the bars
-   show only configured (included) tags.
-3. The toggle lives in the editor form only (no indicator in the tag list).
+1. Icon: 🏖️. Checkbox label: "Día Festivo".
+2. The icon shows everywhere the tag appears, including the year-view chips
+   (which currently render no content at all).
+3. Unchecking "Día Festivo" later does not restore the statistics flag: the tag
+   stays excluded until "Incluir en estadísticas" is checked again.
+4. New planners ship the three "Festivo …" default tags already marked as
+   holidays (so they are out of the statistics); existing planners are not
+   touched.
 
-## Existing tests affected (for approval in the pair session, not touched yet)
-- `src/App.test.tsx` — `starts with every day untagged` (asserts the 365 count)
-  → reworked/removed.
-- `src/utils/stats.test.ts` — both `untagged` cases → removed with the field.
-- `src/components/MonthZoom.test.tsx` — stats fixture drops `untagged`.
-- `README.md` + `release-notes.md` mention "untagged days" → stale wording.
+## Existing tests to review in the pair session (not touched yet)
+- `src/defaults.test.ts` — asserts the default tags (label/color list); adding
+  `holiday`/`inStats` to the three Festivo defaults touches the fixtures.
+- `src/App.test.tsx` — `starts with …` tests render the default palette and
+  assert the stats rows; the three Festivo tags will drop out of the bars.
+- Chip/palette/detail tests that assert chip text or titles may need the 🏖️
+  accounted for in their expected strings.

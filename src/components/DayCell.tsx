@@ -203,12 +203,15 @@ function TagChip({ entry, iso, readOnly, clearing, variant, onOpen, onRemove }: 
     >
       {variant === 'month' ? (
         <>
-          <span className="tag-chip__label">{tag.label}</span>
+          <span className="tag-chip__label">
+            {tag.holiday && '🏖️ '}
+            {tag.label}
+          </span>
           {subtitle ? <span className="tag-chip__sub">{subtitle}</span> : null}
         </>
-    ) : (
-      ''
-    )}
+      ) : (
+        (tag.holiday && '🏖️') || ''
+      )}
     </button>
   )
 }

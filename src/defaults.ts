@@ -7,9 +7,9 @@ export const DEFAULT_TAGS: Tag[] = [
   { id: 'diurno-12h', label: 'Diurno 12h', color: '#2f6fed' },
   { id: 'nocturno-12h', label: 'Nocturno 12h', color: '#7c5ce0' },
   { id: 'turno-24h', label: 'Turno 24h', color: '#e01b24' },
-  { id: 'festivo-local', label: 'Festivo local', color: '#86efac' },
-  { id: 'festivo-regional', label: 'Festivo regional', color: '#3fae6b' },
-  { id: 'festivo-nacional', label: 'Festivo nacional', color: '#15803d' },
+  { id: 'festivo-local', label: 'Festivo local', color: '#86efac', holiday: true, inStats: false },
+  { id: 'festivo-regional', label: 'Festivo regional', color: '#3fae6b', holiday: true, inStats: false },
+  { id: 'festivo-nacional', label: 'Festivo nacional', color: '#15803d', holiday: true, inStats: false },
 ]
 
 export function createPlanner(year: number): Planner {

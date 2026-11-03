@@ -143,9 +143,12 @@ export default function App() {
 
   /* ---------------- tags ---------------- */
 
-  function saveTag(label: string, color: string, inStats: boolean, tagId?: string) {
-    if (tagId) store.updateTag(planner!.id, tagId, { label, color, inStats })
-    else store.addTag(planner!.id, label, color, inStats)
+  function saveTag(
+    fields: { label: string; color: string; inStats: boolean; holiday: boolean },
+    tagId?: string,
+  ) {
+    if (tagId) store.updateTag(planner!.id, tagId, fields)
+    else store.addTag(planner!.id, fields.label, fields.color, fields.inStats, fields.holiday)
   }
 
   /* ---------------- planners ---------------- */

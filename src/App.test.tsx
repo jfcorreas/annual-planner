@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { act, fireEvent, render, waitFor } from '@testing-library/react'
 import App from './App'
-import { DEFAULT_TAGS } from './defaults'
 import { daysOfYear, isoDate } from './utils/dates'
 
 const YEAR = new Date().getFullYear()
@@ -30,6 +29,14 @@ function fillDay(container: HTMLElement, iso: string) {
   fireEvent.click(dayCell(container, iso).querySelector('.day__number')!)
 }
 
+/** Checkbox of the tag form whose label contains the given text. */
+function formCheckbox(container: HTMLElement, labelText: string): HTMLInputElement | null {
+  const label = [...container.querySelectorAll('.tag-form label')].find((l) =>
+    l.textContent?.includes(labelText),
+  )
+  return label?.querySelector('input[type="checkbox"]') ?? null
+}
+
 /** Count shown for a tag in the month zoom stats footer. */
 function zoomCount(container: HTMLElement, label: string): string | undefined {
   const items = [...container.querySelectorAll('.zoom__stats .stats__item')]
@@ -48,10 +55,15 @@ describe('render', () => {
   it('footer lists only included tags with no "Sin etiqueta" row', () => {
     const { container } = renderApp()
     const items = [...container.querySelectorAll('.stats__item')]
-    // All default tags are included (missing flag counts as included).
-    expect(items.map((li) => li.querySelector('.stats__label')?.textContent)).toEqual(
-      DEFAULT_TAGS.map((tag) => tag.label),
-    )
+    // The three "Festivo …" defaults ship as holidays → out of the bars;
+    // the rest are included (missing flag counts as included).
+    expect(items.map((li) => li.querySelector('.stats__label')?.textContent)).toEqual([
+      'Guardia 24h',
+      'Guardia 17h',
+      'Diurno 12h',
+      'Nocturno 12h',
+      'Turno 24h',
+    ])
     expect(items.some((li) => li.textContent?.includes('Sin etiqueta'))).toBe(false)
   })
 })
@@ -322,6 +334,40 @@ describe('tags editor', () => {
     expect(checkbox.checked).toBe(true)
   })
 
+  it('new tag form shows "Día Festivo" unchecked and statistics enabled by default', () => {
+    const { container } = renderApp()
+
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const holiday = formCheckbox(container, 'Día Festivo')
+    const stats = formCheckbox(container, 'Incluir en estadísticas')
+
+    expect(holiday).not.toBeNull()
+    expect(holiday!.checked).toBe(false)
+    expect(stats).not.toBeNull()
+    expect(stats!.checked).toBe(true)
+    expect(stats!.disabled).toBe(false)
+  })
+
+  it('checking "Día Festivo" unchecks and disables "Incluir en estadísticas"', () => {
+    const { container } = renderApp()
+
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const holiday = formCheckbox(container, 'Día Festivo')!
+    const stats = formCheckbox(container, 'Incluir en estadísticas')!
+
+    fireEvent.click(holiday)
+    expect(holiday.checked).toBe(true)
+    expect(stats.checked).toBe(false)
+    expect(stats.disabled).toBe(true)
+
+    // Unchecking the holiday box re-enables statistics but keeps it off:
+    // it must be re-checked manually to count the tag again.
+    fireEvent.click(holiday)
+    expect(holiday.checked).toBe(false)
+    expect(stats.disabled).toBe(false)
+    expect(stats.checked).toBe(false)
+  })
+
   it('creating a tag unchecked keeps it out of the stats but in the palette and on days', () => {
     const { container } = renderApp()
 
@@ -587,6 +633,262 @@ describe('tags editor', () => {
     expect(
       [...container.querySelectorAll('.palette .chip')].some((c) =>
         c.textContent?.includes('Guardia 24h'),
+      ),
+    ).toBe(false)
+    vi.restoreAllMocks()
+  })
+
+  it('creating a holiday tag keeps its name and color in list and palette', () => {
+    const { container } = renderApp()
+
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const input = container.querySelector('.tag-form input[type="text"]') as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'Puente largo' } })
+    fireEvent.click(container.querySelector('[aria-label="Color #db2777"]')!)
+    fireEvent.click(formCheckbox(container, 'Día Festivo')!)
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+
+    // Back in create mode the holiday box starts unchecked again (AC default).
+    expect(formCheckbox(container, 'Día Festivo')!.checked).toBe(false)
+
+    // Name and color are kept in the editor list (still open)…
+    const row = [...container.querySelectorAll('.tags-list__item')].find((li) =>
+      li.textContent?.includes('Puente largo'),
+    )
+    expect(row).toBeTruthy()
+    expect(row!.querySelector('.stats__swatch')!.getAttribute('style')).toContain(
+      'rgb(219, 39, 119)',
+    )
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close
+
+    // …in the palette…
+    const chip = [...container.querySelectorAll('.palette .chip')].find((c) =>
+      c.textContent?.includes('Puente largo'),
+    )
+    expect(chip).toBeTruthy()
+    expect(chip!.querySelector('.chip__dot')!.getAttribute('style')).toContain('rgb(219, 39, 119)')
+
+    // …and the holiday flag survived: editing the tag loads it back checked.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const savedRow = [...container.querySelectorAll('.tags-list__item')].find((li) =>
+      li.textContent?.includes('Puente largo'),
+    )!
+    fireEvent.click(savedRow.querySelectorAll('button')[0]) // ✏️
+    const savedInput = container.querySelector('.tag-form input[type="text"]') as HTMLInputElement
+    expect(savedInput.value).toBe('Puente largo')
+    expect(formCheckbox(container, 'Día Festivo')!.checked).toBe(true)
+  })
+
+  it('holiday tag shows the 🏖️ icon in the palette and the editor list', () => {
+    const { container } = renderApp()
+
+    // Create a holiday tag.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const input = container.querySelector('.tag-form input[type="text"]') as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'Puente' } })
+    fireEvent.click(formCheckbox(container, 'Día Festivo')!)
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+
+    // Editor list: the holiday row carries the icon, regular rows do not.
+    const holidayRow = [...container.querySelectorAll('.tags-list__item')].find((li) =>
+      li.textContent?.includes('Puente'),
+    )
+    expect(holidayRow?.textContent).toContain('🏖️')
+    const regularRow = [...container.querySelectorAll('.tags-list__item')].find((li) =>
+      li.textContent?.includes('Guardia 24h'),
+    )
+    expect(regularRow?.textContent).not.toContain('🏖️')
+
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close
+
+    // Palette: same rule for the chips.
+    const holidayChip = [...container.querySelectorAll('.palette .chip')].find((c) =>
+      c.textContent?.includes('Puente'),
+    )
+    expect(holidayChip?.textContent).toContain('🏖️')
+    const regularChip = [...container.querySelectorAll('.palette .chip')].find((c) =>
+      c.textContent?.includes('Guardia 24h'),
+    )
+    expect(regularChip?.textContent).not.toContain('🏖️')
+  })
+
+  it('holiday tag shows the 🏖️ icon on year and month chips; regular tags show none', () => {
+    const { container } = renderApp()
+    const iso = firstIso()
+
+    // Create the holiday tag through the editor.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const input = container.querySelector('.tag-form input[type="text"]') as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'Puente' } })
+    fireEvent.click(formCheckbox(container, 'Día Festivo')!)
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close
+
+    // Apply both tags to one day: the regular one first, the holiday one after.
+    fillDay(container, iso) // Guardia 24h (active by default)
+    const holidayPaletteChip = [...container.querySelectorAll('.palette .chip')].find((c) =>
+      c.textContent?.includes('Puente'),
+    )!
+    fireEvent.click(holidayPaletteChip)
+    fillDay(container, iso)
+
+    // Year chips: the holiday chip shows the icon, the regular one stays empty
+    // (titles keep the plain label, no icon — tooltips are unaffected).
+    const yearChips = chipsOf(dayCell(container, iso))
+    expect(yearChips).toHaveLength(2)
+    const holidayYear = yearChips.find((c) => c.getAttribute('title')?.startsWith('Puente'))!
+    const regularYear = yearChips.find((c) => c.getAttribute('title')?.startsWith('Guardia 24h'))!
+    expect(holidayYear.textContent).toContain('🏖️')
+    expect(regularYear.textContent).toBe('')
+
+    // Month chips: same rule next to the label.
+    fireEvent.click(container.querySelector('.month-col__zoom')!) // Enero
+    const zoomChips = [...container.querySelectorAll('.zoom .tag-chip')] as HTMLElement[]
+    const holidayMonth = zoomChips.find((c) => c.getAttribute('title')?.startsWith('Puente'))!
+    const regularMonth = zoomChips.find(
+      (c) => c.getAttribute('title')?.startsWith('Guardia 24h'),
+    )!
+    expect(holidayMonth.textContent).toContain('🏖️')
+    expect(holidayMonth.textContent).toContain('Puente')
+    expect(regularMonth.textContent).toContain('Guardia 24h')
+    expect(regularMonth.textContent).not.toContain('🏖️')
+  })
+
+  it('a holiday tag does not appear in the year and month statistics bars', () => {
+    const { container } = renderApp()
+    const iso = firstIso()
+
+    // Create the holiday tag through the editor.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const input = container.querySelector('.tag-form input[type="text"]') as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'Puente' } })
+    fireEvent.click(formCheckbox(container, 'Día Festivo')!)
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close
+
+    // Apply it on a day, so it would be counted if it were included.
+    const holidayPaletteChip = [...container.querySelectorAll('.palette .chip')].find((c) =>
+      c.textContent?.includes('Puente'),
+    )!
+    fireEvent.click(holidayPaletteChip)
+    fillDay(container, iso)
+    expect(chipsOf(dayCell(container, iso))).toHaveLength(1)
+
+    // Year bar: no row for the holiday tag, while regular tags are listed.
+    const yearItems = [...container.querySelectorAll('.stats__item')]
+    expect(yearItems.some((li) => li.textContent?.includes('Puente'))).toBe(false)
+    expect(yearItems.some((li) => li.textContent?.includes('Guardia 24h'))).toBe(true)
+
+    // Month bar (Enero): same rule.
+    fireEvent.click(container.querySelector('.month-col__zoom')!) // Enero
+    const zoomItems = [...container.querySelectorAll('.zoom__stats .stats__item')]
+    expect(zoomItems.some((li) => li.textContent?.includes('Puente'))).toBe(false)
+    expect(zoomItems.some((li) => li.textContent?.includes('Guardia 24h'))).toBe(true)
+  })
+
+  it('unchecking "Día Festivo" keeps the tag out of statistics until "Incluir en estadísticas" is re-checked', () => {
+    const { container } = renderApp()
+    const yearHasRow = () =>
+      [...container.querySelectorAll('.stats__item')].some((li) =>
+        li.textContent?.includes('Puente'),
+      )
+
+    // Create a holiday tag (statistics forced off) and close the editor.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const input = container.querySelector('.tag-form input[type="text"]') as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'Puente' } })
+    fireEvent.click(formCheckbox(container, 'Día Festivo')!)
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close
+    expect(yearHasRow()).toBe(false)
+
+    // Edit it: the holiday box loads checked, statistics loads unchecked+disabled.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const holidayRow = [...container.querySelectorAll('.tags-list__item')].find((li) =>
+      li.textContent?.includes('Puente'),
+    )!
+    fireEvent.click(holidayRow.querySelectorAll('button')[0]) // ✏️
+    const holiday = formCheckbox(container, 'Día Festivo')!
+    const stats = formCheckbox(container, 'Incluir en estadísticas')!
+    expect(holiday.checked).toBe(true)
+    expect(stats.checked).toBe(false)
+    expect(stats.disabled).toBe(true)
+
+    // Uncheck the holiday box and save: the tag stays out of the statistics.
+    fireEvent.click(holiday)
+    expect(stats.disabled).toBe(false)
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close
+    expect(yearHasRow()).toBe(false)
+
+    // Re-check "Incluir en estadísticas" and save: now it is counted again.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const editedRow = [...container.querySelectorAll('.tags-list__item')].find((li) =>
+      li.textContent?.includes('Puente'),
+    )!
+    fireEvent.click(editedRow.querySelectorAll('button')[0]) // ✏️
+    expect(formCheckbox(container, 'Día Festivo')!.checked).toBe(false)
+    const statsAgain = formCheckbox(container, 'Incluir en estadísticas')!
+    expect(statsAgain.checked).toBe(false)
+    fireEvent.click(statsAgain)
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close
+    expect(yearHasRow()).toBe(true)
+  })
+
+  it('a holiday tag applies, renames and deletes like any other tag', () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const { container } = renderApp()
+    const iso = firstIso()
+
+    // Create the holiday tag.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const input = container.querySelector('.tag-form input[type="text"]') as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'Puente' } })
+    fireEvent.click(formCheckbox(container, 'Día Festivo')!)
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close
+    const paletteChip = () =>
+      [...container.querySelectorAll('.palette .chip')].find((c) =>
+        c.textContent?.includes('Puente'),
+      )
+
+    // Applies: select it in the palette and fill a day.
+    fireEvent.click(paletteChip()!)
+    fillDay(container, iso)
+    const appliedChip = chipsOf(dayCell(container, iso))[0]
+    expect(appliedChip.getAttribute('title')).toContain('Puente')
+
+    // Renames: chip and palette follow, and the holiday icon stays.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const row = [...container.querySelectorAll('.tags-list__item')].find((li) =>
+      li.textContent?.includes('Puente'),
+    )!
+    fireEvent.click(row.querySelectorAll('button')[0]) // ✏️
+    fireEvent.change(container.querySelector('.tag-form input[type="text"]')!, {
+      target: { value: 'Puente nuevo' },
+    })
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close
+    const renamedChip = chipsOf(dayCell(container, iso))[0]
+    expect(renamedChip.getAttribute('title')).toContain('Puente nuevo')
+    expect(renamedChip.textContent).toContain('🏖️')
+    expect(paletteChip()?.textContent).toContain('Puente nuevo')
+
+    // Deletes: remove it from the day (double click), then the tag itself.
+    fireEvent.click(renamedChip)
+    fireEvent.click(renamedChip) // second click inside the debounce window
+    expect(chipsOf(dayCell(container, iso))).toHaveLength(0)
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const renamedRow = [...container.querySelectorAll('.tags-list__item')].find((li) =>
+      li.textContent?.includes('Puente nuevo'),
+    )!
+    fireEvent.click(renamedRow.querySelectorAll('button')[1]) // 🗑️
+    expect(confirmSpy).toHaveBeenCalledWith('¿Eliminar la etiqueta “Puente nuevo”?')
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close
+    expect(
+      [...container.querySelectorAll('.palette .chip')].some((c) =>
+        c.textContent?.includes('Puente nuevo'),
       ),
     ).toBe(false)
     vi.restoreAllMocks()

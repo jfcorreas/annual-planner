@@ -88,8 +88,12 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
   })
 
   await test.step('4. Stats update', async () => {
+    // Fill a day with the active (counted) tag so a count actually updates…
+    await page.locator('.day[data-iso]').nth(20).locator('.day__number').click() // Diurno 12h
     const statsText = await page.locator('.planner .stats__list').innerText()
-    expect(statsText).toMatch(/Festivo nacional\s*\n?\s*1/)
+    expect(statsText).toMatch(/Diurno 12h\s*\n?\s*1/)
+    // …while the holiday applied on day 1 stays out of the bars.
+    expect(statsText).not.toContain('Festivo nacional')
   })
 
   await test.step('5. Month zoom overlaps year view', async () => {

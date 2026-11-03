@@ -15,6 +15,22 @@ describe('DEFAULT_TAGS', () => {
       'Festivo nacional',
     ])
   })
+
+  it('the three Festivo default tags ship as holidays with statistics off', () => {
+    for (const label of ['Festivo local', 'Festivo regional', 'Festivo nacional']) {
+      const tag = DEFAULT_TAGS.find((t) => t.label === label)
+      expect(tag).toBeDefined()
+      expect(tag!.holiday).toBe(true)
+      expect(tag!.inStats).toBe(false)
+    }
+
+    // The remaining five defaults are regular and counted.
+    const regular = DEFAULT_TAGS.filter((t) => t.holiday !== true)
+    expect(regular).toHaveLength(5)
+    for (const tag of regular) {
+      expect(tag.inStats).not.toBe(false)
+    }
+  })
 })
 
 describe('createPlanner', () => {

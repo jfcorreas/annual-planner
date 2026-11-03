@@ -5,6 +5,8 @@ export interface Tag {
   color: string
   /** Counted in the statistics bars. Missing (old data) means included. */
   inStats?: boolean
+  /** Holiday flag: shows 🏖️ and forces the tag out of the statistics. */
+  holiday?: boolean
 }
 
 /**

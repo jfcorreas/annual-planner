@@ -40,6 +40,7 @@ export function TagPalette({
             onClick={() => onSelectTag(tag.id)}
           >
             <span className="chip__dot" style={{ backgroundColor: tag.color }} />
+            {tag.holiday && '🏖️ '}
             {tag.label}
           </button>
         ))}

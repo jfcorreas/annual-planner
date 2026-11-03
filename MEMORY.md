@@ -2,38 +2,37 @@
 Project Memory between sessions. Maximum ~50 lines: summarize or remove anything that no longer adds value.
 
 ## Current Status
-- v0.3.0 in progress (tags rework from scratch): stories #1–#3 DONE +
-  committed — flat tags {id, label, color} + per-tag `inStats`; stories
-  #4–#9 overview in backlog.md.
-- v0.2.0 shipped: per-day subtitle + tag types (types now gone) + chip
-  interaction (1 click = detail modal, dblclick / 600ms hold = remove).
+- v0.3.0 in progress (tags rework): stories #1–#3 DONE + committed — flat tags
+  {id, label, color, inStats?}; #4 approved (current-plan.md), not started;
+  stories #5–#9 overview in backlog.md.
+- v0.2.0 shipped: per-day subtitle + chip interaction (dblclick/hold = remove);
+  tag types removed in #1.
 - Green: `tsc -b`, oxlint, `npm test` (96 unit+component), `npm run test:e2e`
   (Playwright flow incl. modal, subtitle, long-press, create→apply→rename).
 - Installed as Omarchy web app "Annual Planner": snapshot in
   ~/.local/share/annual-planner, systemd service `annual-planner` (:4830).
 - **Re-copy `dist/.` to `~/.local/share/annual-planner/` after each build** (AGENTS).
-- Story #3 committed by the user; next up: #4 (holiday flag).
 
 ## Decisions (and why)
-- Tags rework: CLEAN BREAK — final state rejects old data/0.2.0 exports;
-  subtitle stays per-day on DayTag (the spec that put it on Tag was a
-  mistake); color kept; tag types removed (flat list).
-- v0.3.0 Tag = {id, label, color}; tagTypes/category are gone. Legacy data
-  with stray fields still LOADS and the fields are ignored — active refusal
-  is story #9's job, don't remove day-string normalization early.
-- Tag = name (always shown) + color + statistics bool + holiday bool (forces
-  statistics=false, icon) + work license bool (always in stats but separated,
-  icon, max/year showing used/remaining, can go negative) + global bool
-  (usable in every planner). Delete blocked with toast for ANY tag in use
-  (global: if used in any planner).
-- Story #3: `inStats?: boolean`, missing = included (no migration); the bars
-  filter inside `computeStats`; "Sin etiqueta" row gone — README/release-notes
-  wording still pending (goes with the release notes).
+- Tags rework: CLEAN BREAK — old data/0.2.0 exports rejected (#9); subtitle
+  per-day on DayTag (not Tag); color kept; types removed (flat list).
+- v0.3.0 Tag = {id, label, color, inStats?}; tagTypes/category gone. Legacy
+  data with stray fields still LOADS and is ignored (refusal = #9); don't drop
+  day-string normalization early.
+- Tag = name + color + statistics + holiday (forces stats off, icon) + work
+  license (in stats, apart, icon, max/year, used/remaining, can go negative) +
+  global (every planner). Delete blocked with toast for ANY tag in use.
+- Story #3: `inStats?: boolean`, missing = included; the bars filter inside
+  `computeStats`; "Sin etiqueta" row gone (README/release-notes wording
+  pending).
+- #4 approved: `holiday?: boolean`; 🏖️ + "Día Festivo"; icon everywhere (year
+  chips too); forces inStats off (stays off after unchecking); "Festivo …"
+  defaults ship holiday + out of stats.
 - Stack: Vite + React 19 + TS + date-fns, plain CSS; approved defaults/UX in
   release-notes.md.
-- Chip interaction: 250ms click debounce (double-click detection), 600ms hold,
-  document-level swallow of the release click after a hold (the chip unmounts,
-  so the click could land on the day underneath and fill it).
+- Chip interaction: 250ms click debounce (dblclick detection), 600ms hold;
+  document-level swallow of the release click after a hold (chip unmounts, the
+  click could land on the day underneath and fill it).
 
 ## Lessons Learned and Mistakes to Avoid
 - Don't compute "did it apply" inside setState updaters (lazy/possibly twice):
@@ -46,7 +45,6 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
 - pt→px in print: A5 landscape content ≈515px tall; keep print styles compact.
 
 ## Next Steps
-- Stories #4–#9 (holiday flag next); release-notes.md pending for v0.3.0,
-  incl. the "untagged days" wording in README/release-notes.
-- Optional: interaction rule (1 click = details, dblclick/hold =
-  destructive) to AGENTS.md if it becomes a rule.
+- Build #4 from current-plan.md, then #5–#9; release-notes.md pending (v0.3.0,
+  incl. README/release-notes "untagged days" wording).
+- Optional: interaction rule (1 click = details, dblclick/hold = destructive) to AGENTS.md if it becomes a rule.

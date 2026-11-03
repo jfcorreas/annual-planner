@@ -6,7 +6,10 @@ interface TagsEditorProps {
   tags: Tag[]
   /** Days each tag is applied on (usage count per tag id). */
   usage: Record<string, number>
-  onSave: (label: string, color: string, inStats: boolean, tagId?: string) => void
+  onSave: (
+    fields: { label: string; color: string; inStats: boolean; holiday: boolean },
+    tagId?: string,
+  ) => void
   onRemove: (tagId: string) => void
   /** Called instead of removing when the tag is applied on at least one day. */
   onBlocked: (tagId: string) => void
@@ -25,12 +28,14 @@ export function TagsEditor({ tags, usage, onSave, onRemove, onBlocked, onClose }
   const [label, setLabel] = useState('')
   const [color, setColor] = useState(COLOR_SWATCHES[0])
   const [inStats, setInStats] = useState(true)
+  const [holiday, setHoliday] = useState(false)
 
   function startEdit(tag: Tag) {
     setEditingId(tag.id)
     setLabel(tag.label)
     setColor(tag.color)
     setInStats(tag.inStats !== false)
+    setHoliday(tag.holiday === true)
   }
 
   function startNew() {
@@ -38,13 +43,14 @@ export function TagsEditor({ tags, usage, onSave, onRemove, onBlocked, onClose }
     setLabel('')
     setColor(COLOR_SWATCHES[0])
     setInStats(true)
+    setHoliday(false)
   }
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
     const trimmed = label.trim()
     if (!trimmed) return
-    onSave(trimmed, color, inStats, editingId ?? undefined)
+    onSave({ label: trimmed, color, inStats, holiday }, editingId ?? undefined)
     startNew()
   }
 
@@ -70,7 +76,10 @@ export function TagsEditor({ tags, usage, onSave, onRemove, onBlocked, onClose }
           {tags.map((tag) => (
             <li key={tag.id} className="tags-list__item">
               <span className="stats__swatch" style={{ backgroundColor: tag.color }} />
-              <span className="tags-list__label">{tag.label}</span>
+              <span className="tags-list__label">
+                {tag.holiday && '🏖️ '}
+                {tag.label}
+              </span>
               <button type="button" className="btn" onClick={() => startEdit(tag)}>
                 ✏️
               </button>
@@ -134,7 +143,19 @@ export function TagsEditor({ tags, usage, onSave, onRemove, onBlocked, onClose }
             <input
               type="checkbox"
               checked={inStats}
+              disabled={holiday}
               onChange={(e) => setInStats(e.target.checked)}
+            />
+          </label>
+          <label className="field field--inline">
+            <span>Día Festivo</span>
+            <input
+              type="checkbox"
+              checked={holiday}
+              onChange={(e) => {
+                setHoliday(e.target.checked)
+                if (e.target.checked) setInStats(false)
+              }}
             />
           </label>
           <div className="tag-form__actions">
