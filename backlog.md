@@ -15,7 +15,7 @@ the fields are ignored until #9.
 | 1  | Flat tags: name + color only, no types (editor, detail, stats)    | ✅ Done (committed)|
 | 2  | Delete blocked with usage-count toast when the tag is in use      | ✅ Done (committed)|
 | 3  | Statistics flag: per-tag checkbox; bars list only included tags, "Sin etiqueta" row removed | ✅ Done (committed)|
-| 4  | Holiday flag (forces statistics = false, shows icon)              | ⬜ Pending         |
+| 4  | Holiday flag (forces statistics = false, shows icon)              | ✅ Done (committed)|
 | 5  | Work-license flag + max per year (icon, always in stats, apart)   | ⬜ Pending         |
 | 6  | Used/remaining counter for the work license (can go negative)     | ⬜ Pending         |
 | 7  | Global toggle: tag usable in every planner                        | ⬜ Pending         |
@@ -30,6 +30,14 @@ story #2.
 (missing = included, no migration), editor checkbox ("Incluir en
 estadísticas"), statistics filtered to included tags, "Sin etiqueta" row and
 its dead styles removed.
+
+**Story #4 status detail:** shipped — `holiday?: boolean` on the tag model
+(missing = not a holiday, no migration), "Día Festivo" checkbox (while
+checked it disables and unchecks "Incluir en estadísticas"; unchecking it
+later does NOT restore the flag until re-checked manually), 🏖️ badge before
+the name everywhere the tag is listed (year chips included; tooltips keep the
+plain label), and the three "Festivo …" default tags ship as holidays,
+hence out of the statistics. Existing planners untouched.
 
 **Out of scope of the rework (unchanged):** day-chip interactions (1 click =
 detail modal, double click / 600 ms hold = remove from day), 2 tags max per

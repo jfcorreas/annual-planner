@@ -2,13 +2,13 @@
 Project Memory between sessions. Maximum ~50 lines: summarize or remove anything that no longer adds value.
 
 ## Current Status
-- v0.3.0 in progress (tags rework): stories #1–#3 DONE + committed — flat tags
-  {id, label, color, inStats?}; #4 approved (current-plan.md), not started;
-  stories #5–#9 overview in backlog.md.
+- v0.3.0 in progress (tags rework): stories #1–#4 DONE + committed — flat tags
+  {id, label, color, inStats?, holiday?}; #5–#9 overview in backlog.md.
 - v0.2.0 shipped: per-day subtitle + chip interaction (dblclick/hold = remove);
   tag types removed in #1.
-- Green: `tsc -b`, oxlint, `npm test` (96 unit+component), `npm run test:e2e`
-  (Playwright flow incl. modal, subtitle, long-press, create→apply→rename).
+- Green: `tsc -b`, oxlint, `npm test` (106 unit+component), `npm run test:e2e`
+  (Playwright full flow incl. modal, subtitle, long-press, create→apply→rename,
+  holiday stats exclusion).
 - Installed as Omarchy web app "Annual Planner": snapshot in
   ~/.local/share/annual-planner, systemd service `annual-planner` (:4830).
 - **Re-copy `dist/.` to `~/.local/share/annual-planner/` after each build** (AGENTS).
@@ -25,9 +25,9 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
 - Story #3: `inStats?: boolean`, missing = included; the bars filter inside
   `computeStats`; "Sin etiqueta" row gone (README/release-notes wording
   pending).
-- #4 approved: `holiday?: boolean`; 🏖️ + "Día Festivo"; icon everywhere (year
-  chips too); forces inStats off (stays off after unchecking); "Festivo …"
-  defaults ship holiday + out of stats.
+- #4 DONE: `holiday?: boolean`; badge icon before the name (all surfaces, not
+  tooltips); form order = stats then Día Festivo; saves force `inStats` off;
+  Festivo defaults holiday + out of stats.
 - Stack: Vite + React 19 + TS + date-fns, plain CSS; approved defaults/UX in
   release-notes.md.
 - Chip interaction: 250ms click debounce (dblclick detection), 600ms hold;
@@ -45,6 +45,6 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
 - pt→px in print: A5 landscape content ≈515px tall; keep print styles compact.
 
 ## Next Steps
-- Build #4 from current-plan.md, then #5–#9; release-notes.md pending (v0.3.0,
+- Build #5 from current-plan.md, then #6–#9; release-notes.md pending (v0.3.0,
   incl. README/release-notes "untagged days" wording).
 - Optional: interaction rule (1 click = details, dblclick/hold = destructive) to AGENTS.md if it becomes a rule.
