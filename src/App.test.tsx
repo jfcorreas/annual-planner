@@ -1034,7 +1034,7 @@ describe('tags editor', () => {
       li.textContent?.includes('Permiso médico'),
     )!
     expect(permitRow.textContent).toContain('🪪')
-    expect(permitRow.querySelector('.stats__count')?.textContent).toBe('2')
+    expect(permitRow.querySelector('.stats__count')?.textContent).toBe('2 de 4 · Restantes 2')
     expect(labels().some((l) => l === 'Puente')).toBe(false)
 
     // Month bar (Enero): same shape, count limited to the month (both applications).
@@ -1048,7 +1048,78 @@ describe('tags editor', () => {
       li.textContent?.includes('Permiso médico'),
     )!
     expect(zoomPermit.querySelector('.stats__count')?.textContent).toBe('2')
+    // The max is yearly: no remaining counter in the month bar.
+    expect(zoomPermit.textContent).not.toContain('Restantes')
     expect(zoomLabels().some((l) => l === 'Puente')).toBe(false)
+  })
+
+  it('negative remaining is highlighted in red and applications are never capped', () => {
+    const { container } = renderApp()
+
+    // Create a permit tag with a yearly max of 1.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const input = container.querySelector('.tag-form input[type="text"]') as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'Permiso médico' } })
+    fireEvent.click(formCheckbox(container, 'Permiso de trabajo')!)
+    fireEvent.change(formNumber(container, 'Máximo por año')!, { target: { value: '1' } })
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close
+
+    // Apply it on two days: more applications than the max.
+    const paletteChip = [...container.querySelectorAll('.palette .chip')].find((c) =>
+      c.textContent?.includes('Permiso médico'),
+    )!
+    const iso = firstIso()
+    fireEvent.click(paletteChip)
+    fillDay(container, iso)
+    fillDay(container, isoDate(daysOfYear(YEAR)[1]))
+
+    // Both applications are counted; the remaining goes negative and is flagged.
+    const permitRow = [...container.querySelectorAll('.stats__item')].find((li) =>
+      li.textContent?.includes('Permiso médico'),
+    )!
+    const count = permitRow.querySelector('.stats__count')!
+    expect(count.textContent).toBe('2 de 1 · Restantes -1')
+    expect(count.className).toContain('stats__count--negative')
+  })
+
+  it('editing the max updates the year counter', () => {
+    const { container } = renderApp()
+
+    // Create a permit tag with a yearly max of 4 and apply it on one day.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const input = container.querySelector('.tag-form input[type="text"]') as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'Permiso médico' } })
+    fireEvent.click(formCheckbox(container, 'Permiso de trabajo')!)
+    fireEvent.change(formNumber(container, 'Máximo por año')!, { target: { value: '4' } })
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close
+
+    const paletteChip = [...container.querySelectorAll('.palette .chip')].find((c) =>
+      c.textContent?.includes('Permiso médico'),
+    )!
+    fireEvent.click(paletteChip)
+    fillDay(container, firstIso())
+
+    const count = () => {
+      const row = [...container.querySelectorAll('.stats__item')].find((li) =>
+        li.textContent?.includes('Permiso médico'),
+      )!
+      return row.querySelector('.stats__count')?.textContent
+    }
+    expect(count()).toBe('1 de 4 · Restantes 3')
+
+    // Edit the max to 10: the counter follows without touching the days.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const row = [...container.querySelectorAll('.tags-list__item')].find((li) =>
+      li.textContent?.includes('Permiso médico'),
+    )!
+    fireEvent.click(row.querySelectorAll('button')[0]) // ✏️
+    fireEvent.change(formNumber(container, 'Máximo por año')!, { target: { value: '10' } })
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close
+
+    expect(count()).toBe('1 de 10 · Restantes 9')
   })
 
   it('unchecking "Día Festivo" keeps the tag out of statistics until "Incluir en estadísticas" is re-checked', () => {

@@ -480,6 +480,10 @@ button {
   color: var(--faint);
 }
 
+.stats__count--negative {
+  color: var(--danger);
+}
+
 /* ============================================================
    Month zoom (overlaps the year view)
    ============================================================ */
