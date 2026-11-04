@@ -2,10 +2,10 @@
 Project Memory between sessions. Maximum ~50 lines: summarize or remove anything that no longer adds value.
 
 ## Current Status
-- v0.3.0 in progress (tags rework): #1–#5 DONE + committed; #6 approved
-  (current-plan.md), not started; #7–#9 overview in backlog.md.
+- v0.3.0 in progress (tags rework): #1–#6 DONE + committed; #7–#9 overview
+  in backlog.md.
 - v0.2.0 shipped: per-day subtitle + chip interaction (dblclick/hold = remove).
-- Green: `tsc -b`, oxlint, `npm test` (118 unit+component), `npm run test:e2e`
+- Green: `tsc -b`, oxlint, `npm test` (120 unit+component), `npm run test:e2e`
   (Playwright full flow; e2e stats assertion reads the whole `.stats` footer).
 - Installed as Omarchy web app "Annual Planner" (:4830, systemd
   `annual-planner`). **Re-copy `dist/.` to `~/.local/share/annual-planner/`
@@ -27,8 +27,8 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
   exclusive with Festivo (unchecking permit keeps stats checked);
   `Stats {counts, permits}` — permits bypass the filter, own group at the end
   of both bars; `tagIcon(tag)` helper replaces the badge in 6 places.
-- #6 approved: year permit row "U de N · Restantes R" (R = max − count), red
-  when negative; month bar keeps the plain count; detail modal unchanged.
+- #6 DONE: year permit row "U de N · Restantes R" (R = max − count), red when
+  negative; month bar keeps the plain count; detail modal unchanged.
 - Stack: Vite + React 19 + TS + date-fns, plain CSS; approved defaults/UX in
   release-notes.md.
 - Chip interaction: 250ms click debounce (dblclick detection), 600ms hold;
@@ -44,7 +44,7 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
 - pt→px in print: A5 landscape content ≈515px tall; keep print styles compact.
 
 ## Next Steps
-- Build #6 from current-plan.md, then #7–#9; release-notes.md pending (v0.3.0,
-  incl. README "untagged days"). Manual check after #6: permit group look (two
-  `flex:1` lists), 🪪 everywhere, editor form layout.
+- Build #7–#9; release-notes.md pending (v0.3.0, incl. README "untagged
+  days"). Manual check after #6: permit group look (two `flex:1` lists), 🪪
+  everywhere, red counter, A5 print, editor form layout.
 - Optional: interaction rule (1 click = details, dblclick/hold = destructive) to AGENTS.md if it becomes a rule.

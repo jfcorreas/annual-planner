@@ -17,7 +17,7 @@ the fields are ignored until #9.
 | 3  | Statistics flag: per-tag checkbox; bars list only included tags, "Sin etiqueta" row removed | ✅ Done (committed)|
 | 4  | Holiday flag (forces statistics = false, shows icon)              | ✅ Done (committed)|
 | 5  | Work-license flag + max per year (icon, always in stats, apart)   | ✅ Done (committed)|
-| 6  | Used/remaining counter for the work license (can go negative)     | ⬜ Pending         |
+| 6  | Used/remaining counter for the work license (can go negative)     | ✅ Done (committed)|
 | 7  | Global toggle: tag usable in every planner                        | ⬜ Pending         |
 | 8  | _(to confirm — details live in the tracker)_                      | ⬜ Pending         |
 | 9  | Refuse data and exports from the previous version                 | ⬜ Pending         |
@@ -46,7 +46,15 @@ por año" shown beside it while checked (forces "Incluir en estadísticas" on an
 disabled; mutually exclusive with "Día Festivo"), 🪪 badge on every surface via
 the shared `tagIcon()` helper, and statistics: permits bypass the `inStats`
 filter and render in their own group at the end of the year/month bars with the
-period count. Used/remaining display of the max is story #6.
+period count.
+
+**Story #6 status detail:** shipped — the year bar's permit row renders
+"U de N · Restantes R" (R = max − year count) in the `.stats__count` element,
+with a red `.stats__count--negative` state when R < 0 (applications are never
+blocked or capped); derived at render, so editing the max updates it with no
+stored state. The month bar keeps the plain per-month count (the max is
+yearly), the detail modal stays "N veces este año", and a permit tag with no
+`maxPerYear` (not reachable via the editor) falls back to the plain count.
 
 **Out of scope of the rework (unchanged):** day-chip interactions (1 click =
 detail modal, double click / 600 ms hold = remove from day), 2 tags max per
