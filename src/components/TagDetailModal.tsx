@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import type { Tag } from '../types'
+import { tagIcon } from '../utils/tags'
 import { SUBTITLE_MAX_LENGTH } from '../types'
 import { MONTH_NAMES } from '../utils/dates'
 
@@ -55,7 +56,7 @@ export function TagDetailModal({
         <header className="modal__head">
           <h2 className="tag-detail__title">
             <span className="stats__swatch" style={{ backgroundColor: tag.color }} />
-            {tag.holiday && '🏖️ '}
+            {tagIcon(tag)}
             {tag.label}
           </h2>
           <button type="button" className="btn" onClick={onClose} aria-label="Cerrar">

@@ -701,6 +701,18 @@ button {
   gap: 6px;
 }
 
+/* Permit checkbox + its yearly max on one row (the max appears while checked). */
+.field--permit {
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.field--permit input[type='number'] {
+  width: 90px;
+}
+
 .field input[type='text'],
 .field input[type='number'],
 .field select {

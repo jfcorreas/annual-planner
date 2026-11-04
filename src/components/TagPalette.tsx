@@ -1,4 +1,5 @@
 import type { Tag } from '../types'
+import { tagIcon } from '../utils/tags'
 
 interface TagPaletteProps {
   tags: Tag[]
@@ -40,7 +41,7 @@ export function TagPalette({
             onClick={() => onSelectTag(tag.id)}
           >
             <span className="chip__dot" style={{ backgroundColor: tag.color }} />
-            {tag.holiday && '🏖️ '}
+            {tagIcon(tag)}
             {tag.label}
           </button>
         ))}

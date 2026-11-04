@@ -3,7 +3,7 @@ import { render } from '@testing-library/react'
 import { MonthZoom } from './MonthZoom'
 import type { Stats } from '../utils/stats'
 
-const STATS: Stats = { counts: [] }
+const STATS: Stats = { counts: [], permits: [] }
 
 function renderZoom(overrides: Partial<Parameters<typeof MonthZoom>[0]> = {}) {
   const view = render(

@@ -37,6 +37,14 @@ function formCheckbox(container: HTMLElement, labelText: string): HTMLInputEleme
   return label?.querySelector('input[type="checkbox"]') ?? null
 }
 
+/** Number input of the tag form whose label contains the given text. */
+function formNumber(container: HTMLElement, labelText: string): HTMLInputElement | null {
+  const label = [...container.querySelectorAll('.tag-form label')].find((l) =>
+    l.textContent?.includes(labelText),
+  )
+  return label?.querySelector('input[type="number"]') ?? null
+}
+
 /** Count shown for a tag in the month zoom stats footer. */
 function zoomCount(container: HTMLElement, label: string): string | undefined {
   const items = [...container.querySelectorAll('.zoom__stats .stats__item')]
@@ -366,6 +374,118 @@ describe('tags editor', () => {
     expect(holiday.checked).toBe(false)
     expect(stats.disabled).toBe(false)
     expect(stats.checked).toBe(false)
+  })
+
+  it('permit checkbox reveals the required max field, forces stats on and is mutually exclusive with Día Festivo', () => {
+    const { container } = renderApp()
+
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const permit = formCheckbox(container, 'Permiso de trabajo')
+    const stats = formCheckbox(container, 'Incluir en estadísticas')!
+    const holiday = formCheckbox(container, 'Día Festivo')!
+
+    // Hidden while the permit box is off.
+    expect(permit).not.toBeNull()
+    expect(permit!.checked).toBe(false)
+    expect(formNumber(container, 'Máximo por año')).toBeNull()
+
+    // Checking it shows the field and forces statistics on (disabled).
+    fireEvent.click(permit!)
+    const max = formNumber(container, 'Máximo por año')
+    expect(max).not.toBeNull()
+    expect(stats.checked).toBe(true)
+    expect(stats.disabled).toBe(true)
+
+    // Unchecking the permit re-enables statistics; the forced value stays on.
+    fireEvent.click(permit!)
+    expect(formNumber(container, 'Máximo por año')).toBeNull()
+    expect(stats.disabled).toBe(false)
+    expect(stats.checked).toBe(true)
+
+    // Mutual exclusivity: Día Festivo unchecks the permit…
+    fireEvent.click(permit!)
+    fireEvent.click(holiday)
+    expect(holiday.checked).toBe(true)
+    expect(permit!.checked).toBe(false)
+    expect(formNumber(container, 'Máximo por año')).toBeNull()
+    expect(stats.checked).toBe(false)
+    expect(stats.disabled).toBe(true)
+
+    // …and the permit unchecks Día Festivo.
+    fireEvent.click(permit!)
+    expect(permit!.checked).toBe(true)
+    expect(holiday.checked).toBe(false)
+    expect(stats.checked).toBe(true)
+    expect(stats.disabled).toBe(true)
+  })
+
+  it('permit: save is blocked until "Máximo por año" is an integer ≥ 1', () => {
+    const { container } = renderApp()
+
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const input = container.querySelector('.tag-form input[type="text"]') as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'Permiso guardia' } })
+    const submit = container.querySelector('.tag-form button[type="submit"]') as HTMLButtonElement
+
+    // Without the permit box the name alone is enough to save.
+    expect(submit.disabled).toBe(false)
+
+    // Permit on: the max is required.
+    fireEvent.click(formCheckbox(container, 'Permiso de trabajo')!)
+    expect(submit.disabled).toBe(true)
+
+    const max = formNumber(container, 'Máximo por año')!
+    const changeMax = (value: string) => fireEvent.change(max, { target: { value } })
+
+    changeMax('0') // below 1
+    expect(submit.disabled).toBe(true)
+    changeMax('2.5') // not a whole number
+    expect(submit.disabled).toBe(true)
+    changeMax('abc') // not a number
+    expect(submit.disabled).toBe(true)
+
+    changeMax('5')
+    expect(submit.disabled).toBe(false)
+  })
+
+  it('permit: the box and its max are saved and loaded back when editing', () => {
+    const { container } = renderApp()
+
+    // Create a permit tag with a max of 10.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const input = container.querySelector('.tag-form input[type="text"]') as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'Permiso guardia' } })
+    fireEvent.click(formCheckbox(container, 'Permiso de trabajo')!)
+    fireEvent.change(formNumber(container, 'Máximo por año')!, { target: { value: '10' } })
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close
+
+    // Reopen and edit it: box checked, max loaded back, stats forced on.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const row = [...container.querySelectorAll('.tags-list__item')].find((li) =>
+      li.textContent?.includes('Permiso guardia'),
+    )!
+    fireEvent.click(row.querySelectorAll('button')[0]) // ✏️
+
+    const permit = formCheckbox(container, 'Permiso de trabajo')!
+    expect(permit.checked).toBe(true)
+    expect(formNumber(container, 'Máximo por año')?.value).toBe('10')
+    const stats = formCheckbox(container, 'Incluir en estadísticas')!
+    expect(stats.checked).toBe(true)
+    expect(stats.disabled).toBe(true)
+
+    // Change the max and save; reopening shows the new value.
+    fireEvent.change(formNumber(container, 'Máximo por año')!, { target: { value: '3' } })
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close
+
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const savedRow = [...container.querySelectorAll('.tags-list__item')].find((li) =>
+      li.textContent?.includes('Permiso guardia'),
+    )!
+    fireEvent.click(savedRow.querySelectorAll('button')[0]) // ✏️
+    expect(formCheckbox(container, 'Permiso de trabajo')!.checked).toBe(true)
+    expect(formNumber(container, 'Máximo por año')?.value).toBe('3')
   })
 
   it('creating a tag unchecked keeps it out of the stats but in the palette and on days', () => {
@@ -712,6 +832,40 @@ describe('tags editor', () => {
     expect(regularChip?.textContent).not.toContain('🏖️')
   })
 
+  it('permit tag shows the 🪪 icon in the palette and the editor list; regular tags show none', () => {
+    const { container } = renderApp()
+
+    // Create a permit tag (with its required max).
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const input = container.querySelector('.tag-form input[type="text"]') as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'Permiso médico' } })
+    fireEvent.click(formCheckbox(container, 'Permiso de trabajo')!)
+    fireEvent.change(formNumber(container, 'Máximo por año')!, { target: { value: '4' } })
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+
+    // Editor list: the permit row carries the icon, regular rows do not.
+    const permitRow = [...container.querySelectorAll('.tags-list__item')].find((li) =>
+      li.textContent?.includes('Permiso médico'),
+    )
+    expect(permitRow?.textContent).toContain('🪪')
+    const regularRow = [...container.querySelectorAll('.tags-list__item')].find((li) =>
+      li.textContent?.includes('Guardia 24h'),
+    )
+    expect(regularRow?.textContent).not.toContain('🪪')
+
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close
+
+    // Palette: same rule for the chips.
+    const permitChip = [...container.querySelectorAll('.palette .chip')].find((c) =>
+      c.textContent?.includes('Permiso médico'),
+    )
+    expect(permitChip?.textContent).toContain('🪪')
+    const regularChip = [...container.querySelectorAll('.palette .chip')].find((c) =>
+      c.textContent?.includes('Guardia 24h'),
+    )
+    expect(regularChip?.textContent).not.toContain('🪪')
+  })
+
   it('holiday tag shows the 🏖️ icon on year and month chips; regular tags show none', () => {
     const { container } = renderApp()
     const iso = firstIso()
@@ -754,6 +908,50 @@ describe('tags editor', () => {
     expect(regularMonth.textContent).not.toContain('🏖️')
   })
 
+  it('permit tag shows the 🪪 icon on year and month chips; regular tags show none', () => {
+    const { container } = renderApp()
+    const iso = firstIso()
+
+    // Create the permit tag through the editor.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const input = container.querySelector('.tag-form input[type="text"]') as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'Permiso médico' } })
+    fireEvent.click(formCheckbox(container, 'Permiso de trabajo')!)
+    fireEvent.change(formNumber(container, 'Máximo por año')!, { target: { value: '4' } })
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close
+
+    // Apply both tags to one day: the regular one first, the permit after.
+    fillDay(container, iso) // Guardia 24h (active by default)
+    const permitPaletteChip = [...container.querySelectorAll('.palette .chip')].find((c) =>
+      c.textContent?.includes('Permiso médico'),
+    )!
+    fireEvent.click(permitPaletteChip)
+    fillDay(container, iso)
+
+    // Year chips: the permit chip shows the icon, the regular one stays empty.
+    const yearChips = chipsOf(dayCell(container, iso))
+    expect(yearChips).toHaveLength(2)
+    const permitYear = yearChips.find((c) =>
+      c.getAttribute('title')?.startsWith('Permiso médico'),
+    )!
+    const regularYear = yearChips.find((c) => c.getAttribute('title')?.startsWith('Guardia 24h'))!
+    expect(permitYear.textContent).toContain('🪪')
+    expect(regularYear.textContent).toBe('')
+
+    // Month chips: same rule next to the label.
+    fireEvent.click(container.querySelector('.month-col__zoom')!) // Enero
+    const zoomChips = [...container.querySelectorAll('.zoom .tag-chip')] as HTMLElement[]
+    const permitMonth = zoomChips.find((c) => c.getAttribute('title')?.startsWith('Permiso médico'))!
+    const regularMonth = zoomChips.find(
+      (c) => c.getAttribute('title')?.startsWith('Guardia 24h'),
+    )!
+    expect(permitMonth.textContent).toContain('🪪')
+    expect(permitMonth.textContent).toContain('Permiso médico')
+    expect(regularMonth.textContent).toContain('Guardia 24h')
+    expect(regularMonth.textContent).not.toContain('🪪')
+  })
+
   it('a holiday tag does not appear in the year and month statistics bars', () => {
     const { container } = renderApp()
     const iso = firstIso()
@@ -784,6 +982,73 @@ describe('tags editor', () => {
     const zoomItems = [...container.querySelectorAll('.zoom__stats .stats__item')]
     expect(zoomItems.some((li) => li.textContent?.includes('Puente'))).toBe(false)
     expect(zoomItems.some((li) => li.textContent?.includes('Guardia 24h'))).toBe(true)
+  })
+
+  it('year and month bars show the permit group after the regular tags with the period count; holidays stay out', () => {
+    const { container } = renderApp()
+    const iso = firstIso()
+    const iso2 = isoDate(daysOfYear(YEAR)[1])
+
+    // Create a holiday tag (must stay out) and a permit tag.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    let input = container.querySelector('.tag-form input[type="text"]') as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'Puente' } })
+    fireEvent.click(formCheckbox(container, 'Día Festivo')!)
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close
+
+    fireEvent.click(container.querySelector('.chip--add')!)
+    input = container.querySelector('.tag-form input[type="text"]') as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'Permiso médico' } })
+    fireEvent.click(formCheckbox(container, 'Permiso de trabajo')!)
+    fireEvent.change(formNumber(container, 'Máximo por año')!, { target: { value: '4' } })
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close
+
+    // Apply the permit on two days and the holiday on one.
+    const paletteChip = (label: string) =>
+      [...container.querySelectorAll('.palette .chip')].find((c) =>
+        c.textContent?.includes(label),
+      )
+    fireEvent.click(paletteChip('Permiso médico')!)
+    fillDay(container, iso)
+    fillDay(container, iso2)
+    fireEvent.click(paletteChip('Puente')!)
+    fillDay(container, iso)
+
+    // Year bar: regular tags first (planner order), then the permit group,
+    // and the holiday row is absent.
+    const labels = () =>
+      [...container.querySelectorAll('.stats__item')].map((li) =>
+        li.querySelector('.stats__label')?.textContent,
+      )
+    expect(labels()).toEqual([
+      'Guardia 24h',
+      'Guardia 17h',
+      'Diurno 12h',
+      'Nocturno 12h',
+      'Turno 24h',
+      'Permiso médico',
+    ])
+    const permitRow = [...container.querySelectorAll('.stats__item')].find((li) =>
+      li.textContent?.includes('Permiso médico'),
+    )!
+    expect(permitRow.textContent).toContain('🪪')
+    expect(permitRow.querySelector('.stats__count')?.textContent).toBe('2')
+    expect(labels().some((l) => l === 'Puente')).toBe(false)
+
+    // Month bar (Enero): same shape, count limited to the month (both applications).
+    fireEvent.click(container.querySelector('.month-col__zoom')!) // Enero
+    const zoomLabels = () =>
+      [...container.querySelectorAll('.zoom__stats .stats__item')].map((li) =>
+        li.querySelector('.stats__label')?.textContent,
+      )
+    expect(zoomLabels().at(-1)).toBe('Permiso médico')
+    const zoomPermit = [...container.querySelectorAll('.zoom__stats .stats__item')].find((li) =>
+      li.textContent?.includes('Permiso médico'),
+    )!
+    expect(zoomPermit.querySelector('.stats__count')?.textContent).toBe('2')
+    expect(zoomLabels().some((l) => l === 'Puente')).toBe(false)
   })
 
   it('unchecking "Día Festivo" keeps the tag out of statistics until "Incluir en estadísticas" is re-checked', () => {
@@ -889,6 +1154,65 @@ describe('tags editor', () => {
     expect(
       [...container.querySelectorAll('.palette .chip')].some((c) =>
         c.textContent?.includes('Puente nuevo'),
+      ),
+    ).toBe(false)
+    vi.restoreAllMocks()
+  })
+
+  it('a permit tag applies, renames and deletes like any other tag', () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const { container } = renderApp()
+    const iso = firstIso()
+
+    // Create the permit tag.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const input = container.querySelector('.tag-form input[type="text"]') as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'Permiso médico' } })
+    fireEvent.click(formCheckbox(container, 'Permiso de trabajo')!)
+    fireEvent.change(formNumber(container, 'Máximo por año')!, { target: { value: '4' } })
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close
+    const paletteChip = (label: string) =>
+      [...container.querySelectorAll('.palette .chip')].find((c) =>
+        c.textContent?.includes(label),
+      )
+
+    // Applies: select it in the palette and fill a day.
+    fireEvent.click(paletteChip('Permiso médico')!)
+    fillDay(container, iso)
+    const appliedChip = chipsOf(dayCell(container, iso))[0]
+    expect(appliedChip.getAttribute('title')).toContain('Permiso médico')
+
+    // Renames: chip and palette follow, and the permit icon stays.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const row = [...container.querySelectorAll('.tags-list__item')].find((li) =>
+      li.textContent?.includes('Permiso médico'),
+    )!
+    fireEvent.click(row.querySelectorAll('button')[0]) // ✏️
+    fireEvent.change(container.querySelector('.tag-form input[type="text"]')!, {
+      target: { value: 'Permiso nuevo' },
+    })
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close
+    const renamedChip = chipsOf(dayCell(container, iso))[0]
+    expect(renamedChip.getAttribute('title')).toContain('Permiso nuevo')
+    expect(renamedChip.textContent).toContain('🪪')
+    expect(paletteChip('Permiso nuevo')?.textContent).toContain('Permiso nuevo')
+
+    // Deletes: remove it from the day (double click), then the tag itself.
+    fireEvent.click(renamedChip)
+    fireEvent.click(renamedChip) // second click inside the debounce window
+    expect(chipsOf(dayCell(container, iso))).toHaveLength(0)
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const renamedRow = [...container.querySelectorAll('.tags-list__item')].find((li) =>
+      li.textContent?.includes('Permiso nuevo'),
+    )!
+    fireEvent.click(renamedRow.querySelectorAll('button')[1]) // 🗑️
+    expect(confirmSpy).toHaveBeenCalledWith('¿Eliminar la etiqueta “Permiso nuevo”?')
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close
+    expect(
+      [...container.querySelectorAll('.palette .chip')].some((c) =>
+        c.textContent?.includes('Permiso nuevo'),
       ),
     ).toBe(false)
     vi.restoreAllMocks()

@@ -1,4 +1,5 @@
 import type { Stats } from '../utils/stats'
+import { tagIcon } from '../utils/tags'
 
 interface StatsBarProps {
   stats: Stats
@@ -17,6 +18,16 @@ export function StatsBar({ stats, year, className = '' }: StatsBarProps) {
         {stats.counts.map(({ tag, count }) => (
           <li key={tag.id} className="stats__item" title={tag.label}>
             <span className="stats__swatch" style={{ backgroundColor: tag.color }} />
+            <span className="stats__label">{tag.label}</span>
+            <b className={`stats__count${count === 0 ? ' stats__count--zero' : ''}`}>{count}</b>
+          </li>
+        ))}
+      </ul>
+      <ul className="stats__list stats__list--permits">
+        {stats.permits.map(({ tag, count }) => (
+          <li key={tag.id} className="stats__item" title={tag.label}>
+            <span className="stats__swatch" style={{ backgroundColor: tag.color }} />
+            <span className="stats__icon" aria-hidden="true">{tagIcon(tag).trim()}</span>
             <span className="stats__label">{tag.label}</span>
             <b className={`stats__count${count === 0 ? ' stats__count--zero' : ''}`}>{count}</b>
           </li>

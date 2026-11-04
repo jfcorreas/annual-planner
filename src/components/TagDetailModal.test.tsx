@@ -67,6 +67,21 @@ describe('TagDetailModal', () => {
     )
   })
 
+  it('shows the 🪪 icon next to the name in the title for a permit tag', () => {
+    const { container } = renderModal({
+      tag: { ...TAG, label: 'Permiso médico', permit: true, maxPerYear: 4 },
+    })
+    const title = container.querySelector('.tag-detail__title')!
+
+    expect(title.textContent).toContain('🪪')
+    expect(title.textContent).toContain('Permiso médico')
+    expect(title.textContent?.startsWith('🪪')).toBe(true)
+
+    // A regular tag keeps a plain title.
+    const plain = renderModal()
+    expect(plain.container.querySelector('.tag-detail__title')!.textContent).not.toContain('🪪')
+  })
+
   it('saves a trimmed subtitle and closes', () => {
     const { container, onSaveSubtitle, onClose } = renderModal()
 

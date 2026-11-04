@@ -3,6 +3,7 @@ import type { KeyboardEvent, MouseEvent, PointerEvent } from 'react'
 import type { Tag } from '../types'
 import { MAX_TAGS_PER_DAY } from '../types'
 import { WEEKDAY_INITIALS, isoDate, isWeekend } from '../utils/dates'
+import { tagIcon } from '../utils/tags'
 
 /** One tag applied on a day, resolved for display (with its subtitle). */
 export interface DayEntry {
@@ -204,13 +205,13 @@ function TagChip({ entry, iso, readOnly, clearing, variant, onOpen, onRemove }: 
       {variant === 'month' ? (
         <>
           <span className="tag-chip__label">
-            {tag.holiday && '🏖️ '}
+            {tagIcon(tag)}
             {tag.label}
           </span>
           {subtitle ? <span className="tag-chip__sub">{subtitle}</span> : null}
         </>
       ) : (
-        (tag.holiday && '🏖️') || ''
+        tagIcon(tag).trim()
       )}
     </button>
   )

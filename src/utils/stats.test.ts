@@ -64,4 +64,45 @@ describe('computeStats', () => {
 
     expect(stats.counts).toEqual([{ tag: oldTag, count: 1 }])
   })
+
+  it('puts permit tags in their own group after the regular tags, always present', () => {
+    const permit: Tag = {
+      id: 'p',
+      label: 'Permiso',
+      color: '#0891b2',
+      permit: true,
+      maxPerYear: 4,
+    }
+    // Even a permit marked out of stats stays in its own group (bypasses the filter).
+    const outOfStatsPermit: Tag = {
+      id: 'p2',
+      label: 'Permiso fuera',
+      color: '#db2777',
+      permit: true,
+      maxPerYear: 2,
+      inStats: false,
+    }
+    const tags: Tag[] = [
+      { id: 'a', label: 'Etiqueta A', color: '#facc15', inStats: false },
+      { id: 'b', label: 'Etiqueta B', color: '#86efac' },
+      permit,
+      outOfStatsPermit,
+    ]
+    const days = { '2026-01-01': day('a', 'b', 'p'), '2026-01-02': day('p', 'p2') }
+    const stats = computeStats(days, tags, ['2026-01-01', '2026-01-02'])
+
+    // Regular group: only included tags, planner order, no permits.
+    expect(stats.counts.map((c) => c.tag.id)).toEqual(['b'])
+    // Permit group: after the regular ones, in planner order, counted in the period.
+    expect(stats.permits.map((c) => c.tag.id)).toEqual(['p', 'p2'])
+    expect(stats.permits.find((c) => c.tag.id === 'p')?.count).toBe(2)
+    expect(stats.permits.find((c) => c.tag.id === 'p2')?.count).toBe(1)
+  })
+
+  it('keeps the permit group even with zero applications in the period', () => {
+    const permit: Tag = { id: 'p', label: 'Permiso', color: '#0891b2', permit: true }
+    const stats = computeStats({}, [permit], ['2026-01-01'])
+
+    expect(stats.permits).toEqual([{ tag: permit, count: 0 }])
+  })
 })

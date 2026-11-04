@@ -79,6 +79,28 @@ describe('loadData / saveData', () => {
     expect(importFromJson(JSON.stringify(data))).toEqual(data.planners)
   })
 
+  it('round-trips the permit flag and its yearly max through localStorage', () => {
+    const data = sampleData()
+    data.planners[0].tags = [
+      { id: 'permit', label: 'Permiso', color: '#0891b2', permit: true, maxPerYear: 10 },
+      { id: 'plain', label: 'Normal', color: '#facc15', inStats: true }, // no permit fields
+      { id: 'legacy', label: 'Sin bandera', color: '#2f6fed' }, // old data: no flags
+    ]
+
+    saveData(data)
+    expect(loadData()).toEqual(data)
+    expect(importFromJson(JSON.stringify(data))).toEqual(data.planners)
+
+    const loaded = loadData()!.planners[0].tags
+    expect(loaded[0].permit).toBe(true)
+    expect(loaded[0].maxPerYear).toBe(10)
+    // Tags without the fields load as non-permits (missing = not a permit).
+    expect(loaded[1].permit).toBeUndefined()
+    expect(loaded[1].maxPerYear).toBeUndefined()
+    expect(loaded[2].permit).toBeUndefined()
+    expect(loaded[2].maxPerYear).toBeUndefined()
+  })
+
   it('normalizes legacy data (string day ids) on load', () => {
     const legacy = {
       version: 1,

@@ -141,8 +141,20 @@ export function useAppData() {
   /* ---------------- Tags ---------------- */
 
   const addTag = useCallback(
-    (plannerId: string, label: string, color: string, inStats = true, holiday = false) => {
+    (
+      plannerId: string,
+      label: string,
+      color: string,
+      inStats = true,
+      holiday = false,
+      permit = false,
+      maxPerYear?: number,
+    ) => {
       const tag: Tag = { id: crypto.randomUUID(), label, color, inStats, holiday }
+      if (permit) {
+        tag.permit = true
+        tag.maxPerYear = maxPerYear
+      }
       updatePlanner(plannerId, (planner) => ({ ...planner, tags: [...planner.tags, tag] }))
       return tag
     },

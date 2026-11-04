@@ -221,6 +221,23 @@ describe('tags', () => {
     expect(result.current.activePlanner?.tags.at(-1)?.label).toBe('Prueba')
   })
 
+  it('addTag stores the permit flag and its yearly max; a plain tag has neither', () => {
+    const { result } = setup()
+    const id = result.current.activePlanner!.id
+    act(() => {
+      result.current.addTag(id, 'Permiso', '#0891b2', true, false, true, 10)
+      result.current.addTag(id, 'Normal', '#facc15')
+    })
+
+    const permit = result.current.activePlanner?.tags.find((t) => t.label === 'Permiso')
+    expect(permit?.permit).toBe(true)
+    expect(permit?.maxPerYear).toBe(10)
+
+    const plain = result.current.activePlanner?.tags.find((t) => t.label === 'Normal')
+    expect(plain?.permit).toBeUndefined()
+    expect(plain?.maxPerYear).toBeUndefined()
+  })
+
   it('removes a tag everywhere in the planner', () => {
     const { result } = setup()
     const id = result.current.activePlanner!.id

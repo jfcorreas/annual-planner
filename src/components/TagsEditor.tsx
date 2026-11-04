@@ -1,13 +1,21 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import type { Tag } from '../types'
+import { tagIcon } from '../utils/tags'
 
 interface TagsEditorProps {
   tags: Tag[]
   /** Days each tag is applied on (usage count per tag id). */
   usage: Record<string, number>
   onSave: (
-    fields: { label: string; color: string; inStats: boolean; holiday: boolean },
+    fields: {
+      label: string
+      color: string
+      inStats: boolean
+      holiday: boolean
+      permit: boolean
+      maxPerYear?: number
+    },
     tagId?: string,
   ) => void
   onRemove: (tagId: string) => void
@@ -29,6 +37,8 @@ export function TagsEditor({ tags, usage, onSave, onRemove, onBlocked, onClose }
   const [color, setColor] = useState(COLOR_SWATCHES[0])
   const [inStats, setInStats] = useState(true)
   const [holiday, setHoliday] = useState(false)
+  const [permit, setPermit] = useState(false)
+  const [maxPerYear, setMaxPerYear] = useState('')
 
   function startEdit(tag: Tag) {
     setEditingId(tag.id)
@@ -36,6 +46,8 @@ export function TagsEditor({ tags, usage, onSave, onRemove, onBlocked, onClose }
     setColor(tag.color)
     setInStats(tag.inStats !== false)
     setHoliday(tag.holiday === true)
+    setPermit(tag.permit === true)
+    setMaxPerYear(tag.maxPerYear !== undefined ? String(tag.maxPerYear) : '')
   }
 
   function startNew() {
@@ -44,17 +56,31 @@ export function TagsEditor({ tags, usage, onSave, onRemove, onBlocked, onClose }
     setColor(COLOR_SWATCHES[0])
     setInStats(true)
     setHoliday(false)
+    setPermit(false)
+    setMaxPerYear('')
   }
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
     const trimmed = label.trim()
     if (!trimmed) return
-    onSave({ label: trimmed, color, inStats, holiday }, editingId ?? undefined)
+    onSave(
+      {
+        label: trimmed,
+        color,
+        inStats,
+        holiday,
+        permit,
+        maxPerYear: permit ? Number(maxPerYear) : undefined,
+      },
+      editingId ?? undefined,
+    )
     startNew()
   }
 
-  const canSubmit = label.trim().length > 0
+  const canSubmit =
+    label.trim().length > 0 &&
+    (!permit || (Number.isInteger(Number(maxPerYear)) && Number(maxPerYear) >= 1))
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -77,7 +103,7 @@ export function TagsEditor({ tags, usage, onSave, onRemove, onBlocked, onClose }
             <li key={tag.id} className="tags-list__item">
               <span className="stats__swatch" style={{ backgroundColor: tag.color }} />
               <span className="tags-list__label">
-                {tag.holiday && '🏖️ '}
+                {tagIcon(tag)}
                 {tag.label}
               </span>
               <button type="button" className="btn" onClick={() => startEdit(tag)}>
@@ -143,7 +169,7 @@ export function TagsEditor({ tags, usage, onSave, onRemove, onBlocked, onClose }
             <input
               type="checkbox"
               checked={inStats}
-              disabled={holiday}
+              disabled={holiday || permit}
               onChange={(e) => setInStats(e.target.checked)}
             />
           </label>
@@ -154,10 +180,41 @@ export function TagsEditor({ tags, usage, onSave, onRemove, onBlocked, onClose }
               checked={holiday}
               onChange={(e) => {
                 setHoliday(e.target.checked)
-                if (e.target.checked) setInStats(false)
+                if (e.target.checked) {
+                  setInStats(false)
+                  setPermit(false)
+                }
               }}
             />
           </label>
+          <div className="field field--permit">
+            <label className="field field--inline">
+              <span>Permiso de trabajo</span>
+              <input
+                type="checkbox"
+                checked={permit}
+                onChange={(e) => {
+                  setPermit(e.target.checked)
+                  if (e.target.checked) {
+                    setHoliday(false)
+                    setInStats(true)
+                  }
+                }}
+              />
+            </label>
+            {permit && (
+              <label className="field field--inline">
+                <span>Máximo por año</span>
+                <input
+                  type="number"
+                  min={1}
+                  step={1}
+                  value={maxPerYear}
+                  onChange={(e) => setMaxPerYear(e.target.value)}
+                />
+              </label>
+            )}
+          </div>
           <div className="tag-form__actions">
             {editingId && (
               <button type="button" className="btn" onClick={startNew}>

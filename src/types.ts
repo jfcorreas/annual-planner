@@ -7,6 +7,10 @@ export interface Tag {
   inStats?: boolean
   /** Holiday flag: shows 🏖️ and forces the tag out of the statistics. */
   holiday?: boolean
+  /** Work permit: shows 🪪, has its own stats group and a yearly max. */
+  permit?: boolean
+  /** Max applications per year for a work permit (whole number ≥ 1). */
+  maxPerYear?: number
 }
 
 /**
