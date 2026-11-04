@@ -16,7 +16,7 @@ the fields are ignored until #9.
 | 2  | Delete blocked with usage-count toast when the tag is in use      | ✅ Done (committed)|
 | 3  | Statistics flag: per-tag checkbox; bars list only included tags, "Sin etiqueta" row removed | ✅ Done (committed)|
 | 4  | Holiday flag (forces statistics = false, shows icon)              | ✅ Done (committed)|
-| 5  | Work-license flag + max per year (icon, always in stats, apart)   | ⬜ Pending         |
+| 5  | Work-license flag + max per year (icon, always in stats, apart)   | ✅ Done (committed)|
 | 6  | Used/remaining counter for the work license (can go negative)     | ⬜ Pending         |
 | 7  | Global toggle: tag usable in every planner                        | ⬜ Pending         |
 | 8  | _(to confirm — details live in the tracker)_                      | ⬜ Pending         |
@@ -38,6 +38,15 @@ later does NOT restore the flag until re-checked manually), 🏖️ badge before
 the name everywhere the tag is listed (year chips included; tooltips keep the
 plain label), and the three "Festivo …" default tags ship as holidays,
 hence out of the statistics. Existing planners untouched.
+
+**Story #5 status detail:** shipped — `permit?: boolean` + `maxPerYear?: number`
+on the tag model (missing = not a permit; fields written only when it is one,
+so no migration), "Permiso de trabajo" checkbox + required integer ≥ 1 "Máximo
+por año" shown beside it while checked (forces "Incluir en estadísticas" on and
+disabled; mutually exclusive with "Día Festivo"), 🪪 badge on every surface via
+the shared `tagIcon()` helper, and statistics: permits bypass the `inStats`
+filter and render in their own group at the end of the year/month bars with the
+period count. Used/remaining display of the max is story #6.
 
 **Out of scope of the rework (unchanged):** day-chip interactions (1 click =
 detail modal, double click / 600 ms hold = remove from day), 2 tags max per

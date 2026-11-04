@@ -2,8 +2,8 @@
 Project Memory between sessions. Maximum ~50 lines: summarize or remove anything that no longer adds value.
 
 ## Current Status
-- v0.3.0 in progress (tags rework): #1–#4 committed; #5 DONE awaiting commit
-  (work-permit flag + max/year); #6–#9 overview in backlog.md.
+- v0.3.0 in progress (tags rework): #1–#5 DONE + committed (work-permit flag
+  + max/year); #6–#9 overview in backlog.md.
 - v0.2.0 shipped: per-day subtitle + chip interaction (dblclick/hold = remove).
 - Green: `tsc -b`, oxlint, `npm test` (118 unit+component), `npm run test:e2e`
   (Playwright full flow; e2e stats assertion reads the whole `.stats` footer).
@@ -45,8 +45,8 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
 - pt→px in print: A5 landscape content ≈515px tall; keep print styles compact.
 
 ## Next Steps
-- Commit #5, then #6–#9; release-notes.md pending (v0.3.0, incl.
-  README/release-notes "untagged days" wording). Manual check pending: permit
-  group look in the bars (two `flex:1` lists, no `--permits` CSS yet), 🪪 on
-  all surfaces, editor form layout (fieldset grouping suggestion still open).
+- Build #6 (used/remaining counter), then #7–#9; release-notes.md pending
+  (v0.3.0, incl. README/release-notes "untagged days" wording). Manual check
+  pending: permit group look in the bars (two `flex:1` lists, no `--permits`
+  CSS yet), 🪪 on all surfaces, editor form layout.
 - Optional: interaction rule (1 click = details, dblclick/hold = destructive) to AGENTS.md if it becomes a rule.
