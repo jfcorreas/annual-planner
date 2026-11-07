@@ -4,7 +4,7 @@ import { useAppData } from './useAppData'
 import { createPlanner } from '../defaults'
 import type { AppData } from '../types'
 
-const STORAGE_KEY = 'annual-planner:v1'
+const STORAGE_KEY = 'annual-planner:v2'
 
 function setup() {
   return renderHook(() => useAppData())
@@ -18,8 +18,8 @@ describe('initial state', () => {
     expect(result.current.activePlanner?.status).toBe('activo')
   })
 
-  it('loads persisted planners instead of creating one', () => {
-    const persisted: AppData = { version: 1, planners: [createPlanner(2030)] }
+  it('loads persisted v2 planners instead of creating one', () => {
+    const persisted: AppData = { version: 2, planners: [createPlanner(2030)] }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(persisted))
 
     const { result } = setup()
@@ -27,7 +27,41 @@ describe('initial state', () => {
     expect(result.current.activePlanner?.year).toBe(2030)
   })
 
-  it('persists mutations to localStorage', () => {
+  it('saves nothing while previous-version data is pending', () => {
+    const legacy = JSON.stringify({ version: 1, planners: [createPlanner(2030)] })
+    localStorage.setItem('annual-planner:v1', legacy)
+
+    setup()
+
+    // No fresh planner is written before the user confirms…
+    expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
+    // …and the previous-version entry is never touched.
+    expect(localStorage.getItem('annual-planner:v1')).toBe(legacy)
+  })
+
+  it('startFresh creates the default planner and saves it', () => {
+    const legacy = JSON.stringify({ version: 1, planners: [createPlanner(2030)] })
+    localStorage.setItem('annual-planner:v1', legacy)
+
+    const { result } = setup()
+    expect(result.current.previousVersion).toBe(true)
+
+    act(() => {
+      result.current.startFresh()
+    })
+
+    expect(result.current.previousVersion).toBe(false)
+    expect(result.current.planners).toHaveLength(1)
+    expect(result.current.activePlanner?.year).toBe(new Date().getFullYear())
+
+    const stored = localStorage.getItem(STORAGE_KEY)
+    expect(stored).not.toBeNull()
+    expect(JSON.parse(stored!).version).toBe(2)
+    // The old entry is still there, untouched.
+    expect(localStorage.getItem('annual-planner:v1')).toBe(legacy)
+  })
+
+  it('persists mutations to the v2 key', () => {
     const { result } = setup()
     act(() => {
       result.current.toggleDayTag(result.current.activePlanner!.id, '2026-01-01', 'guardia-24h')

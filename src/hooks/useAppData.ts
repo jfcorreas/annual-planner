@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { AppData, DayTag, Planner, PlannerStatus, Tag } from '../types'
 import { MAX_TAGS_PER_DAY, SUBTITLE_MAX_LENGTH } from '../types'
 import { createPlanner } from '../defaults'
-import { loadData, saveData } from '../storage'
+import { hasPreviousVersionData, loadData, saveData } from '../storage'
 
 const CURRENT_YEAR = new Date().getFullYear()
 
@@ -11,15 +11,24 @@ export function useAppData() {
   const [data, setData] = useState<AppData>(() => {
     const loaded = loadData()
     if (loaded && loaded.planners.length > 0) return loaded
-    return { version: 1, planners: [createPlanner(CURRENT_YEAR)] }
+    return { version: 2, planners: [createPlanner(CURRENT_YEAR)] }
   })
   const [activePlannerId, setActivePlannerId] = useState<string | null>(
     () => data.planners[0]?.id ?? null,
   )
 
+  /**
+   * Previous-version data exists and there is no valid current data yet:
+   * the app must wait for an explicit confirmation before writing anything.
+   */
+  const [previousVersion, setPreviousVersion] = useState(
+    () => loadData() === null && hasPreviousVersionData(),
+  )
+
   useEffect(() => {
+    if (previousVersion) return
     saveData(data)
-  }, [data])
+  }, [data, previousVersion])
 
   const activePlanner = useMemo(
     () => data.planners.find((p) => p.id === activePlannerId) ?? data.planners[0] ?? null,
@@ -249,15 +258,26 @@ export function useAppData() {
       for (const planner of imported) byId.set(planner.id, planner)
       const merged = [...byId.values()]
 
-      setData({ version: 1, planners: merged })
+      setData({ version: 2, planners: merged })
       if (activePlannerId !== null && merged.some((p) => p.id === activePlannerId)) return
       setActivePlannerId(merged[0]?.id ?? null)
     },
     [data.planners, activePlannerId],
   )
 
+  /**
+   * Confirm the "previous version" notice: drop the pending state and start
+   * over with a fresh default planner (the save effect then persists it).
+   */
+  const startFresh = useCallback(() => {
+    setPreviousVersion(false)
+    setData({ version: 2, planners: [createPlanner(CURRENT_YEAR)] })
+  }, [])
+
   return {
     planners: data.planners,
+    previousVersion,
+    startFresh,
     activePlanner,
     activePlannerId: activePlanner?.id ?? null,
     setActivePlannerId,

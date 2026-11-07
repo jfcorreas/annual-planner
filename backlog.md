@@ -1,8 +1,8 @@
 # Backlog — Tags rework (v0.3.0)
 
-Tags re-implemented from scratch. Detailed criteria per story live in the
-user's tracker; the story currently being built has its approved block in
-`current-plan.md`. This file is the overview of the 9 stories.
+Tags re-implemented from scratch. The story currently being built has its
+approved block in `current-plan.md`; this file is the overview (9 planned, #8
+discarded for lack of details).
 
 **Agreed model:** Tag = name (always shown) + color, plus the per-story flags
 below. The subtitle stays per *day application* (DayTag), not on the tag (the
@@ -19,7 +19,7 @@ the fields are ignored until #9.
 | 5  | Work-license flag + max per year (icon, always in stats, apart)   | ✅ Done (committed)|
 | 6  | Used/remaining counter for the work license (can go negative)     | ✅ Done (committed)|
 | 7  | Global toggle: tag usable in every planner                        | ✅ Done (committed)|
-| 8  | _(to confirm — details live in the tracker)_                      | ⬜ Pending         |
+| 8  | _(no details available)_                                          | ❌ Discarded       |
 | 9  | Refuse data and exports from the previous version                 | ⬜ Pending         |
 
 **Delete rule (all stories):** deleting any tag in use is blocked with a toast
@@ -67,6 +67,9 @@ planner, the copies stay and sync stops. Deleting is blocked with the total
 usage "N días en M planificadores"; an unused global tag is removed everywhere.
 Both guards live in App (it owns the toasts) over the shared
 `tagUsageAcrossPlanners()` helper; the local delete rule (#2) is unchanged.
+
+**Story #8 status:** discarded — no details were available (the tracker was not
+accessible), so #9 follows #7.
 
 **Out of scope of the rework (unchanged):** day-chip interactions (1 click =
 detail modal, double click / 600 ms hold = remove from day), 2 tags max per

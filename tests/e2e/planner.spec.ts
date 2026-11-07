@@ -136,8 +136,8 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
     await page.locator('.day[data-iso]').nth(3).locator('.day__number').click()
     await page.reload({ waitUntil: 'networkidle' })
     await expect(page.locator('.day[data-iso]').nth(3).locator('.tag-chip')).toHaveCount(1)
-    const stored = await page.evaluate(() => localStorage.getItem('annual-planner:v1'))
-    expect(stored).toContain('"version":1')
+    const stored = await page.evaluate(() => localStorage.getItem('annual-planner:v2'))
+    expect(stored).toContain('"version":2')
   })
 
   await test.step('8. Tags editor: create → apply → rename', async () => {
@@ -232,11 +232,11 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
   })
 
   await test.step('11. Export / import JSON', async () => {
-    const imported = await page.evaluate(() => localStorage.getItem('annual-planner:v1'))
+    const imported = await page.evaluate(() => localStorage.getItem('annual-planner:v2'))
     expect(await page.locator('.topbar .btn', { hasText: 'Importar' }).count()).toBe(1)
 
     // Feed the stored payload back through the hidden file input
-    const payload = JSON.stringify({ version: 1, planners: JSON.parse(imported ?? '{}').planners })
+    const payload = JSON.stringify({ version: 2, planners: JSON.parse(imported ?? '{}').planners })
     const file = testInfo.outputPath('export.json')
     fs.writeFileSync(file, payload)
 

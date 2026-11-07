@@ -90,6 +90,25 @@ export default function App() {
     [planner, zoomMonth, monthIso],
   )
 
+  /* Previous-version data: block everything until the user decides. */
+  if (store.previousVersion) {
+    return (
+      <main className="app app--previous">
+        <div className="previous-version" role="alert">
+          <h1>⚠️ Versión anterior</h1>
+          <p>
+            Los datos guardados en este navegador son de una versión anterior del
+            planificador y ya no son compatibles.
+          </p>
+          <p>Tus datos originales no se han modificado ni se han eliminado.</p>
+          <button className="btn btn--primary" onClick={store.startFresh}>
+            Empezar de cero
+          </button>
+        </div>
+      </main>
+    )
+  }
+
   if (!planner || !yearStats) {
     return (
       <main className="app app--empty">

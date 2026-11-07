@@ -1,7 +1,14 @@
 import type { AppData, DayTag, Planner, Tag } from './types'
 import { MAX_TAGS_PER_DAY, SUBTITLE_MAX_LENGTH } from './types'
 
-const STORAGE_KEY = 'annual-planner:v1'
+const STORAGE_KEY = 'annual-planner:v2'
+/** The slot written by previous versions (0.2.x). Never read as current. */
+const PREVIOUS_STORAGE_KEY = 'annual-planner:v1'
+
+/** True when an entry saved by a previous version exists (never read as current). */
+export function hasPreviousVersionData(): boolean {
+  return localStorage.getItem(PREVIOUS_STORAGE_KEY) !== null
+}
 
 /** Read all app data from localStorage. Returns null when absent or corrupted. */
 export function loadData(): AppData | null {
@@ -31,7 +38,7 @@ export function saveData(data: AppData): void {
 
 /** Serialize planners to a pretty JSON string (file to download). */
 export function exportToJson(planners: Planner[]): string {
-  const data: AppData = { version: 1, planners }
+  const data: AppData = { version: 2, planners }
   return JSON.stringify(data, null, 2)
 }
 
@@ -47,10 +54,18 @@ export function importFromJson(json: string): Planner[] {
   } catch {
     throw new Error('El archivo no es un JSON válido.')
   }
+  if (isPreviousVersion(parsed)) {
+    throw new Error('El archivo es de una versión anterior y ya no es compatible.')
+  }
   if (!isAppData(parsed)) {
     throw new Error('El archivo no tiene el formato de un export del planificador.')
   }
   return normalizeData(parsed).planners
+}
+
+/** An export written by a previous version (0.2.x): `version: 1`. */
+function isPreviousVersion(value: unknown): boolean {
+  return typeof value === 'object' && value !== null && (value as { version?: unknown }).version === 1
 }
 
 /* ------------------------------------------------------------------ */
@@ -65,7 +80,7 @@ export function importFromJson(json: string): Planner[] {
 function isAppData(value: unknown): value is AppData {
   if (typeof value !== 'object' || value === null) return false
   const data = value as Partial<AppData>
-  return data.version === 1 && Array.isArray(data.planners) && data.planners.every(isPlanner)
+  return data.version === 2 && Array.isArray(data.planners) && data.planners.every(isPlanner)
 }
 
 function isPlanner(value: unknown): value is Planner {

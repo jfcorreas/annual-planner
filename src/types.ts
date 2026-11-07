@@ -38,7 +38,7 @@ export interface Planner {
 }
 
 export interface AppData {
-  version: 1
+  version: 2
   planners: Planner[]
 }
 

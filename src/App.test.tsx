@@ -583,7 +583,7 @@ describe('tags editor', () => {
   it('loads old data without the flag counting every tag', () => {
     // Data saved before the flag existed: tags carry no `inStats` at all.
     const oldData = {
-      version: 1,
+      version: 2,
       planners: [
         {
           id: 'planner-old',
@@ -595,7 +595,7 @@ describe('tags editor', () => {
         },
       ],
     }
-    localStorage.setItem('annual-planner:v1', JSON.stringify(oldData))
+    localStorage.setItem('annual-planner:v2', JSON.stringify(oldData))
 
     const { container } = renderApp()
 
@@ -1616,5 +1616,65 @@ describe('persistence', () => {
 
     const second = renderApp()
     expect(chipsOf(dayCell(second.container, firstIso()))).toHaveLength(1)
+  })
+})
+
+describe('previous version', () => {
+  it('shows a blocking notice for previous-version data and starts fresh only after confirming', () => {
+    const legacy = JSON.stringify({ version: 1, planners: [] })
+    localStorage.setItem('annual-planner:v1', legacy)
+
+    const { container } = renderApp()
+
+    // Blocking notice instead of the planner…
+    const notice = container.querySelector('.previous-version')
+    expect(notice).not.toBeNull()
+    expect(notice?.textContent).toContain('versión anterior')
+    expect(notice?.textContent).toContain('ya no son compatibles')
+    expect(notice?.querySelector('button')?.textContent).toBe('Empezar de cero')
+    expect(container.querySelector('.day[data-iso]')).toBeNull()
+    // …and nothing has been written yet.
+    expect(localStorage.getItem('annual-planner:v2')).toBeNull()
+
+    fireEvent.click(notice!.querySelector('button')!)
+
+    // A fresh default planner appears only now…
+    expect(container.querySelector('.previous-version')).toBeNull()
+    expect(container.querySelector('.day[data-iso]')).not.toBeNull()
+    // …saved under the v2 key, with the old entry untouched.
+    const stored = localStorage.getItem('annual-planner:v2')
+    expect(stored).not.toBeNull()
+    expect(JSON.parse(stored!).version).toBe(2)
+    expect(localStorage.getItem('annual-planner:v1')).toBe(legacy)
+  })
+
+  it('importing a previous-version file alerts the specific message and keeps planners unchanged', async () => {
+    const { container } = renderApp()
+    fillDay(container, firstIso()) // current data worth protecting
+    expect(chipsOf(dayCell(container, firstIso()))).toHaveLength(1)
+
+    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {})
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+
+    const file = new File(
+      [JSON.stringify({ version: 1, planners: [] })],
+      'planificadores-0.2.0.json',
+      { type: 'application/json' },
+    )
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement
+    Object.defineProperty(input, 'files', { value: [file], configurable: true })
+    fireEvent.change(input)
+
+    await waitFor(() =>
+      expect(alertSpy).toHaveBeenCalledWith(
+        'El archivo es de una versión anterior y ya no es compatible.',
+      ),
+    )
+    // Refused before any merge: no confirmation asked, planners unchanged.
+    expect(confirmSpy).not.toHaveBeenCalled()
+    expect(container.querySelectorAll('.panel__item')).toHaveLength(1)
+    expect(chipsOf(dayCell(container, firstIso()))).toHaveLength(1)
+
+    vi.restoreAllMocks()
   })
 })
