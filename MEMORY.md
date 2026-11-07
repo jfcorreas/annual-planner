@@ -2,8 +2,8 @@
 Project Memory between sessions. Maximum ~50 lines: summarize or remove anything that no longer adds value.
 
 ## Current Status
-- v0.3.0 in progress (tags rework): #1–#7 DONE (#7 pending commit);
-  #8–#9 overview in backlog.md.
+- v0.3.0 in progress (tags rework): #1–#7 DONE + committed; #8–#9
+  overview in backlog.md.
 - v0.2.0 shipped: per-day subtitle + chip interaction (dblclick/hold = remove).
 - Green: `tsc -b`, oxlint, `npm test` (136 unit+component), `npm run test:e2e`
   (Playwright full flow; e2e stats assertion reads the whole `.stats` footer).
@@ -48,6 +48,5 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
 - pt→px in print: A5 landscape content ≈515px tall; keep print styles compact.
 
 ## Next Steps
-- Commit #7, then update backlog.md; next #8–#9; release-notes.md pending
-  (v0.3.0, incl. README "untagged days").
+- Next #8–#9; release-notes.md pending (v0.3.0, incl. README "untagged days").
 - Optional: interaction rule (1 click = details, dblclick/hold = destructive) to AGENTS.md if it becomes a rule.

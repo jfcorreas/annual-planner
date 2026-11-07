@@ -18,7 +18,7 @@ the fields are ignored until #9.
 | 4  | Holiday flag (forces statistics = false, shows icon)              | ✅ Done (committed)|
 | 5  | Work-license flag + max per year (icon, always in stats, apart)   | ✅ Done (committed)|
 | 6  | Used/remaining counter for the work license (can go negative)     | ✅ Done (committed)|
-| 7  | Global toggle: tag usable in every planner                        | ⬜ Pending         |
+| 7  | Global toggle: tag usable in every planner                        | ✅ Done (committed)|
 | 8  | _(to confirm — details live in the tracker)_                      | ⬜ Pending         |
 | 9  | Refuse data and exports from the previous version                 | ⬜ Pending         |
 
@@ -55,6 +55,18 @@ blocked or capped); derived at render, so editing the max updates it with no
 stored state. The month bar keeps the plain per-month count (the max is
 yearly), the detail modal stays "N veces este año", and a permit tag with no
 `maxPerYear` (not reachable via the editor) falls back to the plain count.
+
+**Story #7 status detail:** shipped — `global?: boolean` on the tag model
+(missing = local, no migration), "Global" checkbox last in the form, 🌐 badge
+via `tagIcon(tag, {showGlobal})` in the editor list and detail modal only.
+Same-id copies in every planner stay in sync through `addTag`/`updateTag`/
+`removeTag`; new planners start with the defaults plus the current globals
+(dedupe by id, the global version wins). Unmarking is blocked with a toast
+while another planner uses the tag; otherwise the flag is cleared in every
+planner, the copies stay and sync stops. Deleting is blocked with the total
+usage "N días en M planificadores"; an unused global tag is removed everywhere.
+Both guards live in App (it owns the toasts) over the shared
+`tagUsageAcrossPlanners()` helper; the local delete rule (#2) is unchanged.
 
 **Out of scope of the rework (unchanged):** day-chip interactions (1 click =
 detail modal, double click / 600 ms hold = remove from day), 2 tags max per
