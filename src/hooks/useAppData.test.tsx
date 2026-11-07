@@ -255,6 +255,200 @@ describe('tags', () => {
   })
 })
 
+describe('global tags', () => {
+  it('updateTag with global: true writes the tag into every planner', () => {
+    const { result } = setup()
+    const firstId = result.current.activePlanner!.id
+    let tagId = ''
+
+    act(() => {
+      tagId = result.current.addTag(firstId, 'Compartida', '#0891b2').id
+    })
+    act(() => {
+      result.current.addPlanner(2030)
+    })
+    // Created before the flag, so the new planner does not carry it yet.
+    expect(result.current.planners[1].tags.some((t) => t.id === tagId)).toBe(false)
+
+    act(() => {
+      result.current.updateTag(firstId, tagId, { global: true })
+    })
+
+    for (const planner of result.current.planners) {
+      const tag = planner.tags.find((t) => t.id === tagId)
+      expect(tag?.label).toBe('Compartida')
+      expect(tag?.color).toBe('#0891b2')
+      expect(tag?.global).toBe(true)
+    }
+  })
+
+  it('updateTag on a global tag propagates label and color to every planner', () => {
+    const { result } = setup()
+    const firstId = result.current.activePlanner!.id
+    let tagId = ''
+
+    act(() => {
+      tagId = result.current.addTag(firstId, 'Compartida', '#0891b2').id
+    })
+    act(() => {
+      result.current.addPlanner(2030)
+    })
+    act(() => {
+      result.current.updateTag(firstId, tagId, { global: true })
+    })
+
+    act(() => {
+      result.current.updateTag(firstId, tagId, { label: 'Renombrada', color: '#db2777' })
+    })
+
+    for (const planner of result.current.planners) {
+      const tag = planner.tags.find((t) => t.id === tagId)
+      expect(tag?.label).toBe('Renombrada')
+      expect(tag?.color).toBe('#db2777')
+      expect(tag?.global).toBe(true)
+    }
+  })
+
+  it('updateTag with global: false clears the flag in every planner, keeping the copies', () => {
+    const { result } = setup()
+    const firstId = result.current.activePlanner!.id
+    let tagId = ''
+
+    act(() => {
+      tagId = result.current.addTag(firstId, 'Compartida', '#0891b2').id
+    })
+    act(() => {
+      result.current.addPlanner(2030)
+    })
+    act(() => {
+      result.current.updateTag(firstId, tagId, { global: true })
+    })
+
+    act(() => {
+      result.current.updateTag(firstId, tagId, { global: false })
+    })
+
+    // D1(b): every planner keeps its copy, now as a local tag.
+    expect(result.current.planners).toHaveLength(2)
+    for (const planner of result.current.planners) {
+      const tag = planner.tags.find((t) => t.id === tagId)
+      expect(tag?.label).toBe('Compartida')
+      expect(tag?.global).not.toBe(true)
+    }
+  })
+
+  it('addTag with the global flag adds it to every planner', () => {
+    const { result } = setup()
+    const firstId = result.current.activePlanner!.id
+    act(() => {
+      result.current.addPlanner(2030)
+    })
+
+    let tagId = ''
+    act(() => {
+      tagId = result.current.addTag(
+        firstId,
+        'Guardia global',
+        '#0891b2',
+        true,
+        false,
+        false,
+        undefined,
+        true,
+      ).id
+    })
+
+    // Created in the first planner, it must exist in every planner.
+    expect(result.current.planners).toHaveLength(2)
+    for (const planner of result.current.planners) {
+      const tag = planner.tags.find((t) => t.id === tagId)
+      expect(tag?.label).toBe('Guardia global')
+      expect(tag?.global).toBe(true)
+    }
+  })
+
+  it('removeTag of a global tag removes it from every planner', () => {
+    const { result } = setup()
+    const firstId = result.current.activePlanner!.id
+    act(() => {
+      result.current.addPlanner(2030)
+    })
+
+    let tagId = ''
+    act(() => {
+      tagId = result.current.addTag(
+        firstId,
+        'Guardia global',
+        '#0891b2',
+        true,
+        false,
+        false,
+        undefined,
+        true,
+      ).id
+    })
+    act(() => {
+      result.current.toggleDayTag(firstId, '2026-01-01', tagId)
+    })
+
+    act(() => {
+      result.current.removeTag(firstId, tagId)
+    })
+
+    // Gone from every planner…
+    for (const planner of result.current.planners) {
+      expect(planner.tags.find((t) => t.id === tagId)).toBeUndefined()
+    }
+    // …and from the day it was applied on.
+    expect(result.current.planners[0].days['2026-01-01']).toBeUndefined()
+  })
+
+  it('addPlanner starts with defaults + current globals, with no duplicate when ids collide', () => {
+    const { result } = setup()
+    const firstId = result.current.activePlanner!.id
+
+    // A brand-new global tag…
+    let customId = ''
+    act(() => {
+      customId = result.current.addTag(
+        firstId,
+        'Compartida',
+        '#0891b2',
+        true,
+        false,
+        false,
+        undefined,
+        true,
+      ).id
+    })
+    // …and a default tag marked global and customized (same id as the pristine default).
+    act(() => {
+      result.current.updateTag(firstId, 'festivo-local', { global: true })
+    })
+    act(() => {
+      result.current.updateTag(firstId, 'festivo-local', { label: 'Festivo propio' })
+    })
+
+    act(() => {
+      result.current.addPlanner(2030)
+    })
+
+    const created = result.current.planners[1]
+    const custom = created.tags.find((t) => t.id === customId)
+    expect(custom?.label).toBe('Compartida')
+    expect(custom?.global).toBe(true)
+
+    // The colliding default appears once, with the global (synced) version.
+    const locals = created.tags.filter((t) => t.id === 'festivo-local')
+    expect(locals).toHaveLength(1)
+    expect(locals[0].label).toBe('Festivo propio')
+    expect(locals[0].global).toBe(true)
+
+    // 8 defaults (one of them the collided global) + the new global tag.
+    expect(created.tags).toHaveLength(9)
+  })
+})
+
 describe('mergePlanners (import)', () => {
   it('updates by id, appends new ones and keeps the rest', () => {
     const { result } = setup()

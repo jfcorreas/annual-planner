@@ -11,6 +11,8 @@ export interface Tag {
   permit?: boolean
   /** Max applications per year for a work permit (whole number ≥ 1). */
   maxPerYear?: number
+  /** Global tag: same-id copies in every planner, kept in sync. Missing = local. */
+  global?: boolean
 }
 
 /**

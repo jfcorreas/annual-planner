@@ -37,12 +37,17 @@ export function useAppData() {
     [],
   )
 
-  const addPlanner = useCallback((year: number): Planner => {
-    const planner = createPlanner(year)
-    setData((prev) => ({ ...prev, planners: [...prev.planners, planner] }))
-    setActivePlannerId(planner.id)
-    return planner
-  }, [])
+  const addPlanner = useCallback(
+    (year: number): Planner => {
+      // New planners start with the defaults plus the current global tags.
+      const globals = data.planners.flatMap((p) => p.tags.filter((t) => t.global === true))
+      const planner = createPlanner(year, globals)
+      setData((prev) => ({ ...prev, planners: [...prev.planners, planner] }))
+      setActivePlannerId(planner.id)
+      return planner
+    },
+    [data.planners],
+  )
 
   const removePlanner = useCallback(
     (id: string) => {
@@ -149,11 +154,21 @@ export function useAppData() {
       holiday = false,
       permit = false,
       maxPerYear?: number,
+      global = false,
     ) => {
       const tag: Tag = { id: crypto.randomUUID(), label, color, inStats, holiday }
+      if (global) tag.global = true
       if (permit) {
         tag.permit = true
         tag.maxPerYear = maxPerYear
+      }
+      // A global tag is created in every planner at once (fresh id: no clashes).
+      if (global) {
+        setData((prev) => ({
+          ...prev,
+          planners: prev.planners.map((p) => ({ ...p, tags: [...p.tags, tag] })),
+        }))
+        return tag
       }
       updatePlanner(plannerId, (planner) => ({ ...planner, tags: [...planner.tags, tag] }))
       return tag
@@ -163,28 +178,66 @@ export function useAppData() {
 
   const updateTag = useCallback(
     (plannerId: string, tagId: string, patch: Partial<Omit<Tag, 'id'>>) => {
-      updatePlanner(plannerId, (planner) => ({
-        ...planner,
-        tags: planner.tags.map((t) => (t.id === tagId ? { ...t, ...patch } : t)),
-      }))
-    },
-    [updatePlanner],
-  )
+      setData((prev) => {
+        const base = prev.planners.find((p) => p.id === plannerId)?.tags.find((t) => t.id === tagId)
+        if (!base) return prev
+        const updated: Tag = { ...base, ...patch }
 
-  /** Delete a tag everywhere in the planner. */
-  const removeTag = useCallback(
-    (plannerId: string, tagId: string) => {
-      updatePlanner(plannerId, (planner) => {
-        const days: Record<string, DayTag[]> = {}
-        for (const [date, entries] of Object.entries(planner.days)) {
-          const rest = entries.filter((entry) => entry.tagId !== tagId)
-          if (rest.length > 0) days[date] = rest
+        // A global tag writes the merged tag into every planner, appending
+        // a copy to the ones that do not have it yet.
+        if (updated.global) {
+          return {
+            ...prev,
+            planners: prev.planners.map((p) =>
+              p.tags.some((t) => t.id === tagId)
+                ? { ...p, tags: p.tags.map((t) => (t.id === tagId ? updated : t)) }
+                : { ...p, tags: [...p.tags, updated] },
+            ),
+          }
         }
-        return { ...planner, tags: planner.tags.filter((t) => t.id !== tagId), days }
+        // Unmarking (only from global) clears the flag in every planner;
+        // each keeps its copy. A local tag stays a per-planner edit.
+        if (base.global === true && patch.global === false) {
+          return {
+            ...prev,
+            planners: prev.planners.map((p) => ({
+              ...p,
+              tags: p.tags.map((t) => (t.id === tagId ? { ...t, ...patch } : t)),
+            })),
+          }
+        }
+        return {
+          ...prev,
+          planners: prev.planners.map((p) =>
+            p.id === plannerId ? { ...p, tags: p.tags.map((t) => (t.id === tagId ? updated : t)) } : p,
+          ),
+        }
       })
     },
-    [updatePlanner],
+    [],
   )
+
+  /** Delete a tag everywhere in the planner (from every planner if global). */
+  const removeTag = useCallback((plannerId: string, tagId: string) => {
+    const strip = (planner: Planner): Planner => {
+      const days: Record<string, DayTag[]> = {}
+      for (const [date, entries] of Object.entries(planner.days)) {
+        const rest = entries.filter((entry) => entry.tagId !== tagId)
+        if (rest.length > 0) days[date] = rest
+      }
+      return { ...planner, tags: planner.tags.filter((t) => t.id !== tagId), days }
+    }
+
+    setData((prev) => {
+      const source = prev.planners.find((p) => p.id === plannerId)
+      if (!source) return prev
+      const isGlobal = source.tags.find((t) => t.id === tagId)?.global === true
+      return {
+        ...prev,
+        planners: prev.planners.map((p) => (isGlobal || p.id === plannerId ? strip(p) : p)),
+      }
+    })
+  }, [])
 
   /**
    * Import planners (already validated by the caller): same id = update,

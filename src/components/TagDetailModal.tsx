@@ -56,7 +56,7 @@ export function TagDetailModal({
         <header className="modal__head">
           <h2 className="tag-detail__title">
             <span className="stats__swatch" style={{ backgroundColor: tag.color }} />
-            {tagIcon(tag)}
+            {tagIcon(tag, { showGlobal: true })}
             {tag.label}
           </h2>
           <button type="button" className="btn" onClick={onClose} aria-label="Cerrar">

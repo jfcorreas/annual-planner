@@ -45,6 +45,26 @@ function formNumber(container: HTMLElement, labelText: string): HTMLInputElement
   return label?.querySelector('input[type="number"]') ?? null
 }
 
+/** Year button of a planner in the side panel. */
+function yearButton(container: HTMLElement, year: number): HTMLElement {
+  const button = [...container.querySelectorAll('.panel__year')].find(
+    (b) => b.textContent === String(year),
+  )
+  if (!button) throw new Error(`Planner ${year} not found`)
+  return button as HTMLElement
+}
+
+/** Open the tags editor, create a tag marked as Global, close it again. */
+function createGlobalTag(container: HTMLElement, label: string) {
+  fireEvent.click(container.querySelector('.chip--add')!)
+  fireEvent.change(container.querySelector('.tag-form input[type="text"]')!, {
+    target: { value: label },
+  })
+  fireEvent.click(formCheckbox(container, 'Global')!)
+  fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+  fireEvent.click(container.querySelector('.modal__head .btn')!) // close editor
+}
+
 /** Count shown for a tag in the month zoom stats footer. */
 function zoomCount(container: HTMLElement, label: string): string | undefined {
   const items = [...container.querySelectorAll('.zoom__stats .stats__item')]
@@ -613,6 +633,304 @@ describe('tags editor', () => {
       '.tag-form input[type="checkbox"]',
     ) as HTMLInputElement
     expect(checkbox.checked).toBe(true)
+  })
+
+  it('checking "Global" saves it, shows the 🌐 badge and loads the choice back', () => {
+    const { container } = renderApp()
+
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const input = container.querySelector('.tag-form input[type="text"]') as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'Compartida' } })
+    fireEvent.click(formCheckbox(container, 'Global')!)
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+
+    // The new row shows the 🌐 badge…
+    const row = [...container.querySelectorAll('.tags-list__item')].find((li) =>
+      li.textContent?.includes('Compartida'),
+    )!
+    expect(row.querySelector('.tags-list__label')!.textContent).toContain('🌐')
+
+    // …while a local tag does not.
+    const localRow = [...container.querySelectorAll('.tags-list__item')].find((li) =>
+      li.textContent?.includes('Guardia 24h'),
+    )!
+    expect(localRow.querySelector('.tags-list__label')!.textContent).not.toContain('🌐')
+
+    // Editing loads the saved choice back into the form.
+    fireEvent.click(row.querySelectorAll('button')[0]) // ✏️
+    expect(formCheckbox(container, 'Global')!.checked).toBe(true)
+  })
+
+  it('🌐 shows in the detail modal but not in palette, day chips or statistics', async () => {
+    const { container } = renderApp()
+
+    // Create a global tag and apply it to the first day.
+    createGlobalTag(container, 'Compartida')
+
+    const paletteChip = [...container.querySelectorAll('.palette .chip')].find((c) =>
+      c.textContent?.includes('Compartida'),
+    )!
+    fireEvent.click(paletteChip)
+    fillDay(container, firstIso())
+
+    // Palette chip: no badge.
+    expect(paletteChip.textContent).not.toContain('🌐')
+
+    // Day chip (year and month zoom share DayCell): no badge.
+    const chip = chipsOf(dayCell(container, firstIso())).find((c) =>
+      c.getAttribute('title')?.startsWith('Compartida'),
+    )!
+    expect(chip.textContent).not.toContain('🌐')
+
+    // Statistics row: no badge.
+    const statsRow = [...container.querySelectorAll('.stats__item')].find((li) =>
+      li.textContent?.includes('Compartida'),
+    )!
+    expect(statsRow.textContent).not.toContain('🌐')
+
+    // Detail modal title: the badge is there.
+    fireEvent.click(chip)
+    await waitFor(() => expect(container.querySelector('.tag-detail__title')).not.toBeNull())
+    const title = container.querySelector('.tag-detail__title')!
+    expect(title.textContent).toContain('Compartida')
+    expect(title.textContent).toContain('🌐')
+  })
+
+  it('a global tag appears in the palette and editor of every planner, including one created through the panel', () => {
+    const { container } = renderApp()
+    const inPalette = (label: string) =>
+      [...container.querySelectorAll('.palette .chip')].some((c) =>
+        c.textContent?.includes(label),
+      )
+
+    // Create the global tag in the first planner.
+    createGlobalTag(container, 'Compartida')
+
+    // Create a second planner through the panel (year defaults to the next one).
+    fireEvent.click(container.querySelector('.panel__new')!)
+    fireEvent.click(container.querySelector('.panel__create button[type="submit"]')!)
+
+    // The new planner shows it in the palette…
+    expect(inPalette('Compartida')).toBe(true)
+    // …and in its editor list.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const rows = [...container.querySelectorAll('.tags-list__item')]
+    expect(rows.some((li) => li.textContent?.includes('Compartida'))).toBe(true)
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close editor
+
+    // Switching back to the first planner keeps it too.
+    fireEvent.click(yearButton(container, YEAR))
+    expect(inPalette('Compartida')).toBe(true)
+  })
+
+  it('editing a global tag’s name and color is visible after switching to another planner', () => {
+    const { container } = renderApp()
+
+    // Create the global tag in the first planner, then a second planner.
+    createGlobalTag(container, 'Compartida')
+    fireEvent.click(container.querySelector('.panel__new')!)
+    fireEvent.click(container.querySelector('.panel__create button[type="submit"]')!)
+
+    // Back in the first planner: rename it and recolor it.
+    fireEvent.click(yearButton(container, YEAR))
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const row = [...container.querySelectorAll('.tags-list__item')].find((li) =>
+      li.textContent?.includes('Compartida'),
+    )!
+    fireEvent.click(row.querySelectorAll('button')[0]) // ✏️
+    fireEvent.change(container.querySelector('.tag-form input[type="text"]')!, {
+      target: { value: 'Renombrada' },
+    })
+    fireEvent.click(container.querySelector('[aria-label="Color #db2777"]')!)
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close editor
+
+    // The second planner shows the same name and color.
+    fireEvent.click(yearButton(container, YEAR + 1))
+    const chip = [...container.querySelectorAll('.palette .chip')].find((c) =>
+      c.textContent?.includes('Renombrada'),
+    )!
+    expect(chip.querySelector('.chip__dot')!.getAttribute('style')).toContain('rgb(219, 39, 119)')
+    expect(
+      [...container.querySelectorAll('.palette .chip')].some((c) =>
+        c.textContent?.includes('Compartida'),
+      ),
+    ).toBe(false)
+
+    // …and so does its editor list.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const rows = [...container.querySelectorAll('.tags-list__item')]
+    expect(rows.some((li) => li.textContent?.includes('Renombrada'))).toBe(true)
+    expect(rows.some((li) => li.textContent?.includes('Compartida'))).toBe(false)
+  })
+
+  it('unmarking a global tag used by another planner is blocked with a toast', () => {
+    const { container } = renderApp()
+
+    // Global tag created in planner 1…
+    createGlobalTag(container, 'Compartida')
+
+    // …used on a day by planner 2…
+    fireEvent.click(container.querySelector('.panel__new')!)
+    fireEvent.click(container.querySelector('.panel__create button[type="submit"]')!)
+    const paletteChip = [...container.querySelectorAll('.palette .chip')].find((c) =>
+      c.textContent?.includes('Compartida'),
+    )!
+    fireEvent.click(paletteChip)
+    // Planner 2 shows its own year (YEAR + 1): fill its first day.
+    fillDay(container, isoDate(daysOfYear(YEAR + 1)[0]))
+
+    // …then unmarked from planner 1: blocked with a toast.
+    fireEvent.click(yearButton(container, YEAR))
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const row = [...container.querySelectorAll('.tags-list__item')].find((li) =>
+      li.textContent?.includes('Compartida'),
+    )!
+    fireEvent.click(row.querySelectorAll('button')[0]) // ✏️
+    fireEvent.click(formCheckbox(container, 'Global')!) // uncheck
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+
+    const toast = container.querySelector('.toast')
+    expect(toast?.textContent).toContain('Compartida')
+    expect(toast?.textContent).toContain('se usa en otro planificador')
+    expect(toast?.textContent).toContain('antes de hacerla local')
+
+    // The tag stays global: the 🌐 badge is still in the list.
+    const stillRow = [...container.querySelectorAll('.tags-list__item')].find((li) =>
+      li.textContent?.includes('Compartida'),
+    )!
+    expect(stillRow.querySelector('.tags-list__label')!.textContent).toContain('🌐')
+  })
+
+  it('unmarking a global tag unused elsewhere makes it local to the current planner', () => {
+    const { container } = renderApp()
+    const rowOf = (label: string) =>
+      [...container.querySelectorAll('.tags-list__item')].find((li) =>
+        li.textContent?.includes(label),
+      )!
+
+    // Global tag in planner 1; planner 2 gets the copy (nothing applied anywhere).
+    createGlobalTag(container, 'Compartida')
+    fireEvent.click(container.querySelector('.panel__new')!)
+    fireEvent.click(container.querySelector('.panel__create button[type="submit"]')!)
+    fireEvent.click(yearButton(container, YEAR))
+
+    // Unmark from planner 1: allowed (no other planner uses it).
+    fireEvent.click(container.querySelector('.chip--add')!)
+    fireEvent.click(rowOf('Compartida').querySelectorAll('button')[0]) // ✏️
+    fireEvent.click(formCheckbox(container, 'Global')!) // uncheck
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+
+    expect(container.querySelector('.toast')?.textContent ?? '').not.toContain(
+      'se usa en otro planificador',
+    )
+    // Badge gone in the current planner…
+    expect(rowOf('Compartida').querySelector('.tags-list__label')!.textContent).not.toContain(
+      '🌐',
+    )
+    // …and the form loads it back as local.
+    fireEvent.click(rowOf('Compartida').querySelectorAll('button')[0]) // ✏️
+    expect(formCheckbox(container, 'Global')!.checked).toBe(false)
+
+    // Now local: renaming in planner 1 no longer reaches planner 2.
+    fireEvent.change(container.querySelector('.tag-form input[type="text"]')!, {
+      target: { value: 'Local ahora' },
+    })
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+    fireEvent.click(container.querySelector('.modal__head .btn')!)
+
+    fireEvent.click(yearButton(container, YEAR + 1))
+    fireEvent.click(container.querySelector('.chip--add')!)
+    // The copy is still there, unflagged and untouched by the rename.
+    const otherRow = rowOf('Compartida')
+    expect(otherRow.querySelector('.tags-list__label')!.textContent).not.toContain('🌐')
+    expect(
+      [...container.querySelectorAll('.tags-list__item')].some((li) =>
+        li.textContent?.includes('Local ahora'),
+      ),
+    ).toBe(false)
+  })
+
+  it('deleting a global tag used in planners is blocked with the total-usage toast', () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const { container } = renderApp()
+
+    // Global tag in planner 1, applied on two days.
+    createGlobalTag(container, 'Compartida')
+    const paletteChip = () =>
+      [...container.querySelectorAll('.palette .chip')].find((c) =>
+        c.textContent?.includes('Compartida'),
+      )!
+    fireEvent.click(paletteChip())
+    fillDay(container, isoDate(daysOfYear(YEAR)[0]))
+    fillDay(container, isoDate(daysOfYear(YEAR)[1]))
+
+    // Planner 2 uses it on one more day.
+    fireEvent.click(container.querySelector('.panel__new')!)
+    fireEvent.click(container.querySelector('.panel__create button[type="submit"]')!)
+    fireEvent.click(paletteChip())
+    fillDay(container, isoDate(daysOfYear(YEAR + 1)[0]))
+
+    // Back in planner 1: try to delete it from the editor.
+    fireEvent.click(yearButton(container, YEAR))
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const row = [...container.querySelectorAll('.tags-list__item')].find((li) =>
+      li.textContent?.includes('Compartida'),
+    )!
+    const before = container.querySelectorAll('.tags-list__item').length
+    fireEvent.click(row.querySelectorAll('button')[1]) // 🗑️
+
+    // Blocked: no confirmation asked, toast shows the total across planners.
+    expect(confirmSpy).not.toHaveBeenCalled()
+    const toast = container.querySelector('.toast')
+    expect(toast?.textContent).toContain('Compartida')
+    expect(toast?.textContent).toContain('3 días en 2 planificadores')
+    expect(container.querySelectorAll('.tags-list__item')).toHaveLength(before)
+    vi.restoreAllMocks()
+  })
+
+  it('deleting an unused global tag removes it from every planner', () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const { container } = renderApp()
+
+    // Global tag in planner 1; planner 2 gets the copy (no usage anywhere).
+    createGlobalTag(container, 'Compartida')
+    fireEvent.click(container.querySelector('.panel__new')!)
+    fireEvent.click(container.querySelector('.panel__create button[type="submit"]')!)
+
+    // Delete it from planner 1: the usual confirm is asked…
+    fireEvent.click(yearButton(container, YEAR))
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const row = [...container.querySelectorAll('.tags-list__item')].find((li) =>
+      li.textContent?.includes('Compartida'),
+    )!
+    const before = container.querySelectorAll('.tags-list__item').length
+    fireEvent.click(row.querySelectorAll('button')[1]) // 🗑️
+    expect(confirmSpy).toHaveBeenCalledWith('¿Eliminar la etiqueta “Compartida”?')
+    expect(container.querySelectorAll('.tags-list__item')).toHaveLength(before - 1)
+
+    // …and it is gone from planner 1's palette.
+    fireEvent.click(container.querySelector('.modal__head .btn')!)
+    expect(
+      [...container.querySelectorAll('.palette .chip')].some((c) =>
+        c.textContent?.includes('Compartida'),
+      ),
+    ).toBe(false)
+
+    // Planner 2 lost it too: palette and editor list.
+    fireEvent.click(yearButton(container, YEAR + 1))
+    expect(
+      [...container.querySelectorAll('.palette .chip')].some((c) =>
+        c.textContent?.includes('Compartida'),
+      ),
+    ).toBe(false)
+    fireEvent.click(container.querySelector('.chip--add')!)
+    expect(
+      [...container.querySelectorAll('.tags-list__item')].some((li) =>
+        li.textContent?.includes('Compartida'),
+      ),
+    ).toBe(false)
+    vi.restoreAllMocks()
   })
 
   it('creates a tag with name and color shown in list and palette', () => {

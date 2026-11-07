@@ -15,6 +15,7 @@ interface TagsEditorProps {
       holiday: boolean
       permit: boolean
       maxPerYear?: number
+      global: boolean
     },
     tagId?: string,
   ) => void
@@ -39,6 +40,7 @@ export function TagsEditor({ tags, usage, onSave, onRemove, onBlocked, onClose }
   const [holiday, setHoliday] = useState(false)
   const [permit, setPermit] = useState(false)
   const [maxPerYear, setMaxPerYear] = useState('')
+  const [global, setGlobal] = useState(false)
 
   function startEdit(tag: Tag) {
     setEditingId(tag.id)
@@ -48,6 +50,7 @@ export function TagsEditor({ tags, usage, onSave, onRemove, onBlocked, onClose }
     setHoliday(tag.holiday === true)
     setPermit(tag.permit === true)
     setMaxPerYear(tag.maxPerYear !== undefined ? String(tag.maxPerYear) : '')
+    setGlobal(tag.global === true)
   }
 
   function startNew() {
@@ -58,6 +61,7 @@ export function TagsEditor({ tags, usage, onSave, onRemove, onBlocked, onClose }
     setHoliday(false)
     setPermit(false)
     setMaxPerYear('')
+    setGlobal(false)
   }
 
   function handleSubmit(event: FormEvent) {
@@ -72,6 +76,7 @@ export function TagsEditor({ tags, usage, onSave, onRemove, onBlocked, onClose }
         holiday,
         permit,
         maxPerYear: permit ? Number(maxPerYear) : undefined,
+        global,
       },
       editingId ?? undefined,
     )
@@ -103,7 +108,7 @@ export function TagsEditor({ tags, usage, onSave, onRemove, onBlocked, onClose }
             <li key={tag.id} className="tags-list__item">
               <span className="stats__swatch" style={{ backgroundColor: tag.color }} />
               <span className="tags-list__label">
-                {tagIcon(tag)}
+                {tagIcon(tag, { showGlobal: true })}
                 {tag.label}
               </span>
               <button type="button" className="btn" onClick={() => startEdit(tag)}>
@@ -215,6 +220,14 @@ export function TagsEditor({ tags, usage, onSave, onRemove, onBlocked, onClose }
               </label>
             )}
           </div>
+          <label className="field field--inline">
+            <span>Global</span>
+            <input
+              type="checkbox"
+              checked={global}
+              onChange={(e) => setGlobal(e.target.checked)}
+            />
+          </label>
           <div className="tag-form__actions">
             {editingId && (
               <button type="button" className="btn" onClick={startNew}>

@@ -5,6 +5,7 @@ import { exportToJson, importFromJson } from './storage'
 import { daysOfMonth, daysOfYear, isoDate } from './utils/dates'
 import { computeStats } from './utils/stats'
 import { printPlanner } from './utils/print'
+import { tagUsageAcrossPlanners } from './utils/tags'
 import { TopBar } from './components/TopBar'
 import { TagPalette } from './components/TagPalette'
 import { YearView } from './components/YearView'
@@ -58,15 +59,19 @@ export default function App() {
     [planner],
   )
 
-  /** Days each tag of the active planner is applied on. */
+  /** Days each tag of the active planner is applied on (global: every planner). */
   const tagUsage = useMemo(() => {
     const counts: Record<string, number> = {}
     if (!planner) return counts
     for (const entries of Object.values(planner.days)) {
       for (const entry of entries) counts[entry.tagId] = (counts[entry.tagId] ?? 0) + 1
     }
+    // A global tag counts its applications in every planner.
+    for (const tag of planner.tags) {
+      if (tag.global) counts[tag.id] = tagUsageAcrossPlanners(store.planners, tag.id).days
+    }
     return counts
-  }, [planner])
+  }, [planner, store.planners])
   const monthIso = useMemo(
     () =>
       planner && zoomMonth !== null ? daysOfMonth(planner.year, zoomMonth).map(isoDate) : [],
@@ -151,11 +156,24 @@ export default function App() {
       holiday: boolean
       permit: boolean
       maxPerYear?: number
+      global: boolean
     },
     tagId?: string,
   ) {
-    if (tagId) store.updateTag(planner!.id, tagId, fields)
-    else
+    if (tagId) {
+      const existing = planner!.tags.find((t) => t.id === tagId)
+      // Unmarking a global tag is blocked while another planner uses it.
+      if (existing?.global && !fields.global) {
+        const others = tagUsageAcrossPlanners(store.planners, tagId, planner!.id)
+        if (others.planners > 0) {
+          setNotice(
+            `🔒 “${existing.label}” se usa en otro planificador: quítala de sus días antes de hacerla local.`,
+          )
+          return
+        }
+      }
+      store.updateTag(planner!.id, tagId, fields)
+    } else
       store.addTag(
         planner!.id,
         fields.label,
@@ -164,6 +182,7 @@ export default function App() {
         fields.holiday,
         fields.permit,
         fields.maxPerYear,
+        fields.global,
       )
   }
 
@@ -318,6 +337,14 @@ export default function App() {
           onBlocked={(tagId) => {
             const tag = planner.tags.find((t) => t.id === tagId)
             if (!tag) return
+            if (tag.global) {
+              // Global: the toast shows the usage across every planner.
+              const total = tagUsageAcrossPlanners(store.planners, tagId)
+              setNotice(
+                `🔒 “${tag.label}” se usa en ${total.days} ${total.days === 1 ? 'día' : 'días'} en ${total.planners} ${total.planners === 1 ? 'planificador' : 'planificadores'}: quítala de todos los días antes de eliminarla.`,
+              )
+              return
+            }
             const count = tagUsage[tagId] ?? 0
             setNotice(
               `🔒 “${tag.label}” se usa en ${count} ${count === 1 ? 'día' : 'días'}: quítala de todos los días antes de eliminarla.`,

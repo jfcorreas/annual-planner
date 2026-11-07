@@ -101,6 +101,22 @@ describe('loadData / saveData', () => {
     expect(loaded[2].maxPerYear).toBeUndefined()
   })
 
+  it('round-trips the global flag through localStorage and export', () => {
+    const data = sampleData()
+    data.planners[0].tags = [
+      { id: 'shared', label: 'Compartida', color: '#2f6fed', global: true },
+      { id: 'local', label: 'Local', color: '#facc15' }, // no flag: local tag
+    ]
+
+    saveData(data)
+    expect(loadData()).toEqual(data)
+    expect(importFromJson(JSON.stringify(data))).toEqual(data.planners)
+
+    const loaded = loadData()!.planners[0].tags
+    expect(loaded[0].global).toBe(true)
+    expect(loaded[1].global).toBeUndefined()
+  })
+
   it('normalizes legacy data (string day ids) on load', () => {
     const legacy = {
       version: 1,

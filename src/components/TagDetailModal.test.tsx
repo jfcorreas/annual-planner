@@ -82,6 +82,20 @@ describe('TagDetailModal', () => {
     expect(plain.container.querySelector('.tag-detail__title')!.textContent).not.toContain('🪪')
   })
 
+  it('shows the 🌐 icon next to the name in the title for a global tag', () => {
+    const { container } = renderModal({
+      tag: { ...TAG, label: 'Compartida', global: true },
+    })
+    const title = container.querySelector('.tag-detail__title')!
+
+    expect(title.textContent).toContain('🌐')
+    expect(title.textContent).toContain('Compartida')
+
+    // A local tag keeps a plain title.
+    const plain = renderModal()
+    expect(plain.container.querySelector('.tag-detail__title')!.textContent).not.toContain('🌐')
+  })
+
   it('saves a trimmed subtitle and closes', () => {
     const { container, onSaveSubtitle, onClose } = renderModal()
 

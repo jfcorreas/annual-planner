@@ -12,13 +12,21 @@ export const DEFAULT_TAGS: Tag[] = [
   { id: 'festivo-nacional', label: 'Festivo nacional', color: '#15803d', holiday: true, inStats: false },
 ]
 
-export function createPlanner(year: number): Planner {
+export function createPlanner(year: number, extraTags: Tag[] = []): Planner {
+  // Extra tags (globals) are added by id: they win over a colliding default
+  // and are appended when new, so no id ever appears twice.
+  const tags = DEFAULT_TAGS.map((tag) => ({ ...tag }))
+  for (const extra of extraTags) {
+    const index = tags.findIndex((tag) => tag.id === extra.id)
+    if (index >= 0) tags[index] = { ...extra }
+    else tags.push({ ...extra })
+  }
   return {
     id: crypto.randomUUID(),
     year,
     name: `Planificador ${year}`,
     status: 'activo',
-    tags: DEFAULT_TAGS.map((tag) => ({ ...tag })),
+    tags,
     days: {},
   }
 }
