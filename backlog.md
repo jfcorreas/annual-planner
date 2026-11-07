@@ -1,14 +1,13 @@
 # Backlog — Tags rework (v0.3.0)
 
-Tags re-implemented from scratch. The story currently being built has its
-approved block in `current-plan.md`; this file is the overview (9 planned, #8
-discarded for lack of details).
+Tags re-implemented from scratch. The rework is complete: 9 planned stories,
+#8 discarded for lack of details, #9 the last one. Approved blocks live in
+`current-plan.md`; this file is the overview.
 
 **Agreed model:** Tag = name (always shown) + color, plus the per-story flags
 below. The subtitle stays per *day application* (DayTag), not on the tag (the
 original spec that put it on Tag was a mistake). Clean break with v0.2.0: no
-migration (active refusal = story #9). Legacy data with stray fields loads and
-the fields are ignored until #9.
+migration — previous-version data and exports are actively refused (#9).
 
 | #  | Story                                                             | Status             |
 |----|-------------------------------------------------------------------|--------------------|
@@ -20,7 +19,7 @@ the fields are ignored until #9.
 | 6  | Used/remaining counter for the work license (can go negative)     | ✅ Done (committed)|
 | 7  | Global toggle: tag usable in every planner                        | ✅ Done (committed)|
 | 8  | _(no details available)_                                          | ❌ Discarded       |
-| 9  | Refuse data and exports from the previous version                 | ⬜ Pending         |
+| 9  | Refuse data and exports from the previous version                 | ✅ Done (committed)|
 
 **Delete rule (all stories):** deleting any tag in use is blocked with a toast
 showing the usage count (global tag: used in *any* planner) — implemented in
@@ -70,6 +69,17 @@ Both guards live in App (it owns the toasts) over the shared
 
 **Story #8 status:** discarded — no details were available (the tracker was not
 accessible), so #9 follows #7.
+
+**Story #9 status detail:** shipped — format bumped to `version: 2` under the
+new `annual-planner:v2` slot; the `annual-planner:v1` entry is never read and
+never deleted. Startup rule: valid v2 data → normal load; no valid v2 but a v1
+entry present → blocking notice with "Empezar de cero" (nothing is saved before
+the confirm, the v1 entry stays untouched); neither → today's silent fresh
+planner (so corrupt v2 + leftover v1 shows the notice). Importing a
+`version: 1` file is refused with "El archivo es de una versión anterior y ya
+no es compatible."; other invalid files keep the generic message. Legacy string
+day ids inside a v2 file are still normalized (only the version gates the
+refusal).
 
 **Out of scope of the rework (unchanged):** day-chip interactions (1 click =
 detail modal, double click / 600 ms hold = remove from day), 2 tags max per

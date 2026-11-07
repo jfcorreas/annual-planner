@@ -2,9 +2,8 @@
 Project Memory between sessions. Maximum ~50 lines: summarize or remove anything that no longer adds value.
 
 ## Current Status
-- v0.3.0 in progress (tags rework): #1–#7 DONE + committed; #8 discarded (no
-  details); #9 DONE — tests green (143 unit+component, e2e full flow), pending
-  navigator commit, /code-review and manual notice check.
+- v0.3.0 in progress (tags rework): #1–#9 DONE + committed (#8 discarded);
+  remaining: `/code-review`, manual notice check on :4830, release-notes.md.
 - Green: `tsc -b`, oxlint, `npm test` (136 unit+component), `npm run test:e2e`
   (Playwright full flow; e2e stats assertion reads the whole `.stats` footer).
 - Installed as Omarchy web app (:4830, systemd `annual-planner`); **re-copy
@@ -47,7 +46,6 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
 - pt→px in print: A5 landscape content ≈515px tall; keep print styles compact.
 
 ## Next Steps
-- #9: navigator commit (suggest message below) + `/code-review` + manual
-  notice check; release-notes.md pending (v0.3.0, incl. README "untagged days"
-  and the storage-key mention).
+- v0.3.0 wrap-up: `/code-review`, manual notice check on :4830, then
+  release-notes.md (incl. README "untagged days" and the storage-key mention).
 - Optional: interaction rule (1 click = details, dblclick/hold = destructive) to AGENTS.md if it becomes a rule.
