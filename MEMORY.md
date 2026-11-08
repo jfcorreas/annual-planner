@@ -2,39 +2,30 @@
 Project Memory between sessions. Maximum ~50 lines: summarize or remove anything that no longer adds value.
 
 ## Current Status
-- v0.3.0 in progress (tags rework): #1–#9 DONE + committed (#8 discarded);
-  remaining: `/code-review`, manual notice check on :4830, release-notes.md.
-- Green: `tsc -b`, oxlint, `npm test` (136 unit+component), `npm run test:e2e`
-  (Playwright full flow; e2e stats assertion reads the whole `.stats` footer).
+- v0.3.0 complete (tags rework #1–#9, #8 discarded); pending commit + `v0.3.0`
+  tag. Details archived in `archive/backlog-v0.3.0-tags-rework.md`.
+- Green: `tsc -b`, oxlint, `npm test` (143 unit+component), `npm run test:e2e`.
 - Installed as Omarchy web app (:4830, systemd `annual-planner`); **re-copy
-  `dist/.` after each build** (AGENTS). #7 build copied, manual checks OK.
+  `dist/.` after each build** (AGENTS). Confirm the :4830 copy has the #9 build.
 
 ## Decisions (and why)
-- Tags rework: CLEAN BREAK — v1 data/0.2.0 exports refused (#9); subtitle
-  per-day on DayTag (not Tag); color kept; types removed (flat list).
-- v0.3.0 Tag = {id, label, color, inStats?, holiday?, permit?, maxPerYear?,
-  global?}; tagTypes/category gone; v2 still normalizes string day ids.
-- Tag flags: statistics, holiday (stats off, 🏖️), permit (always in stats, apart,
-  🪪, max/year, can go negative), global (same-id copies synced, 🌐 only in
-  editor + detail modal); delete blocked if used anywhere.
-- #7 DONE: unmark blocked if another planner uses it; unused-elsewhere unmark
+- Tag = {id, label, color, inStats?, holiday?, permit?, maxPerYear?, global?};
+  no tag types (flat list); subtitle stays per-day on DayTag.
+- Flags: holiday (stats off, 🏖️), permit (own stats group, 🪪, max/year,
+  used/remaining, can go negative), global (same-id copies synced across
+  planners, 🌐 only in editor + detail modal); delete blocked if used anywhere.
+- Statistics: `inStats?` missing = included; permits bypass the filter; no
+  "Sin etiqueta" row; month bar plain counts, year bar adds "U de N ·
+  Restantes R" (red if negative).
+- Global: unmark blocked if another planner uses it; unused-elsewhere unmark
   clears the flag everywhere (copies stay, sync stops); delete blocked with
-  "N días en M planificadores". Guards in App via `tagUsageAcrossPlanners()`;
-  new planners = defaults + globals; badge via `tagIcon(tag, {showGlobal})`.
-- #9 DONE: format `version: 2` + key `annual-planner:v2` (v1 untouched);
-  blocking "Empezar de cero" screen, old data never deleted; specific import
-  refusal message. Startup rule: valid v2 → normal; else v1 entry present →
-  notice; else silent fresh (so corrupt v2 + leftover v1 → notice).
-- #3: `inStats?` missing = included; `computeStats` filters; "Sin etiqueta" gone.
-- #4: `holiday?` (badge all surfaces, not tooltips; form order stats→Festivo;
-  saves force `inStats` off).
-- #5: `permit?`+`maxPerYear?` (only when permit); editor forces `inStats`
-  on/disabled, exclusive with Festivo; permits get their own group in both bars.
-- #6: year permit row "U de N · Restantes R" (red if negative); month bar plain
-  count; detail modal unchanged.
-- Stack: Vite + React 19 + TS + date-fns, plain CSS; defaults/UX in release-notes.md.
-- Chip interaction: 250ms click debounce, 600ms hold; document-level swallow of
-  the release click after a hold (chip unmounts → it could hit the day below).
+  "N días en M planificadores"; new planners = defaults + globals.
+- Storage v2: `version: 2` under `annual-planner:v2`; v1 data is never read or
+  deleted — blocking "Empezar de cero" notice; v1 imports refused with a
+  specific message; v2 still normalizes string day ids.
+- Chip interaction: 1 click = detail modal (250ms debounce), double click /
+  600ms hold = remove; document-level swallow of the release click.
+- Stack: Vite + React 19 + TS + date-fns, plain CSS.
 
 ## Lessons Learned and Mistakes to Avoid
 - No setState inside updaters; compute derived values (and "did it apply") first.
@@ -46,6 +37,6 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
 - pt→px in print: A5 landscape content ≈515px tall; keep print styles compact.
 
 ## Next Steps
-- v0.3.0 wrap-up: `/code-review`, manual notice check on :4830, then
-  release-notes.md (incl. README "untagged days" and the storage-key mention).
-- Optional: interaction rule (1 click = details, dblclick/hold = destructive) to AGENTS.md if it becomes a rule.
+- Confirm the :4830 copy has the #9 build (re-copy `dist/.` if needed), then
+  commit + tag v0.3.0 (see release-notes.md); optional `/code-review`.
+- Optional: interaction rule (1 click = details, dblclick/hold = destructive) to AGENTS.md.

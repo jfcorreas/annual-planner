@@ -4,6 +4,60 @@ All notable changes to the Annual Planner webapp.
 Format based on [Keep a Changelog](https://keepachangelog.com/), versioning
 following [SemVer](https://semver.org/).
 
+## [0.3.0] - 2026-11-08
+
+Tags re-implemented from scratch: flat tags with per-tag flags, work-permit
+tracking and global tags. Clean break with 0.2.x data.
+
+### Added
+
+- **Statistics flag**: each tag can be included in or excluded from the
+  statistics bars ("Incluir en estadísticas").
+- **Holiday flag**: "Día Festivo" marks a tag as a holiday (🏖️ badge) and keeps
+  it out of the statistics automatically. The three "Festivo …" default tags
+  ship with this flag.
+- **Work permit**: "Permiso de trabajo" (🪪 badge) with a required "Máximo por
+  año". Permits are always counted and get their own group in both statistics
+  bars.
+- **Used/remaining counter**: the year bar shows "U de N · Restantes R" for each
+  permit, highlighted in red when the remaining days go negative. Applications
+  are never blocked or capped.
+- **Global tags**: "Global" (🌐) shares a tag across every planner, kept in sync
+  (name, color and flags). New planners start with the defaults plus the current
+  globals. Unmarking is blocked while another planner uses the tag; deleting is
+  blocked while any planner uses it, with the total usage in the toast.
+- **Delete guard**: deleting a tag applied on any day is blocked with a
+  usage-count toast.
+
+### Changed
+
+- **Tag model**: tags are now a flat list of name + color + flags — the tag
+  type/category is gone.
+- **Tags editor**: one form for name, color and the four flags; the permit max
+  only appears while the permit box is checked, and permit/holiday are mutually
+  exclusive.
+- **Statistics bars**: only included tags are listed (holidays are out), permits
+  render in a separate group after the regular tags, and the year permit row
+  adds the used/max/remaining counter. The "Sin etiqueta" row is gone.
+- **Storage**: the format is now `version: 2` under the new
+  `annual-planner:v2` key.
+
+### Removed
+
+- Tag types: the type model, the types CRUD in the editor and the "Tipo" select.
+- The "Sin etiqueta" row from the statistics bars.
+
+### Notes
+
+- **Clean break**: data saved by 0.2.x under `annual-planner:v1` is not loaded.
+  A blocking notice explains it and offers "Empezar de cero"; nothing is saved
+  before confirming, and the old entry is never read or deleted.
+- Importing a `version: 1` export is refused with "El archivo es de una versión
+  anterior y ya no es compatible."; other invalid files keep the generic
+  message.
+- Current-format files with legacy string day ids are still normalized; only the
+  format version gates the refusal.
+
 ## [0.2.0] - 2026-10-25
 
 Tag subtitles, user-managed tag types and a new tag interaction model.
