@@ -6,7 +6,7 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
   tag. Details archived in `archive/backlog-v0.3.0-tags-rework.md`.
 - Green: `tsc -b`, oxlint, `npm test` (143 unit+component), `npm run test:e2e`.
 - Installed as Omarchy web app (:4830, systemd `annual-planner`); **re-copy
-  `dist/.` after each build** (AGENTS). Confirm the :4830 copy has the #9 build.
+  `dist/.` after each build** (AGENTS). :4830 confirmed with the #9 build.
 
 ## Decisions (and why)
 - Tag = {id, label, color, inStats?, holiday?, permit?, maxPerYear?, global?};
@@ -37,6 +37,5 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
 - pt→px in print: A5 landscape content ≈515px tall; keep print styles compact.
 
 ## Next Steps
-- Confirm the :4830 copy has the #9 build (re-copy `dist/.` if needed), then
-  commit + tag v0.3.0 (see release-notes.md); optional `/code-review`.
+- Commit + tag v0.3.0 (see release-notes.md); optional `/code-review`.
 - Optional: interaction rule (1 click = details, dblclick/hold = destructive) to AGENTS.md.
