@@ -1,5 +1,5 @@
 import type { DayTag, Tag } from '../types'
-import { MONTH_NAMES, WEEKDAY_NAMES, weeksOfMonth } from '../utils/dates'
+import { MONTH_NAMES, WEEKDAY_INITIALS, WEEKDAY_NAMES, weeksOfMonth } from '../utils/dates'
 import type { Stats } from '../utils/stats'
 import { WeekRow } from './WeekRow'
 import { StatsBar } from './StatsBar'
@@ -86,8 +86,13 @@ export function MonthZoom({
               key={name}
               className={`zoom__dow${index >= 5 ? ' zoom__dow--we' : ''}`}
               role="columnheader"
+              aria-label={name}
             >
-              {name}
+              {/* Portrait phones show the initial only (narrow label column). */}
+              <span className="zoom__dow-full">{name}</span>
+              <span className="zoom__dow-short" aria-hidden="true">
+                {WEEKDAY_INITIALS[index]}
+              </span>
             </span>
           ))}
         </div>

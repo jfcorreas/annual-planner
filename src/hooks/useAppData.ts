@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { AppData, DayTag, Planner, PlannerStatus, Tag } from '../types'
 import { MAX_TAGS_PER_DAY, SUBTITLE_MAX_LENGTH } from '../types'
-import { createPlanner } from '../defaults'
+import { createPlanner, newId } from '../defaults'
 import { hasPreviousVersionData, loadData, saveData } from '../storage'
 
 const CURRENT_YEAR = new Date().getFullYear()
@@ -165,7 +165,7 @@ export function useAppData() {
       maxPerYear?: number,
       global = false,
     ) => {
-      const tag: Tag = { id: crypto.randomUUID(), label, color, inStats, holiday }
+      const tag: Tag = { id: newId(), label, color, inStats, holiday }
       if (global) tag.global = true
       if (permit) {
         tag.permit = true

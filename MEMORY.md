@@ -4,7 +4,11 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
 ## Current Status
 - v0.3.0 complete (tags rework #1–#9, #8 discarded); pending commit + `v0.3.0`
   tag. Details archived in `archive/backlog-v0.3.0-tags-rework.md`.
-- Green: `tsc -b`, oxlint, `npm test` (143 unit+component), `npm run test:e2e`.
+- Phone/LAN fixes (blank screen, month view) are documented under `[Unreleased]`
+  in `release-notes.md`; they also touch ids and the month view CSS.
+- Mobile/LAN test: app serves fine at `http://<LAN-IP>:4831` (`python3 -m
+  http.server 4831 --bind 0.0.0.0 --directory dist`); path for Option 1.
+- Green: `tsc -b`, oxlint, `npm test` (146 unit+component), `npm run test:e2e`.
 - Installed as Omarchy web app (:4830, systemd `annual-planner`); **re-copy
   `dist/.` after each build** (AGENTS). :4830 confirmed with the #9 build.
 
@@ -28,6 +32,13 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
 - Stack: Vite + React 19 + TS + date-fns, plain CSS.
 
 ## Lessons Learned and Mistakes to Avoid
+- Phones over a LAN: plain `http://<IP>` is NOT a secure context, so
+  `crypto.randomUUID` is missing (white screen). Use `newId()` from
+  `src/defaults.ts` for any new id.
+- Month zoom: the overlay must be VIEWPORT-sized (`position: fixed` below 1100px,
+  where the year view wraps and `.planner` is taller than the screen). Portrait
+  grid (<700px) is transposed CSS-only: rows + header `display: contents`,
+  `grid-auto-flow: column`, 7 dow spans pinned to column 1, `WEEKDAY_INITIALS`.
 - No setState inside updaters; compute derived values (and "did it apply") first.
 - A condition on a patch field must compare the PREVIOUS state (base), not the
   patch — the editor sends every flag each save (silent #7 sync bug).
@@ -39,3 +50,5 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
 ## Next Steps
 - Commit + tag v0.3.0 (see release-notes.md); optional `/code-review`.
 - Optional: interaction rule (1 click = details, dblclick/hold = destructive) to AGENTS.md.
+- Phone month view: tag labels still ellipsize ("Guar…") in ~55-67px cells;
+  open question = dot/icon-only chips or keep labels and let them clip.

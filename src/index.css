@@ -579,6 +579,12 @@ button {
   border-bottom: 2px solid var(--line);
 }
 
+/* Full names on wide layouts; the initial is only used by the narrow
+   portrait grid, where the header becomes a thin label column. */
+.zoom__dow-short {
+  display: none;
+}
+
 .zoom__dow--we {
   color: var(--faint);
 }
@@ -1006,6 +1012,21 @@ button {
   .year-view {
     grid-template-columns: repeat(6, minmax(0, 1fr));
   }
+
+  /* Up to 1100px the year view wraps into several rows, so `.planner` is much
+     taller than the viewport. The month zoom is `inset: 0` inside it, so it
+     inherited that height and every week row stretched with it (huge day
+     cells on phones). Anchor it to the viewport instead; the grid scrolls. */
+  .zoom {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    border: 0;
+    border-radius: 0;
+    overflow: hidden;
+    /* The page behind must not scroll while the full-screen month is open. */
+    overscroll-behavior: contain;
+  }
 }
 
 @media (max-width: 700px) {
@@ -1029,6 +1050,94 @@ button {
 
   .day {
     font-size: 11px;
+  }
+
+  /* Month zoom: compact chrome and cells so the month fits a phone screen. */
+  .zoom {
+    padding: 8px 8px 10px;
+  }
+
+  .zoom__bar {
+    flex-wrap: wrap;
+    gap: 6px 8px;
+    margin-bottom: 8px;
+  }
+
+  /* Month name first and centred; the long interaction hint is desktop-only. */
+  .zoom__title {
+    order: -1;
+    flex-basis: 100%;
+    text-align: center;
+    font-size: 15px;
+  }
+
+  .zoom__hint {
+    display: none;
+  }
+
+  /* Portrait month grid, transposed: one row per weekday (labels in a thin
+     left column) and one column per week. The 7 narrow day columns become
+     5-6 wider ones, and every week stays visible without scrolling. */
+  .zoom__grid {
+    display: grid;
+    grid-template-columns: 18px;
+    grid-template-rows: repeat(7, minmax(0, 1fr));
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 4px;
+    overflow: visible;
+  }
+
+  /* Rows and header dissolve so the day cells join the single grid above. */
+  .zoom__row,
+  .zoom__row--head {
+    display: contents;
+  }
+
+  .zoom__dow {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 2px 0 0;
+    border-bottom: 0;
+    font-size: 10px;
+  }
+
+  .zoom__dow-full {
+    display: none;
+  }
+
+  .zoom__dow-short {
+    display: inline;
+  }
+
+  /* The weekday labels pin the 7 rows of the transposed grid. */
+  .zoom__dow:nth-child(1) { grid-area: 1 / 1; }
+  .zoom__dow:nth-child(2) { grid-area: 2 / 1; }
+  .zoom__dow:nth-child(3) { grid-area: 3 / 1; }
+  .zoom__dow:nth-child(4) { grid-area: 4 / 1; }
+  .zoom__dow:nth-child(5) { grid-area: 5 / 1; }
+  .zoom__dow:nth-child(6) { grid-area: 6 / 1; }
+  .zoom__dow:nth-child(7) { grid-area: 7 / 1; }
+
+  .zoom .day {
+    min-height: 0;
+    padding: 3px 4px;
+    font-size: 11px;
+  }
+
+  .zoom .day__number {
+    font-size: 12px;
+  }
+
+  /* A ~55px-wide cell has no room for the weekday name. */
+  .zoom .day__weekday {
+    display: none;
+  }
+
+  .zoom .day__tags {
+    gap: 2px;
+    margin-top: 2px;
   }
 }
 

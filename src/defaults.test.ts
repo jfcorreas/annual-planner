@@ -1,5 +1,39 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_TAGS, createPlanner } from './defaults'
+import { DEFAULT_TAGS, createPlanner, newId } from './defaults'
+
+const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
+
+/** Runs `fn` with `crypto.randomUUID` missing, like a non-secure origin. */
+function withoutRandomUUID<T>(fn: () => T): T {
+  const original = Object.getOwnPropertyDescriptor(globalThis.crypto, 'randomUUID')
+  Object.defineProperty(globalThis.crypto, 'randomUUID', {
+    configurable: true,
+    value: undefined,
+  })
+  try {
+    return fn()
+  } finally {
+    if (original) Object.defineProperty(globalThis.crypto, 'randomUUID', original)
+  }
+}
+
+describe('newId', () => {
+  it('returns a v4-shaped uuid', () => {
+    expect(newId()).toMatch(UUID_V4)
+  })
+
+  it('still generates unique ids when crypto.randomUUID is unavailable', () => {
+    const ids = withoutRandomUUID(() => [newId(), newId(), newId()])
+    for (const id of ids) expect(id).toMatch(UUID_V4)
+    expect(new Set(ids).size).toBe(3)
+  })
+
+  it('creates planners without crypto.randomUUID (plain http on a LAN IP)', () => {
+    const planner = withoutRandomUUID(() => createPlanner(2026))
+    expect(planner.id).toMatch(UUID_V4)
+    expect(planner.tags).toHaveLength(DEFAULT_TAGS.length)
+  })
+})
 
 describe('DEFAULT_TAGS', () => {
   it('has the approved 8 default tags in ES/ES', () => {

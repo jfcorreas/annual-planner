@@ -12,6 +12,22 @@ export const DEFAULT_TAGS: Tag[] = [
   { id: 'festivo-nacional', label: 'Festivo nacional', color: '#15803d', holiday: true, inStats: false },
 ]
 
+/**
+ * Id generator. `crypto.randomUUID` only exists in secure contexts, so it is
+ * unavailable when the built app is opened over plain http on a LAN IP
+ * (e.g. a phone at http://192.168.x.x:port) and the first render would crash.
+ * Ids only need to be unique per device, so a random v4-shaped string is enough.
+ */
+export function newId(): string {
+  const randomUUID = globalThis.crypto?.randomUUID
+  if (typeof randomUUID === 'function') return randomUUID.call(globalThis.crypto)
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (char) => {
+    const random = Math.floor(Math.random() * 16)
+    const value = char === 'x' ? random : (random & 0x3) | 0x8
+    return value.toString(16)
+  })
+}
+
 export function createPlanner(year: number, extraTags: Tag[] = []): Planner {
   // Extra tags (globals) are added by id: they win over a colliding default
   // and are appended when new, so no id ever appears twice.
@@ -22,7 +38,7 @@ export function createPlanner(year: number, extraTags: Tag[] = []): Planner {
     else tags.push({ ...extra })
   }
   return {
-    id: crypto.randomUUID(),
+    id: newId(),
     year,
     name: `Planificador ${year}`,
     status: 'activo',

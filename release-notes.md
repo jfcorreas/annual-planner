@@ -4,6 +4,28 @@ All notable changes to the Annual Planner webapp.
 Format based on [Keep a Changelog](https://keepachangelog.com/), versioning
 following [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+Fixes found while testing the app on an Android phone.
+
+### Fixed
+
+- **Blank screen when opened from another device**: the first render crashed
+  when the built app was served over plain http from a LAN IP (e.g.
+  `http://192.168.1.20:4831`), because `crypto.randomUUID` only exists in
+  secure contexts. Planners and tags now fall back to an equivalent random id,
+  so the app works when served over the LAN too.
+- **Month view height on phones**: the month zoom was sized by the planner card
+  instead of the screen, and the card is several screens tall once the year view
+  wraps into columns, so the day cells stretched to ~670 px. Below 1100 px the
+  zoom now covers the viewport, uses compact chrome and scrolls internally; the
+  page behind no longer scrolls while it is open.
+- **Month view width in portrait**: the month grid is now transposed on narrow
+  screens — one row per weekday (labels in a thin column with the existing
+  L M X J V S D initials) and one column per week. A 5-week month goes from
+  50×127 to 67×93 px cells and a 6-week month to 55×93 px, and every week stays
+  visible without scrolling. Landscape and desktop keep the 7-column grid.
+
 ## [0.3.0] - 2026-11-08
 
 Tags re-implemented from scratch: flat tags with per-tag flags, work-permit
