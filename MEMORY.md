@@ -2,8 +2,9 @@
 Project Memory between sessions. Maximum ~50 lines: summarize or remove anything that no longer adds value.
 
 ## Current Status
-- v0.4.0 committed as `aa8e959` (local, 1 ahead of origin, untagged); the PWA
-  work below is uncommitted. Details in `release-notes.md`.
+- v0.4.0 tagged + pushed at `e41ca7a` (includes the PWA and the Pages
+  workflow). Live at `https://jfcorreas.github.io/annual-planner/` (Pages,
+  Actions source); PWA installable + offline there. Details in `release-notes.md`.
 - Mobile/LAN test: `python3 -m http.server 4831 --bind 0.0.0.0 --directory dist`
   → `http://<LAN-IP>:4831`. Green: tsc -b, oxlint, `npm test` (148), e2e.
 - Installed as Omarchy web app (:4830, systemd `annual-planner`); **re-copy
@@ -49,9 +50,6 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
 - pt→px in print: A5 landscape content ≈515px tall; keep print styles compact.
 
 ## Next Steps
-- Commit the PWA + Pages work, push; Pages must be enabled (Settings → Pages →
-  Source: GitHub Actions) before the first deploy, then check
-  `https://jfcorreas.github.io/annual-planner/`.
 - Optional `/code-review`.
 - Optional: interaction rule (1 click = details, dblclick/hold = destructive)
   to AGENTS.md.
