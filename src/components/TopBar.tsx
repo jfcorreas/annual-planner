@@ -7,6 +7,8 @@ interface TopBarProps {
   onImport: () => void
   onPrint: (paper: 'A4' | 'A5') => void
   onDelete: () => void
+  /** Open the about modal (version + short description). */
+  onAbout: () => void
 }
 
 /** Title, status toggle and global actions of the current planner. */
@@ -17,11 +19,22 @@ export function TopBar({
   onImport,
   onPrint,
   onDelete,
+  onAbout,
 }: TopBarProps) {
   const archived = planner.status === 'archivado'
 
   return (
     <header className="topbar">
+      <button
+        type="button"
+        className="btn btn--icon"
+        onClick={onAbout}
+        title="Acerca de la aplicación"
+        aria-label="Acerca de la aplicación"
+      >
+        ℹ️
+      </button>
+      <span className="topbar__sep" aria-hidden="true" />
       <span className="topbar__icon" aria-hidden="true">📅</span>
       <h1 className="topbar__title">{planner.name}</h1>
       <button

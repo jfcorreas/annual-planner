@@ -2,33 +2,31 @@
 Project Memory between sessions. Maximum ~50 lines: summarize or remove anything that no longer adds value.
 
 ## Current Status
-- v0.3.0 complete (tags rework #1–#9, #8 discarded); pending commit + `v0.3.0`
-  tag. Details archived in `archive/backlog-v0.3.0-tags-rework.md`.
-- Phone/LAN fixes (blank screen, month view) are documented under `[Unreleased]`
-  in `release-notes.md`; they also touch ids and the month view CSS.
-- Mobile/LAN test: app serves fine at `http://<LAN-IP>:4831` (`python3 -m
-  http.server 4831 --bind 0.0.0.0 --directory dist`); path for Option 1.
-- Green: `tsc -b`, oxlint, `npm test` (146 unit+component), `npm run test:e2e`.
+- v0.4.0 released on top of `v0.3.0` (tagged): phone/LAN fixes, transposed
+  portrait month view, new favicon and the about modal. Pending commit + tag.
+- Phone/LAN work (blank screen, month view, favicon, about modal) is documented
+  in `release-notes.md`.
+- Mobile/LAN test: `python3 -m http.server 4831 --bind 0.0.0.0 --directory dist`
+  → `http://<LAN-IP>:4831`. Green: tsc -b, oxlint, `npm test` (148),
+  `npm run test:e2e`.
 - Installed as Omarchy web app (:4830, systemd `annual-planner`); **re-copy
-  `dist/.` after each build** (AGENTS). :4830 confirmed with the #9 build.
+  `dist/.` after each build** (AGENTS).
 
 ## Decisions (and why)
 - Tag = {id, label, color, inStats?, holiday?, permit?, maxPerYear?, global?};
-  no tag types (flat list); subtitle stays per-day on DayTag.
-- Flags: holiday (stats off, 🏖️), permit (own stats group, 🪪, max/year,
-  used/remaining, can go negative), global (same-id copies synced across
-  planners, 🌐 only in editor + detail modal); delete blocked if used anywhere.
+  flat list (no types), subtitle per-day on DayTag, delete blocked if used.
+- Flags: holiday (stats off, 🏖️), permit (own stats group, 🪪, max/year, can go
+  negative), global (same-id copies synced, 🌐 only in editor + detail modal).
 - Statistics: `inStats?` missing = included; permits bypass the filter; no
-  "Sin etiqueta" row; month bar plain counts, year bar adds "U de N ·
-  Restantes R" (red if negative).
-- Global: unmark blocked if another planner uses it; unused-elsewhere unmark
-  clears the flag everywhere (copies stay, sync stops); delete blocked with
-  "N días en M planificadores"; new planners = defaults + globals.
-- Storage v2: `version: 2` under `annual-planner:v2`; v1 data is never read or
-  deleted — blocking "Empezar de cero" notice; v1 imports refused with a
-  specific message; v2 still normalizes string day ids.
-- Chip interaction: 1 click = detail modal (250ms debounce), double click /
-  600ms hold = remove; document-level swallow of the release click.
+  "Sin etiqueta"; month bar plain counts, year bar adds "U de N · Restantes R".
+- Global: unmark/delete blocked while other planners use it ("N días en M
+  planificadores"); unused-elsewhere unmark clears the flag everywhere;
+  new planners = defaults + globals.
+- Storage v2: `version: 2` under `annual-planner:v2`; v1 never read or deleted —
+  blocking "Empezar de cero"; v1 imports refused; v2 normalizes string day ids.
+- Chip: 1 click = detail modal (250ms debounce), dblclick / 600ms hold = remove.
+- About modal: ℹ️ left of the planner title, version imported from package.json
+  (`resolveJsonModule: true` in tsconfig.app.json).
 - Stack: Vite + React 19 + TS + date-fns, plain CSS.
 
 ## Lessons Learned and Mistakes to Avoid

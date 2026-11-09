@@ -30,6 +30,19 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
     expect(await page.locator('.stats__year').innerText()).toMatch(/^\d{4}$/)
   })
 
+  await test.step('1b. About modal shows the app version', async () => {
+    const pkg = JSON.parse(
+      fs.readFileSync(new URL('../../package.json', import.meta.url), 'utf8'),
+    ) as { version: string }
+
+    await page.locator('.topbar .btn--icon').click()
+    await expect(page.locator('.modal--about')).toHaveCount(1)
+    await expect(page.locator('.about__version')).toContainText(`Versión ${pkg.version}`)
+
+    await page.keyboard.press('Escape')
+    await expect(page.locator('.modal--about')).toHaveCount(0)
+  })
+
   await test.step('2. Fill days with one click', async () => {
     const firstDay = page.locator('.day[data-iso]').first()
     await firstDay.locator('.day__number').click() // number area = fill

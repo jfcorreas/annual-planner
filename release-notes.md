@@ -4,9 +4,18 @@ All notable changes to the Annual Planner webapp.
 Format based on [Keep a Changelog](https://keepachangelog.com/), versioning
 following [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [0.4.0] - 2026-11-09
 
-Fixes found while testing the app on an Android phone.
+Fixes and polish found while testing the app on an Android phone.
+
+### Added
+
+- **About modal**: an ℹ️ button (left of the title, separated by a divider)
+  opens a small dialog with the app version (read from `package.json`, so it
+  never drifts) and a short description of how the app stores data. Closes with
+  ✕, Escape or a click outside the dialog.
+- **New favicon**: the tab icon is now the calendar PNG shipped with the
+  project (`synology-calendar.png`), replacing the old SVG.
 
 ### Fixed
 

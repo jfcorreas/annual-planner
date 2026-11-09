@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { act, fireEvent, render, waitFor } from '@testing-library/react'
 import App from './App'
+import pkg from '../package.json'
 import { daysOfYear, isoDate } from './utils/dates'
 
 const YEAR = new Date().getFullYear()
@@ -252,6 +253,44 @@ describe('tag detail modal', () => {
     const chip = container.querySelector('.zoom .tag-chip') as HTMLElement
     expect(chip.querySelector('.tag-chip__sub')?.textContent).toBe('de tarde')
     expect(chip.title).toContain('de tarde')
+  })
+})
+
+describe('about modal', () => {
+  it('opens from the info button and shows the version from package.json', () => {
+    const { container } = renderApp()
+
+    const button = container.querySelector('.topbar .btn--icon') as HTMLButtonElement | null
+    expect(button).not.toBeNull()
+    expect(button!.getAttribute('aria-label')).toBe('Acerca de la aplicación')
+    expect(button!.title).toBe('Acerca de la aplicación')
+
+    fireEvent.click(button!)
+    const modal = container.querySelector('.modal--about')!
+    expect(modal).not.toBeNull()
+    expect(modal.getAttribute('aria-label')).toBe('Acerca de la aplicación')
+    expect(modal.textContent).toContain(`Versión ${pkg.version}`)
+    expect(modal.textContent).toMatch(/Versión \d+\.\d+\.\d+/)
+    expect(modal.textContent).toContain('navegador')
+  })
+
+  it('closes with Escape, with the ✕ button and with the backdrop', () => {
+    const { container } = renderApp()
+    const open = () => fireEvent.click(container.querySelector('.topbar .btn--icon')!)
+    const modal = () => container.querySelector('.modal--about')
+
+    open()
+    expect(modal()).not.toBeNull()
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(modal()).toBeNull()
+
+    open()
+    fireEvent.click(container.querySelector('.modal--about .modal__head .btn')!)
+    expect(modal()).toBeNull()
+
+    open()
+    fireEvent.click(container.querySelector('.modal-backdrop')!)
+    expect(modal()).toBeNull()
   })
 })
 

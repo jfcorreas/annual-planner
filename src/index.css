@@ -156,6 +156,11 @@ button {
   background: #fdf3f3;
 }
 
+.btn--icon {
+  padding: 6px 8px;
+  line-height: 1;
+}
+
 .status {
   display: inline-flex;
   align-items: center;
@@ -205,6 +210,13 @@ button {
 
 .topbar__icon {
   font-size: 20px;
+}
+
+/* Thin divider between the about button and the planner title block. */
+.topbar__sep {
+  width: 1px;
+  align-self: stretch;
+  background: var(--line);
 }
 
 .topbar__title {
@@ -923,6 +935,28 @@ button {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* ============================================================
+   About modal (ℹ️ next to the planner title)
+   ============================================================ */
+
+.modal--about {
+  width: min(420px, 100%);
+}
+
+.about__version {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.about__text {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--muted);
 }
 
 /* ============================================================

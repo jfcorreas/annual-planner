@@ -14,6 +14,7 @@ import { StatsBar } from './components/StatsBar'
 import { PlannersPanel } from './components/PlannersPanel'
 import { TagsEditor } from './components/TagsEditor'
 import { TagDetailModal } from './components/TagDetailModal'
+import { AboutModal } from './components/AboutModal'
 
 export default function App() {
   const store = useAppData()
@@ -24,6 +25,7 @@ export default function App() {
   const [zoomMonth, setZoomMonth] = useState<number | null>(null)
   const [tagsOpen, setTagsOpen] = useState(false)
   const [tagDetail, setTagDetail] = useState<{ date: string; tagId: string } | null>(null)
+  const [aboutOpen, setAboutOpen] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -35,13 +37,14 @@ export default function App() {
       ? activeTagId
       : (planner?.tags[0]?.id ?? null)
 
-  /* Esc closes the month zoom, the tags editor and the tag detail modal. */
+  /* Esc closes the month zoom, the tags editor, the tag detail modal and about. */
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key !== 'Escape') return
       setZoomMonth(null)
       setTagsOpen(false)
       setTagDetail(null)
+      setAboutOpen(false)
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
@@ -265,6 +268,7 @@ export default function App() {
         onImport={() => fileInputRef.current?.click()}
         onPrint={printPlanner}
         onDelete={deleteActivePlanner}
+        onAbout={() => setAboutOpen(true)}
       />
 
       <input
@@ -386,6 +390,8 @@ export default function App() {
           onClose={() => setTagDetail(null)}
         />
       )}
+
+      {aboutOpen && <AboutModal onClose={() => setAboutOpen(false)} />}
 
       {notice && (
         <div className="toast" role="status">
