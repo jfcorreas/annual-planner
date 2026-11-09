@@ -14,6 +14,12 @@ Fixes and polish found while testing the app on an Android phone.
   opens a small dialog with the app version (read from `package.json`, so it
   never drifts) and a short description of how the app stores data. Closes with
   ✕, Escape or a click outside the dialog.
+- **Installable PWA, works offline**: `vite-plugin-pwa` (v2, build-time only)
+  generates a web manifest (`manifest.webmanifest`, ES/ES) and a precaching
+  service worker (`sw.js`, 12 entries) with auto-update, so the app installs to
+  the home screen and opens without a connection. Icons are square PNGs derived
+  from the favicon (`icon-192.png`, `icon-512.png`); `index.html` also gained a
+  `theme-color` meta tag.
 - **New favicon**: the tab icon is now the calendar PNG shipped with the
   project (`synology-calendar.png`), replacing the old SVG.
 
@@ -34,6 +40,16 @@ Fixes and polish found while testing the app on an Android phone.
   L M X J V S D initials) and one column per week. A 5-week month goes from
   50×127 to 67×93 px cells and a 6-week month to 55×93 px, and every week stays
   visible without scrolling. Landscape and desktop keep the 7-column grid.
+
+### Notes
+
+- **Secure context required**: the service worker, the install prompt and the
+  offline cache work on `localhost` and `https://`, but **not** on plain
+  `http://<LAN-IP>` — Chrome hides the ServiceWorker API there. Install the PWA
+  from a `localhost` URL or from an HTTPS deployment.
+- **Update flow**: the worker auto-updates (`skipWaiting` + `clientsClaim`),
+  so after re-copying a new `dist/` to the installed web app, reload twice to
+  see the new build.
 
 ## [0.3.0] - 2026-11-08
 

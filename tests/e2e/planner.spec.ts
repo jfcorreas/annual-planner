@@ -43,6 +43,27 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
     await expect(page.locator('.modal--about')).toHaveCount(0)
   })
 
+  await test.step('1c. PWA: manifest, icons and service worker', async () => {
+    const manifest = await page.evaluate(async () => {
+      const link = document.querySelector<HTMLLinkElement>('link[rel="manifest"]')
+      if (!link) return null
+      const res = await fetch(link.href)
+      return {
+        status: res.status,
+        contentType: res.headers.get('content-type'),
+        json: (await res.json()) as { name: string; icons: { sizes: string }[] },
+      }
+    })
+    expect(manifest?.status).toBe(200)
+    expect(manifest?.contentType).toContain('manifest+json')
+    expect(manifest?.json.name).toBe('Planificador anual')
+    expect(manifest?.json.icons.map((i) => i.sizes)).toEqual(['192x192', '512x512'])
+
+    // localhost is a secure context, so the worker registers and controls the page.
+    await page.waitForFunction(() => navigator.serviceWorker.controller !== null)
+    expect(await page.evaluate(() => fetch('/sw.js').then((r) => r.status))).toBe(200)
+  })
+
   await test.step('2. Fill days with one click', async () => {
     const firstDay = page.locator('.day[data-iso]').first()
     await firstDay.locator('.day__number').click() // number area = fill
