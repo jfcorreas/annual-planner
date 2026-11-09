@@ -22,6 +22,12 @@ Fixes and polish found while testing the app on an Android phone.
   `theme-color` meta tag.
 - **New favicon**: the tab icon is now the calendar PNG shipped with the
   project (`synology-calendar.png`), replacing the old SVG.
+- **GitHub Pages deployment**: `.github/workflows/deploy-pages.yml` builds and
+  publishes `dist/` to Pages on every push to `main` (test suite runs first).
+  The build uses `--base=/annual-planner/`, so the manifest, the service worker
+  and every asset resolve under that sub-path: the site lives at
+  `https://jfcorreas.github.io/annual-planner/` over HTTPS, which is what makes
+  the PWA installable and offline-capable from a phone.
 
 ### Fixed
 
@@ -50,6 +56,10 @@ Fixes and polish found while testing the app on an Android phone.
 - **Update flow**: the worker auto-updates (`skipWaiting` + `clientsClaim`),
   so after re-copying a new `dist/` to the installed web app, reload twice to
   see the new build.
+- **Two bases**: the installed web app (`:4830`) is served at `/` (default
+  base), while Pages uses `/annual-planner/`. `vite.config.ts` therefore lets
+  the manifest `start_url`/`scope` default to Vite's base; pass
+  `--base=…` only for the Pages build.
 
 ## [0.3.0] - 2026-11-08
 
