@@ -15,6 +15,8 @@ export interface DayEntry {
 const OPEN_DELAY = 250
 /** Press-and-hold duration that removes the tag directly (touch friendly). */
 const HOLD_DELAY = 600
+/** Pointer movement (px) that turns the press into a drag (e.g. a month swipe). */
+const MOVE_TOLERANCE = 10
 
 interface DayCellProps {
   date: Date
@@ -115,6 +117,8 @@ function TagChip({ entry, iso, readOnly, clearing, variant, onOpen, onRemove }: 
   const holdTimer = useRef<number | null>(null)
   // Set by a long press, consumed by the click that follows the release.
   const suppressClick = useRef(false)
+  // Where the press started, to tell a hold from a drag (month swipe).
+  const origin = useRef<{ x: number; y: number } | null>(null)
 
   useEffect(
     () => () => {
@@ -138,9 +142,10 @@ function TagChip({ entry, iso, readOnly, clearing, variant, onOpen, onRemove }: 
     }
   }
 
-  function handlePointerDown(_event: PointerEvent<HTMLButtonElement>) {
+  function handlePointerDown(event: PointerEvent<HTMLButtonElement>) {
     if (readOnly || clearing) return
     suppressClick.current = false
+    origin.current = { x: event.clientX, y: event.clientY }
     clearHoldTimer()
     holdTimer.current = window.setTimeout(() => {
       holdTimer.current = null
@@ -151,6 +156,20 @@ function TagChip({ entry, iso, readOnly, clearing, variant, onOpen, onRemove }: 
       // underneath and fill it by mistake: swallow that one trailing click.
       swallowNextClick()
     }, HOLD_DELAY)
+  }
+
+  /** A drag (e.g. swiping to the next month) is not a hold: drop the timer. */
+  function handlePointerMove(event: PointerEvent<HTMLButtonElement>) {
+    const start = origin.current
+    if (!start || holdTimer.current === null) return
+    if (Math.hypot(event.clientX - start.x, event.clientY - start.y) <= MOVE_TOLERANCE) return
+    origin.current = null
+    clearHoldTimer()
+  }
+
+  function handlePointerUp() {
+    origin.current = null
+    clearHoldTimer()
   }
 
   function handleClick(event: MouseEvent<HTMLButtonElement>) {
@@ -197,9 +216,10 @@ function TagChip({ entry, iso, readOnly, clearing, variant, onOpen, onRemove }: 
       disabled={readOnly}
       onClick={handleClick}
       onPointerDown={handlePointerDown}
-      onPointerUp={clearHoldTimer}
-      onPointerLeave={clearHoldTimer}
-      onPointerCancel={clearHoldTimer}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerLeave={handlePointerUp}
+      onPointerCancel={handlePointerUp}
       onKeyDown={handleKeyDown}
     >
       {variant === 'month' ? (

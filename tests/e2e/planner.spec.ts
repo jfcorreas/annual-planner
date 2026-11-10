@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import { expect, test } from '@playwright/test'
+import type { Page } from '@playwright/test'
 
 /**
  * End-to-end smoke test of the whole app, ported from the original
@@ -312,5 +313,88 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
       contentType: 'image/png',
     })
     expect(errors).toEqual([])
+  })
+})
+
+/** Every day cell of the open month must be on screen and the grid must not scroll. */
+async function expectMonthFits(page: Page, width: number, height: number) {
+  const rects = await page.locator('.zoom .day').evaluateAll((days) =>
+    days.map((day) => {
+      const r = day.getBoundingClientRect()
+      return { top: r.top, bottom: r.bottom, left: r.left, right: r.right }
+    }),
+  )
+  expect(rects.length).toBeGreaterThan(28)
+  for (const r of rects) {
+    expect(r.top).toBeGreaterThanOrEqual(-1)
+    expect(r.left).toBeGreaterThanOrEqual(-1)
+    expect(r.bottom).toBeLessThanOrEqual(height + 1)
+    expect(r.right).toBeLessThanOrEqual(width + 1)
+  }
+  const gridScrolls = await page
+    .locator('.zoom__grid')
+    .evaluate((grid) => grid.scrollHeight > grid.clientHeight + 1)
+  expect(gridScrolls).toBe(false)
+}
+
+/** Horizontal drag over the zoom: to the left = next month, to the right = previous. */
+async function dragAcrossZoom(page: Page, dx: number, dayIndex = 15) {
+  const box = await page.locator('.zoom .day[data-iso]').nth(dayIndex).boundingBox()
+  if (!box) throw new Error('The day cell is not on screen')
+  const x = box.x + box.width / 2
+  const y = box.y + Math.min(8, box.height / 2)
+  await page.mouse.move(x, y)
+  await page.mouse.down()
+  await page.mouse.move(x + dx, y, { steps: 5 })
+  await page.mouse.up()
+}
+
+test('month zoom on a phone: portrait and landscape', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/', { waitUntil: 'networkidle' })
+  await page.locator('.month-col__zoom', { hasText: 'Enero' }).click()
+  await expect(page.locator('.zoom')).toHaveCount(1)
+
+  await test.step('portrait: the month and both panels fit without scrolling', async () => {
+    await expectMonthFits(page, 390, 844)
+    await expect(page.locator('.zoom__bar')).toBeInViewport()
+    await expect(page.locator('.zoom__stats')).toBeInViewport()
+  })
+
+  await test.step('portrait: a lateral drag moves to the neighbouring month', async () => {
+    const chips = await page.locator('.zoom .tag-chip').count()
+    await dragAcrossZoom(page, -70)
+    expect((await page.locator('.zoom__title').innerText()).toLowerCase()).toContain('febrero')
+    await dragAcrossZoom(page, 70)
+    expect((await page.locator('.zoom__title').innerText()).toLowerCase()).toContain('enero')
+    // The swipe must not leave a day filled behind it
+    expect(await page.locator('.zoom .tag-chip').count()).toBe(chips)
+  })
+
+  await page.setViewportSize({ width: 812, height: 375 })
+
+  await test.step('landscape: all rows fit; the panels are reached by scrolling', async () => {
+    await expectMonthFits(page, 812, 375)
+
+    const zoom = page.locator('.zoom')
+    const statsTop = () =>
+      page.locator('.zoom__stats').evaluate((el) => el.getBoundingClientRect().top)
+
+    // The overlay scrolls: the stats panel waits below the fold…
+    expect(await zoom.evaluate((el) => el.scrollHeight > el.clientHeight + 1)).toBe(true)
+    expect(await statsTop()).toBeGreaterThanOrEqual(374)
+
+    await zoom.evaluate((el) => el.scrollTo(0, el.scrollHeight))
+    await expect(page.locator('.zoom__stats')).toBeInViewport()
+
+    // …and back at the top the bar is there again, with the panel below.
+    await zoom.evaluate((el) => el.scrollTo(0, 0))
+    await expect(page.locator('.zoom__bar')).toBeInViewport()
+    expect(await statsTop()).toBeGreaterThanOrEqual(374)
+  })
+
+  await test.step('landscape: the same lateral drag moves to the next month', async () => {
+    await dragAcrossZoom(page, -70)
+    expect((await page.locator('.zoom__title').innerText()).toLowerCase()).toContain('febrero')
   })
 })

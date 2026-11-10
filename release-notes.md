@@ -4,6 +4,34 @@ All notable changes to the Annual Planner webapp.
 Format based on [Keep a Changelog](https://keepachangelog.com/), versioning
 following [SemVer](https://semver.org/).
 
+## [0.5.0] - 2026-11-10
+
+Month zoom on a phone: swipe to change the month, and a landscape layout
+that shows the whole month on one screen.
+
+### Added
+
+- **Lateral scroll between months**: dragging sideways over the month zoom
+  (touch or mouse, at least 48 px and clearly more horizontal than vertical)
+  goes to the next month when the finger moves left and to the previous one
+  when it moves right — the same as the ◀ ▶ buttons, and just as unable to
+  leave the year. The click the drag leaves behind is swallowed, so a swipe
+  never fills a day by mistake, and dragging across a tag chip no longer
+  counts as the press-and-hold that removes it (a hold without movement
+  still removes it).
+
+### Changed
+
+- **Landscape on phones and tablets (up to 1100 px wide)**: every week row
+  of the month fits on screen at once. The grid stops scrolling internally:
+  it takes the room left by the top bar and the day cells shrink to fit it,
+  so the whole month is visible without any vertical scrolling inside the
+  grid. The overlay itself scrolls instead — down to reach the statistics
+  panel, which waits just below the fold, up to reach the top bar. The
+  interaction hint is hidden here, as it already was in portrait.
+- Portrait is untouched: the transposed grid and both panels still fit the
+  screen with no scrolling at all.
+
 ## [0.4.0] - 2026-11-09
 
 Fixes and polish found while testing the app on an Android phone.

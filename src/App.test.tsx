@@ -164,6 +164,33 @@ describe('filling days', () => {
     }
   })
 
+  it('dragging a chip (month swipe) cancels the press-and-hold removal', () => {
+    vi.useFakeTimers()
+    try {
+      const { container } = renderApp()
+      const iso = firstIso()
+      fillDay(container, iso)
+
+      const chip = chipsOf(dayCell(container, iso))[0]
+      fireEvent.pointerDown(chip, { clientX: 40, clientY: 40 })
+      fireEvent.pointerMove(chip, { clientX: 140, clientY: 44 }) // lateral drag
+      act(() => {
+        vi.advanceTimersByTime(600)
+      })
+      expect(chipsOf(dayCell(container, iso))).toHaveLength(1)
+
+      fireEvent.pointerUp(chip, { clientX: 140, clientY: 44 })
+      // A hold without movement still removes it.
+      fireEvent.pointerDown(chip, { clientX: 40, clientY: 40 })
+      act(() => {
+        vi.advanceTimersByTime(600)
+      })
+      expect(chipsOf(dayCell(container, iso))).toHaveLength(0)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('clear mode empties a day in one click', () => {
     const { container } = renderApp()
     const iso = firstIso()

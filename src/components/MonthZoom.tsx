@@ -1,8 +1,15 @@
+import { useEffect, useRef } from 'react'
+import type { MouseEvent, PointerEvent } from 'react'
 import type { DayTag, Tag } from '../types'
 import { MONTH_NAMES, WEEKDAY_INITIALS, WEEKDAY_NAMES, weeksOfMonth } from '../utils/dates'
 import type { Stats } from '../utils/stats'
 import { WeekRow } from './WeekRow'
 import { StatsBar } from './StatsBar'
+
+/** Horizontal distance (px) a drag must cover before it changes the month. */
+const SWIPE_MIN = 48
+/** How much wider than tall the drag has to be, to ignore diagonal scrolls. */
+const SWIPE_RATIO = 1.2
 
 interface MonthZoomProps {
   year: number
@@ -28,6 +35,8 @@ interface MonthZoomProps {
 /**
  * Month zoom: overlaps the year view (fixed overlay).
  * Wide cells showing full weekday names and full tag labels.
+ * A lateral drag (touch or mouse) over the overlay moves to the
+ * neighbouring month, like the ◀ ▶ buttons.
  */
 export function MonthZoom({
   year,
@@ -45,9 +54,70 @@ export function MonthZoom({
   onNext,
 }: MonthZoomProps) {
   const weeks = weeksOfMonth(year, month)
+  const rootRef = useRef<HTMLDivElement>(null)
+  /** Pointer that started the current drag (cleared once it becomes a swipe). */
+  const drag = useRef<{ id: number; x: number; y: number } | null>(null)
+  /** Set while a swipe navigates: the click it leaves behind must do nothing. */
+  const swiped = useRef(false)
+
+  // A swipe can be fired while scrolled down on the stats panel; the new
+  // month must open showing its grid.
+  useEffect(() => {
+    if (rootRef.current) rootRef.current.scrollTop = 0
+  }, [month])
+
+  /** Lateral drag over the zoom = go to the neighbouring month. */
+  function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
+    drag.current = { id: event.pointerId, x: event.clientX, y: event.clientY }
+    swiped.current = false
+  }
+
+  function handlePointerMove(event: PointerEvent<HTMLDivElement>) {
+    const start = drag.current
+    if (!start || start.id !== event.pointerId || swiped.current) return
+    // A hover (mouse/pen with no button down) must not reuse a stale origin.
+    if (event.pointerType !== 'touch' && event.buttons === 0) {
+      drag.current = null
+      return
+    }
+    const dx = event.clientX - start.x
+    const dy = event.clientY - start.y
+    if (Math.abs(dx) < SWIPE_MIN || Math.abs(dx) < Math.abs(dy) * SWIPE_RATIO) return
+    drag.current = null
+    swiped.current = true
+    // Finger to the left = next month, to the right = previous one.
+    if (dx < 0) {
+      if (month < 11) onNext()
+    } else if (month > 0) {
+      onPrev()
+    }
+  }
+
+  function releasePointer(event: PointerEvent<HTMLDivElement>) {
+    if (drag.current?.id === event.pointerId) drag.current = null
+  }
+
+  /** The swipe already navigated: swallow the click it may leave behind. */
+  function handleClickCapture(event: MouseEvent<HTMLDivElement>) {
+    if (!swiped.current) return
+    swiped.current = false
+    event.stopPropagation()
+    event.preventDefault()
+  }
 
   return (
-    <div className="zoom" role="dialog" aria-modal="false" aria-label={`${MONTH_NAMES[month]} ${year}`}>
+    <div
+      className="zoom"
+      ref={rootRef}
+      role="dialog"
+      aria-modal="false"
+      aria-label={`${MONTH_NAMES[month]} ${year}`}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={releasePointer}
+      onPointerCancel={releasePointer}
+      onClickCapture={handleClickCapture}
+    >
       <div className="zoom__bar">
         <button type="button" className="btn" onClick={onClose}>
           ← Volver al año
