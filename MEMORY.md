@@ -2,8 +2,8 @@
 Project Memory between sessions. Maximum ~50 lines: summarize or remove anything that no longer adds value.
 
 ## Current Status
-- v0.5.0 built (not tagged): month zoom swipe + landscape fit. `release-notes.md`
-  updated; Pages/PWA still serve 0.4.0 until this is pushed to `main`.
+- v0.5.0 tagged + pushed at `e57dd21` (month zoom swipe + landscape fit).
+  Pages redeploys from `main`; the PWA picks the build up after two reloads.
 - Green: `tsc -b`, oxlint, `npm test` (153), `npm run test:e2e` (2, incl. a
   phone-viewport test: portrait + landscape).
 - LAN test: `python3 -m http.server 4831 --bind 0.0.0.0 --directory dist`.
