@@ -2,7 +2,8 @@
 Project Memory between sessions. Maximum ~50 lines: summarize or remove anything that no longer adds value.
 
 ## Current Status
-- v0.5.1 prepared (day detail modal + icon-only chips); commit/tag/push pending.
+- v0.5.1 tagged + pushed at `c01c0a6` (day detail modal + icon-only chips).
+  Pages redeploys from `main`; the PWA picks the build up after two reloads.
 - Green: `tsc -b`, oxlint, `npm test` (164), `npm run test:e2e` (2, incl. a
   phone-viewport test: portrait + landscape).
 - LAN test: `python3 -m http.server 4831 --bind 0.0.0.0 --directory dist`.
@@ -52,5 +53,4 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
 - pt→px in print: A5 landscape content ≈515px tall; keep print styles compact.
 
 ## Next Steps
-- Commit + tag `v0.5.1` + push (release commit prepared, not yet made).
 - Optional `/code-review`.
