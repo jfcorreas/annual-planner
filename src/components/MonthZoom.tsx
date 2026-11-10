@@ -22,6 +22,7 @@ interface MonthZoomProps {
   /** Statistics of this month, shown at the bottom of the planner. */
   stats: Stats
   onDayClick: (date: string) => void
+  onDayInfo: (date: string) => void
   onTagOpen: (date: string, tagId: string) => void
   onTagRemove: (date: string, tagId: string) => void
   /** Close the zoom and go back to the year view. */
@@ -47,6 +48,7 @@ export function MonthZoom({
   clearing,
   stats,
   onDayClick,
+  onDayInfo,
   onTagOpen,
   onTagRemove,
   onClose,
@@ -145,7 +147,7 @@ export function MonthZoom({
         <span className="zoom__hint">
           {readOnly
             ? 'Planner archivado — solo lectura'
-            : 'Clic en un día = aplicar la etiqueta activa · clic en la etiqueta = ver detalle · doble clic o mantener pulsado = quitarla'}
+            : 'Clic en un día = aplicar la etiqueta activa · clic en el número = detalle del día · clic en la etiqueta = ver detalle · doble clic o mantener pulsado = quitarla'}
         </span>
       </div>
 
@@ -176,6 +178,7 @@ export function MonthZoom({
               clearing={clearing}
               variant="month"
               onDayClick={onDayClick}
+              onDayInfo={onDayInfo}
               onTagOpen={onTagOpen}
               onTagRemove={onTagRemove}
             />

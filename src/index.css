@@ -384,10 +384,14 @@ button {
   cursor: not-allowed;
 }
 
+/* The number is a button (opens the day detail): strip the UA button look. */
 .day__number {
   font-weight: 700;
   text-align: right;
-  padding-right: 2px;
+  padding: 0 2px 0 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
 }
 
 .day__weekday {
@@ -448,8 +452,25 @@ button {
   transform: scale(0.94);
 }
 
+/* Icon + label of a month chip side by side (the label is dropped on
+   small cells, leaving an icon-only chip). */
+.tag-chip__line {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+/* A plain tag has no icon: don't leave a phantom gap for it. */
+.tag-chip__icon:empty {
+  display: none;
+}
+
 .tag-chip__label,
 .tag-chip__sub {
+  min-width: 0;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -817,7 +838,8 @@ button {
   display: grid;
   place-items: center;
   padding: 16px;
-  z-index: 50;
+  /* Above the month zoom (50), below the toast (60). */
+  z-index: 55;
 }
 
 .modal {
@@ -1024,6 +1046,63 @@ button {
 }
 
 /* ============================================================
+   Day detail modal (one click on the day number)
+   ============================================================ */
+
+.modal--day-detail {
+  width: min(420px, 100%);
+}
+
+.day-detail__title {
+  margin: 0;
+  font-size: 16px;
+}
+
+.day-detail__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.day-detail__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.day-detail__text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+/* This modal exists to read what the chips clip: no ellipsis here. */
+.day-detail__label {
+  font-size: 13.5px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.day-detail__sub {
+  font-size: 12px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.day-detail__empty {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+/* ============================================================
    Toast
    ============================================================ */
 
@@ -1176,6 +1255,29 @@ button {
     gap: 2px;
     margin-top: 2px;
   }
+
+  /* Small cells: month chips drop their labels and become icon-only bars
+     (plain tags keep a bar of their colour). Full text lives in the
+     day detail modal. */
+  .tag-chip--month {
+    height: 12px;
+    padding: 0 4px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  .tag-chip--month .tag-chip__label,
+  .tag-chip--month .tag-chip__sub {
+    display: none;
+  }
+
+  .tag-chip--month .tag-chip__icon {
+    font-size: 10px;
+    line-height: 1;
+  }
 }
 
 /* ============================================================
@@ -1218,6 +1320,27 @@ button {
   .zoom .day__tags {
     margin-top: 2px;
     gap: 2px;
+  }
+
+  /* Same icon-only chips as portrait: the landscape cells are narrow too. */
+  .tag-chip--month {
+    height: 12px;
+    padding: 0 4px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  .tag-chip--month .tag-chip__label,
+  .tag-chip--month .tag-chip__sub {
+    display: none;
+  }
+
+  .tag-chip--month .tag-chip__icon {
+    font-size: 10px;
+    line-height: 1;
   }
 
   /* Out of the flex flow, right below the viewport: the grid gets the whole

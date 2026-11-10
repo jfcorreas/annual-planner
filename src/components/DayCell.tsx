@@ -27,6 +27,8 @@ interface DayCellProps {
   clearing: boolean
   /** Click on the empty area: apply the active tag (or clear when clearing). */
   onDayClick: (date: string) => void
+  /** Click on the day number: show the day detail modal. */
+  onDayInfo: (date: string) => void
   /** One click on a chip (debounced): show the tag detail modal. */
   onTagOpen: (date: string, tagId: string) => void
   /** Double click / press-and-hold on a chip: remove it from the day. */
@@ -42,6 +44,7 @@ export function DayCell({
   readOnly,
   clearing,
   onDayClick,
+  onDayInfo,
   onTagOpen,
   onTagRemove,
   variant,
@@ -53,6 +56,12 @@ export function DayCell({
   function handleDayClick() {
     if (readOnly) return
     onDayClick(iso)
+  }
+
+  /** The number opens the day detail; it must not also fill the day. */
+  function handleDayInfo(event: MouseEvent<HTMLButtonElement>) {
+    event.stopPropagation()
+    onDayInfo(iso)
   }
 
   const title = readOnly
@@ -76,7 +85,19 @@ export function DayCell({
         }
       }}
     >
-      <span className="day__number">{String(date.getDate()).padStart(2, '0')}</span>
+      <button
+        type="button"
+        className="day__number"
+        title={`${iso}\nClic: detalle del día`}
+        onClick={handleDayInfo}
+        onKeyDown={(event) => {
+          // Enter/Space must not reach the day (it would fill it); Escape
+          // and everything else keep bubbling so modals can close.
+          if (event.key === 'Enter' || event.key === ' ') event.stopPropagation()
+        }}
+      >
+        {String(date.getDate()).padStart(2, '0')}
+      </button>
       <span className="day__weekday">{WEEKDAY_INITIALS[(date.getDay() + 6) % 7]}</span>
       <span className="day__tags">
         {entries.map((entry) => (
@@ -224,9 +245,9 @@ function TagChip({ entry, iso, readOnly, clearing, variant, onOpen, onRemove }: 
     >
       {variant === 'month' ? (
         <>
-          <span className="tag-chip__label">
-            {tagIcon(tag)}
-            {tag.label}
+          <span className="tag-chip__line">
+            <span className="tag-chip__icon">{tagIcon(tag)}</span>
+            <span className="tag-chip__label">{tag.label}</span>
           </span>
           {subtitle ? <span className="tag-chip__sub">{subtitle}</span> : null}
         </>

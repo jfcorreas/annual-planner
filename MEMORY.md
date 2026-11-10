@@ -2,9 +2,8 @@
 Project Memory between sessions. Maximum ~50 lines: summarize or remove anything that no longer adds value.
 
 ## Current Status
-- v0.5.0 tagged + pushed at `e57dd21` (month zoom swipe + landscape fit).
-  Pages redeploys from `main`; the PWA picks the build up after two reloads.
-- Green: `tsc -b`, oxlint, `npm test` (153), `npm run test:e2e` (2, incl. a
+- v0.5.1 prepared (day detail modal + icon-only chips); commit/tag/push pending.
+- Green: `tsc -b`, oxlint, `npm test` (164), `npm run test:e2e` (2, incl. a
   phone-viewport test: portrait + landscape).
 - LAN test: `python3 -m http.server 4831 --bind 0.0.0.0 --directory dist`.
 - Installed as Omarchy web app (:4830, systemd `annual-planner`); **re-copy
@@ -23,6 +22,11 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
 - Storage v2 under `annual-planner:v2`; v1 never read (blocking "Empezar de cero").
 - Chip: 1 click = detail modal (250ms debounce), dblclick / 600ms hold = remove;
   a drag >10px cancels the hold (it is a month swipe, not a hold).
+- Day number = button → DayDetailModal (display-only, works read-only, in year
+  view and zoom, every device); stopPropagation on click/Enter/Space only —
+  NOT on Escape, or the modal could not be closed by keyboard.
+- Icon-only month chips only ≤700px + landscape (label/sub hidden in CSS);
+  desktop zoom keeps labels. Backdrop z-index 55 (zoom 50, toast 60).
 - Stack: Vite + React 19 + TS + date-fns, plain CSS; PWA via `vite-plugin-pwa@2`
   (the only build-time dep).
 
@@ -48,6 +52,5 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
 - pt→px in print: A5 landscape content ≈515px tall; keep print styles compact.
 
 ## Next Steps
+- Commit + tag `v0.5.1` + push (release commit prepared, not yet made).
 - Optional `/code-review`.
-- Phone month view: tag labels ellipsize in small cells; open question =
-  dot/icon-only chips or keep labels and let them clip.

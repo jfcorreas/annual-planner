@@ -5,8 +5,10 @@ import {
   WEEKDAY_NAMES,
   daysOfMonth,
   daysOfYear,
+  formatIsoDate,
   isWeekend,
   mondayIndex,
+  weekdayOfIso,
   weeksOfMonth,
   weeksOfYear,
   isoDate,
@@ -105,5 +107,35 @@ describe('weeksOfYear', () => {
   it('leap year has 366 slots filled', () => {
     const days = weeksOfYear(2028).flat().filter((d): d is Date => d !== null)
     expect(days).toHaveLength(366)
+  })
+})
+
+describe('formatIsoDate', () => {
+  it('writes "5 de enero de 2026" with a lowercase Spanish month', () => {
+    expect(formatIsoDate('2026-01-05')).toBe('5 de enero de 2026')
+    expect(formatIsoDate('2026-12-31')).toBe('31 de diciembre de 2026')
+  })
+
+  it('keeps a single-digit day without padding', () => {
+    expect(formatIsoDate('2026-07-01')).toBe('1 de julio de 2026')
+  })
+
+  it('returns the input unchanged when it is not a valid ISO date', () => {
+    expect(formatIsoDate('2026-13-01')).toBe('2026-13-01')
+    expect(formatIsoDate('garbage')).toBe('garbage')
+  })
+})
+
+describe('weekdayOfIso', () => {
+  it('returns the Monday-first weekday name', () => {
+    expect(weekdayOfIso('2026-01-05')).toBe('Lunes')
+    expect(weekdayOfIso('2026-01-04')).toBe('Domingo')
+    expect(weekdayOfIso('2026-10-19')).toBe('Lunes')
+    expect(weekdayOfIso('2026-10-25')).toBe('Domingo')
+  })
+
+  it('returns an empty string for an invalid date', () => {
+    expect(weekdayOfIso('nope')).toBe('')
+    expect(weekdayOfIso('2026-02-30')).toBe('')
   })
 })

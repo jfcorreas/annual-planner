@@ -9,6 +9,7 @@ interface YearViewProps {
   readOnly: boolean
   clearing: boolean
   onDayClick: (date: string) => void
+  onDayInfo: (date: string) => void
   onTagOpen: (date: string, tagId: string) => void
   onTagRemove: (date: string, tagId: string) => void
   onZoom: (month: number) => void
@@ -22,6 +23,7 @@ export function YearView({
   readOnly,
   clearing,
   onDayClick,
+  onDayInfo,
   onTagOpen,
   onTagRemove,
   onZoom,
@@ -38,6 +40,7 @@ export function YearView({
           readOnly={readOnly}
           clearing={clearing}
           onDayClick={onDayClick}
+          onDayInfo={onDayInfo}
           onTagOpen={onTagOpen}
           onTagRemove={onTagRemove}
           onZoom={onZoom}

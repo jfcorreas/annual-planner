@@ -3,7 +3,7 @@ import type { FormEvent } from 'react'
 import type { Tag } from '../types'
 import { tagIcon } from '../utils/tags'
 import { SUBTITLE_MAX_LENGTH } from '../types'
-import { MONTH_NAMES } from '../utils/dates'
+import { formatIsoDate } from '../utils/dates'
 
 interface TagDetailModalProps {
   /** Tag applied on the day that was clicked. */
@@ -71,7 +71,7 @@ export function TagDetailModal({
           </div>
           <div className="tag-detail__row">
             <dt>Fecha</dt>
-            <dd>{formatIso(date)}</dd>
+            <dd>{formatIsoDate(date)}</dd>
           </div>
           <div className="tag-detail__row">
             <dt>Aplicaciones</dt>
@@ -106,15 +106,4 @@ export function TagDetailModal({
       </div>
     </div>
   )
-}
-
-/** "2026-01-05" -> "5 de enero de 2026" (ES/ES month names, no Date/DST). */
-function formatIso(iso: string): string {
-  const day = Number(iso.slice(8, 10))
-  const month = Number(iso.slice(5, 7))
-  const year = iso.slice(0, 4)
-  const name = MONTH_NAMES[month - 1]
-  if (!name || Number.isNaN(day)) return iso
-  const lower = name.charAt(0).toLowerCase() + name.slice(1)
-  return `${day} de ${lower} de ${year}`
 }

@@ -14,6 +14,8 @@ import { StatsBar } from './components/StatsBar'
 import { PlannersPanel } from './components/PlannersPanel'
 import { TagsEditor } from './components/TagsEditor'
 import { TagDetailModal } from './components/TagDetailModal'
+import { DayDetailModal } from './components/DayDetailModal'
+import type { DayEntry } from './components/DayCell'
 import { AboutModal } from './components/AboutModal'
 
 export default function App() {
@@ -25,6 +27,7 @@ export default function App() {
   const [zoomMonth, setZoomMonth] = useState<number | null>(null)
   const [tagsOpen, setTagsOpen] = useState(false)
   const [tagDetail, setTagDetail] = useState<{ date: string; tagId: string } | null>(null)
+  const [dayDetail, setDayDetail] = useState<string | null>(null)
   const [aboutOpen, setAboutOpen] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -37,13 +40,14 @@ export default function App() {
       ? activeTagId
       : (planner?.tags[0]?.id ?? null)
 
-  /* Esc closes the month zoom, the tags editor, the tag detail modal and about. */
+  /* Esc closes the month zoom, the tags editor, both detail modals and about. */
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key !== 'Escape') return
       setZoomMonth(null)
       setTagsOpen(false)
       setTagDetail(null)
+      setDayDetail(null)
       setAboutOpen(false)
     }
     window.addEventListener('keydown', onKeyDown)
@@ -80,6 +84,17 @@ export default function App() {
       planner && zoomMonth !== null ? daysOfMonth(planner.year, zoomMonth).map(isoDate) : [],
     [planner, zoomMonth],
   )
+
+  /** Resolved entries (tag objects) of the day shown in the day detail modal. */
+  const dayEntries = useMemo<DayEntry[]>(() => {
+    if (!planner || !dayDetail) return []
+    const entries: DayEntry[] = []
+    for (const dayTag of planner.days[dayDetail] ?? []) {
+      const tag = planner.tags.find((t) => t.id === dayTag.tagId)
+      if (tag) entries.push({ tag, subtitle: dayTag.subtitle })
+    }
+    return entries
+  }, [planner, dayDetail])
 
   const yearStats = useMemo(
     () => (planner ? computeStats(planner.days, planner.tags, yearIso) : null),
@@ -158,6 +173,11 @@ export default function App() {
   function handleTagOpen(date: string, tagId: string) {
     if (readOnly) return
     setTagDetail({ date, tagId })
+  }
+
+  /** Click on the day number: open the day detail modal (read-only safe). */
+  function handleDayInfo(date: string) {
+    setDayDetail(date)
   }
 
   function handleTagRemove(date: string, tagId: string) {
@@ -304,6 +324,7 @@ export default function App() {
           readOnly={Boolean(readOnly)}
           clearing={clearing}
           onDayClick={handleDayClick}
+          onDayInfo={handleDayInfo}
           onTagOpen={handleTagOpen}
           onTagRemove={handleTagRemove}
           onZoom={setZoomMonth}
@@ -320,6 +341,7 @@ export default function App() {
             clearing={clearing}
             stats={monthStats}
             onDayClick={handleDayClick}
+            onDayInfo={handleDayInfo}
             onTagOpen={handleTagOpen}
             onTagRemove={handleTagRemove}
             onClose={() => setZoomMonth(null)}
@@ -336,11 +358,13 @@ export default function App() {
           store.setActivePlannerId(id)
           setZoomMonth(null)
           setTagDetail(null)
+          setDayDetail(null)
         }}
         onCreate={(year) => {
           store.addPlanner(year)
           setZoomMonth(null)
           setTagDetail(null)
+          setDayDetail(null)
           setNotice(`＋ Planificador ${year} creado.`)
         }}
         onToggleStatus={toggleStatus}
@@ -348,6 +372,7 @@ export default function App() {
           store.removePlanner(id)
           setZoomMonth(null)
           setTagDetail(null)
+          setDayDetail(null)
         }}
       />
 
@@ -388,6 +413,14 @@ export default function App() {
           }
           onRemove={() => handleTagRemove(detail.date, detail.tagId)}
           onClose={() => setTagDetail(null)}
+        />
+      )}
+
+      {dayDetail && (
+        <DayDetailModal
+          date={dayDetail}
+          entries={dayEntries}
+          onClose={() => setDayDetail(null)}
         />
       )}
 

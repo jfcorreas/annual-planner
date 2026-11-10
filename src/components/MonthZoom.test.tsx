@@ -16,6 +16,7 @@ function renderZoom(overrides: Partial<Parameters<typeof MonthZoom>[0]> = {}) {
       clearing={false}
       stats={STATS}
       onDayClick={vi.fn()}
+      onDayInfo={vi.fn()}
       onTagOpen={vi.fn()}
       onTagRemove={vi.fn()}
       onClose={vi.fn()}

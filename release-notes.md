@@ -4,6 +4,31 @@ All notable changes to the Annual Planner webapp.
 Format based on [Keep a Changelog](https://keepachangelog.com/), versioning
 following [SemVer](https://semver.org/).
 
+## [0.5.1] - 2026-11-10
+
+Readability of the month view on small screens, and a new modal that shows
+the full detail of any day.
+
+### Added
+
+- **Day detail modal**: clicking or tapping the day number (in the year view
+  and in the month zoom, on any device, also in archived read-only planners)
+  opens a modal with the date and every tag of that day — labels and subtitles
+  in full, never clipped. It closes with Escape, the ✕ button or a click on
+  the backdrop, and it is display-only: editing stays on the chips. The number
+  no longer fills the day — that still happens when clicking the rest of the
+  cell.
+
+### Changed
+
+- **Icon-only chips in small cells**: on screens up to 700 px wide and in the
+  landscape layout, the month-view tag chips drop their labels and subtitles
+  and show only the tag icon (🏖️ / 🪪) on a colored bar — plain tags without
+  an icon keep the plain bar. The full text is one tap away in the new day
+  detail modal. Wide screens keep the labels as before.
+- The zoom hint now mentions the day detail: “clic en el número = detalle
+  del día”.
+
 ## [0.5.0] - 2026-11-10
 
 Month zoom on a phone: swipe to change the month, and a landscape layout

@@ -25,9 +25,9 @@ function chipsOf(cell: HTMLElement): HTMLElement[] {
   return [...cell.querySelectorAll('.tag-chip')] as HTMLElement[]
 }
 
-/** Click the number area of a day = apply the active tag. */
+/** Click the day (its empty area, not the number) = apply the active tag. */
 function fillDay(container: HTMLElement, iso: string) {
-  fireEvent.click(dayCell(container, iso).querySelector('.day__number')!)
+  fireEvent.click(dayCell(container, iso))
 }
 
 /** Checkbox of the tag form whose label contains the given text. */
@@ -156,9 +156,10 @@ describe('filling days', () => {
       expect(container.querySelector('.modal--tag-detail')).toBeNull()
 
       // The release click may land on the day underneath: it must not fill it.
-      fireEvent.click(dayCell(container, iso).querySelector('.day__number')!)
+      fireEvent.click(dayCell(container, iso))
       expect(chipsOf(dayCell(container, iso))).toHaveLength(0)
       expect(container.querySelector('.modal--tag-detail')).toBeNull()
+      expect(container.querySelector('.modal--day-detail')).toBeNull()
     } finally {
       vi.useRealTimers()
     }
@@ -283,6 +284,107 @@ describe('tag detail modal', () => {
   })
 })
 
+describe('day detail modal', () => {
+  it('opens from the day number with every tag and subtitle in full', async () => {
+    const { container } = renderApp()
+    const iso = firstIso()
+    fillDay(container, iso)
+
+    // A subtitle set through the tag detail modal must be shown here too.
+    fireEvent.click(chipsOf(dayCell(container, iso))[0])
+    await waitFor(() => expect(container.querySelector('.modal--tag-detail')).not.toBeNull())
+    fireEvent.change(container.querySelector('.tag-detail__form input')!, {
+      target: { value: 'de tarde' },
+    })
+    fireEvent.click(container.querySelector('.tag-detail__form button[type="submit"]')!)
+
+    fireEvent.click(dayCell(container, iso).querySelector('.day__number')!)
+    const modal = container.querySelector('.modal--day-detail')
+    expect(modal).not.toBeNull()
+    expect(modal!.getAttribute('aria-modal')).toBe('true')
+    expect(modal!.textContent).toContain(`1 de enero de ${YEAR}`)
+    expect(modal!.textContent).toContain('Guardia 24h')
+    expect(modal!.textContent).toContain('de tarde')
+  })
+
+  it('shows an empty state for a day with no tags', () => {
+    const { container } = renderApp()
+
+    fireEvent.click(dayCell(container, firstIso()).querySelector('.day__number')!)
+    const modal = container.querySelector('.modal--day-detail')
+    expect(modal).not.toBeNull()
+    expect(modal!.textContent).toContain('Sin etiquetas este día.')
+  })
+
+  it('the number click opens the modal without filling or emptying the day', () => {
+    const { container } = renderApp()
+    const iso = firstIso()
+
+    // Empty day: the modal opens and the day stays empty.
+    fireEvent.click(dayCell(container, iso).querySelector('.day__number')!)
+    expect(container.querySelector('.modal--day-detail')).not.toBeNull()
+    expect(chipsOf(dayCell(container, iso))).toHaveLength(0)
+    fireEvent.keyDown(window, { key: 'Escape' })
+
+    // Filled day: the number does not toggle the tag off.
+    fillDay(container, iso)
+    fireEvent.click(dayCell(container, iso).querySelector('.day__number')!)
+    expect(container.querySelector('.modal--day-detail')).not.toBeNull()
+    expect(chipsOf(dayCell(container, iso))).toHaveLength(1)
+  })
+
+  it('closes with Escape, with the ✕ button and with the backdrop', () => {
+    const { container } = renderApp()
+    const iso = firstIso()
+    const open = () =>
+      fireEvent.click(dayCell(container, iso).querySelector('.day__number')!)
+    const modal = () => container.querySelector('.modal--day-detail')
+
+    open()
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(modal()).toBeNull()
+
+    open()
+    fireEvent.click(modal()!.querySelector('.modal__head .btn')!)
+    expect(modal()).toBeNull()
+
+    open()
+    fireEvent.click(container.querySelector('.modal-backdrop')!)
+    expect(modal()).toBeNull()
+  })
+
+  it('opens from a day inside the month zoom too', () => {
+    const { container } = renderApp()
+    fillDay(container, firstIso())
+
+    fireEvent.click(container.querySelector('.month-col__zoom')!) // Enero
+    const zoomDay = container.querySelector('.zoom .day[data-iso]') as HTMLElement
+    fireEvent.click(zoomDay.querySelector('.day__number')!)
+
+    const modal = container.querySelector('.modal--day-detail')
+    expect(modal).not.toBeNull()
+    expect(modal!.textContent).toContain('Guardia 24h')
+
+    // The number inside the zoom must not apply the active tag either.
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(zoomDay.querySelectorAll('.tag-chip')).toHaveLength(1)
+  })
+
+  it('opens in a read-only (archived) planner: viewing only', () => {
+    const { container } = renderApp()
+    fillDay(container, firstIso())
+    fireEvent.click(container.querySelector('.topbar .status')!) // archivar
+
+    fireEvent.click(dayCell(container, firstIso()).querySelector('.day__number')!)
+    const modal = container.querySelector('.modal--day-detail')
+    expect(modal).not.toBeNull()
+    expect(modal!.textContent).toContain('Guardia 24h')
+    // No editing controls in this modal.
+    expect(modal!.querySelector('input')).toBeNull()
+    expect(modal!.querySelector('button[type="submit"]')).toBeNull()
+  })
+})
+
 describe('about modal', () => {
   it('opens from the info button and shows the version from package.json', () => {
     const { container } = renderApp()
@@ -372,9 +474,7 @@ describe('month zoom', () => {
 
     const july = `${YEAR}-07-01`
     const june = `${YEAR}-06-01`
-    fireEvent.click(
-      container.querySelector(`.zoom .day[data-iso="${july}"] .day__number`)!,
-    )
+    fireEvent.click(container.querySelector(`.zoom .day[data-iso="${july}"]`)!)
 
     // The chip lands on July 1st (zoom + year view), not on June 1st.
     expect(

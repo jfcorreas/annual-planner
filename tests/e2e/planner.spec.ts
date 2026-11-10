@@ -1,6 +1,16 @@
 import fs from 'node:fs'
 import { expect, test } from '@playwright/test'
-import type { Page } from '@playwright/test'
+import type { Locator, Page } from '@playwright/test'
+
+/**
+ * Click a day's empty area (just right of the number, never on it: the
+ * number opens the day detail modal) = apply the active tag.
+ */
+async function fillDay(page: Page, day: Locator) {
+  const number = await day.locator('.day__number').boundingBox()
+  if (!number) throw new Error('The day number is not on screen')
+  await page.mouse.click(number.x + number.width + 8, number.y + number.height / 2)
+}
 
 /**
  * End-to-end smoke test of the whole app, ported from the original
@@ -67,17 +77,17 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
 
   await test.step('2. Fill days with one click', async () => {
     const firstDay = page.locator('.day[data-iso]').first()
-    await firstDay.locator('.day__number').click() // number area = fill
+    await fillDay(page, firstDay)
     await expect(firstDay.locator('.tag-chip')).toHaveCount(1)
 
     // second tag on same day (switch tag first)
     await page.locator('.palette .chip', { hasText: 'Festivo nacional' }).click()
-    await firstDay.locator('.day__number').click()
+    await fillDay(page, firstDay)
     await expect(firstDay.locator('.tag-chip')).toHaveCount(2)
 
     // third tag must be rejected
     await page.locator('.palette .chip', { hasText: 'Diurno 12h' }).click()
-    await firstDay.locator('.day__number').click()
+    await fillDay(page, firstDay)
     await expect(firstDay.locator('.tag-chip')).toHaveCount(2)
     await expect(page.locator('.toast')).toHaveCount(1)
     await expect(page.locator('.toast')).toHaveCount(0, { timeout: 4000 }) // auto-hides
@@ -107,7 +117,7 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
 
   await test.step('3b. Press and hold removes a chip (touch)', async () => {
     const day = page.locator('.day[data-iso]').nth(10)
-    await day.locator('.day__number').click() // apply the active tag
+    await fillDay(page, day) // apply the active tag
     await expect(day.locator('.tag-chip')).toHaveCount(1)
 
     const chip = day.locator('.tag-chip').first()
@@ -122,9 +132,27 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
     await expect(day.locator('.tag-chip')).toHaveCount(0)
   })
 
+  await test.step('3c. The day number opens the day detail modal', async () => {
+    // A filled day: every tag of the day is listed in full.
+    await firstDay.locator('.day__number').click()
+    await expect(page.locator('.modal--day-detail')).toHaveCount(1)
+    await expect(page.locator('.day-detail__label')).toContainText('Festivo nacional')
+    await expect(page.locator('.modal--day-detail')).toContainText(/de enero de \d{4}/)
+    await page.keyboard.press('Escape')
+    await expect(page.locator('.modal--day-detail')).toHaveCount(0)
+    await expect(firstDay.locator('.tag-chip')).toHaveCount(1) // the day is untouched
+
+    // An empty day shows the empty state, and the click fills nothing.
+    const emptyDay = page.locator('.day[data-iso]').nth(11)
+    await emptyDay.locator('.day__number').click()
+    await expect(page.locator('.day-detail__empty')).toHaveCount(1)
+    await page.keyboard.press('Escape')
+    await expect(emptyDay.locator('.tag-chip')).toHaveCount(0)
+  })
+
   await test.step('4. Stats update', async () => {
     // Fill a day with the active (counted) tag so a count actually updates…
-    await page.locator('.day[data-iso]').nth(20).locator('.day__number').click() // Diurno 12h
+    await fillDay(page, page.locator('.day[data-iso]').nth(20)) // Diurno 12h
     const statsText = await page.locator('.planner .stats').innerText()
     expect(statsText).toMatch(/Diurno 12h\s*\n?\s*1/)
     // …while the holiday applied on day 1 stays out of the bars.
@@ -137,6 +165,8 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
     await expect(page.locator('.zoom__dow')).toHaveCount(7)
     expect((await page.locator('.zoom__title').innerText()).toLowerCase()).toContain('enero')
     await expect(page.locator('.zoom__stats')).toHaveCount(1)
+    // Wide screens keep the full labels on the month chips.
+    await expect(page.locator('.zoom .tag-chip__label').first()).toBeVisible()
     await testInfo.attach('month-zoom.png', {
       body: await page.screenshot(),
       contentType: 'image/png',
@@ -152,7 +182,7 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
     // fill inside zoom
     const zoomDay = page.locator('.zoom .day[data-iso]').first()
     const before = await zoomDay.locator('.tag-chip').count()
-    await zoomDay.locator('.day__number').click()
+    await fillDay(page, zoomDay)
     await expect(zoomDay.locator('.tag-chip')).toHaveCount(before + 1)
 
     await page.locator('.zoom .zoom__bar .btn', { hasText: 'Volver al año' }).click()
@@ -162,13 +192,13 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
   await test.step('6. Clear day mode', async () => {
     await page.locator('.chip--clear').click()
     await expect(page.locator('.chip--clear.chip--on')).toHaveCount(1)
-    await firstDay.locator('.day__number').click()
+    await fillDay(page, firstDay)
     await expect(firstDay.locator('.tag-chip')).toHaveCount(0)
     await page.locator('.chip--clear').click() // leave clear mode
   })
 
   await test.step('7. Persistence (localStorage)', async () => {
-    await page.locator('.day[data-iso]').nth(3).locator('.day__number').click()
+    await fillDay(page, page.locator('.day[data-iso]').nth(3))
     await page.reload({ waitUntil: 'networkidle' })
     await expect(page.locator('.day[data-iso]').nth(3).locator('.tag-chip')).toHaveCount(1)
     const stored = await page.evaluate(() => localStorage.getItem('annual-planner:v2'))
@@ -196,7 +226,7 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
     // Apply it to a free day
     await page.locator('.palette .chip', { hasText: 'Prueba tag' }).click()
     const tagDay = page.locator('.day[data-iso]').nth(4)
-    await tagDay.locator('.day__number').click()
+    await fillDay(page, tagDay)
     await expect(tagDay.locator('.tag-chip')).toHaveCount(1)
     await expect(tagDay.locator('.tag-chip')).toHaveAttribute('title', /^Prueba tag/)
 
@@ -240,7 +270,7 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
 
     const someDay = page.locator('.day[data-iso]').nth(5)
     const beforeArch = await someDay.locator('.tag-chip').count()
-    await someDay.locator('.day__number').click({ force: true })
+    await fillDay(page, someDay) // read-only: the click must do nothing
     await expect(someDay.locator('.tag-chip')).toHaveCount(beforeArch)
     await expect(page.locator('.palette .chip--clear')).toBeDisabled()
     await testInfo.attach('archived.png', {
@@ -369,6 +399,27 @@ test('month zoom on a phone: portrait and landscape', async ({ page }) => {
     expect((await page.locator('.zoom__title').innerText()).toLowerCase()).toContain('enero')
     // The swipe must not leave a day filled behind it
     expect(await page.locator('.zoom .tag-chip').count()).toBe(chips)
+  })
+
+  await test.step('portrait: chips are icon-only and the number opens the day detail', async () => {
+    // A filled day: the label and subtitle are hidden in small cells…
+    const day = page.locator('.zoom .day[data-iso]').nth(5)
+    await fillDay(page, day)
+    await expect(day.locator('.tag-chip')).toHaveCount(1)
+    await expect(day.locator('.tag-chip__label')).toBeHidden()
+    await expect(day.locator('.tag-chip__sub')).toBeHidden()
+
+    // …and the day number shows them in full inside the modal.
+    await day.locator('.day__number').click()
+    await expect(page.locator('.modal--day-detail')).toHaveCount(1)
+    await expect(page.locator('.day-detail__label')).toContainText('Guardia 24h')
+    // The ✕ closes only the modal (Escape would also leave the zoom).
+    await page.locator('.modal--day-detail .modal__head .btn').click()
+    await expect(page.locator('.modal--day-detail')).toHaveCount(0)
+    await expect(page.locator('.zoom')).toHaveCount(1)
+
+    // The number click must not have filled or emptied anything.
+    await expect(day.locator('.tag-chip')).toHaveCount(1)
   })
 
   await page.setViewportSize({ width: 812, height: 375 })

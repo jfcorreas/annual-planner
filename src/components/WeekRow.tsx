@@ -11,6 +11,7 @@ interface WeekRowProps {
   clearing: boolean
   variant: 'year' | 'month'
   onDayClick: (date: string) => void
+  onDayInfo: (date: string) => void
   onTagOpen: (date: string, tagId: string) => void
   onTagRemove: (date: string, tagId: string) => void
 }
@@ -24,6 +25,7 @@ export function WeekRow({
   clearing,
   variant,
   onDayClick,
+  onDayInfo,
   onTagOpen,
   onTagRemove,
 }: WeekRowProps) {
@@ -54,6 +56,7 @@ export function WeekRow({
             clearing={clearing}
             variant={variant}
             onDayClick={onDayClick}
+            onDayInfo={onDayInfo}
             onTagOpen={onTagOpen}
             onTagRemove={onTagRemove}
           />

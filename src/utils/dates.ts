@@ -79,3 +79,26 @@ export function weeksOfYear(year: number): (Date | null)[][] {
 
 /** Add n days to a date (re-exported for convenience in components). */
 export { addDays }
+
+/** "2026-01-05" -> "5 de enero de 2026" (ES/ES month names, no Date/DST). */
+export function formatIsoDate(iso: string): string {
+  const day = Number(iso.slice(8, 10))
+  const month = Number(iso.slice(5, 7))
+  const year = iso.slice(0, 4)
+  const name = MONTH_NAMES[month - 1]
+  if (!name || Number.isNaN(day)) return iso
+  const lower = name.charAt(0).toLowerCase() + name.slice(1)
+  return `${day} de ${lower} de ${year}`
+}
+
+/** "2026-01-05" -> "Lunes" (Monday-first weekday name, no Date/DST). */
+export function weekdayOfIso(iso: string): string {
+  const [year, month, day] = iso.split('-').map(Number)
+  if (!year || !month || !day) return ''
+  const date = new Date(Date.UTC(year, month - 1, day))
+  // Round-trip check: rejects 2026-02-30 or month 13, which Date would normalize.
+  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) {
+    return ''
+  }
+  return WEEKDAY_NAMES[(date.getUTCDay() + 6) % 7] ?? ''
+}

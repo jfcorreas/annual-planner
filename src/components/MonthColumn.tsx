@@ -11,6 +11,7 @@ interface MonthColumnProps {
   readOnly: boolean
   clearing: boolean
   onDayClick: (date: string) => void
+  onDayInfo: (date: string) => void
   onTagOpen: (date: string, tagId: string) => void
   onTagRemove: (date: string, tagId: string) => void
   /** Click on the month title: zoom into the month. */
@@ -26,6 +27,7 @@ export function MonthColumn({
   readOnly,
   clearing,
   onDayClick,
+  onDayInfo,
   onTagOpen,
   onTagRemove,
   onZoom,
@@ -55,6 +57,7 @@ export function MonthColumn({
             clearing={clearing}
             variant="year"
             onDayClick={onDayClick}
+            onDayInfo={onDayInfo}
             onTagOpen={onTagOpen}
             onTagRemove={onTagRemove}
           />
