@@ -1146,10 +1146,8 @@ describe('tags editor', () => {
       li.textContent?.includes('Prueba tag'),
     )
     expect(row).toBeTruthy()
-    // jsdom serializes #db2777 as rgb() in the style attribute.
-    expect(row!.querySelector('.stats__swatch')!.getAttribute('style')).toContain(
-      'rgb(219, 39, 119)',
-    )
+    // jsdom serializes #db2777 as rgb(); the card paints it on its left edge.
+    expect(row!.getAttribute('style')).toContain('border-left-color: rgb(219, 39, 119)')
 
     const chip = [...container.querySelectorAll('.palette .chip')].find((c) =>
       c.textContent?.includes('Prueba tag'),
@@ -1291,9 +1289,7 @@ describe('tags editor', () => {
       li.textContent?.includes('Puente largo'),
     )
     expect(row).toBeTruthy()
-    expect(row!.querySelector('.stats__swatch')!.getAttribute('style')).toContain(
-      'rgb(219, 39, 119)',
-    )
+    expect(row!.getAttribute('style')).toContain('border-left-color: rgb(219, 39, 119)')
     fireEvent.click(container.querySelector('.modal__head .btn')!) // close
 
     // …in the palette…

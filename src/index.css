@@ -854,27 +854,74 @@ button {
   font-size: 16px;
 }
 
+/* Editor layout: the header and the form are pinned, only the tag list
+   scrolls — `flex: 1 1 auto` + `min-height: 0` lets it shrink inside the
+   85vh the modal inherits from `.modal` instead of pushing the form away. */
+.modal--tags {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal--tags .modal__head {
+  flex: none;
+}
+
+.modal--tags .tags-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  /* Room for the scrollbar and the cards' focus rings. */
+  padding: 2px;
+}
+
+.modal--tags .tag-form {
+  flex: none;
+}
+
+/* Cards, not rows: two columns inside the 520px modal, one on small phones. */
 .tags-list {
   list-style: none;
   margin: 0 0 14px;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 8px;
+  align-content: start;
 }
 
 .tags-list__item {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
   border: 1px solid var(--line);
+  /* The tag colour, written inline, lives in this left edge. */
+  border-left: 4px solid var(--line-strong);
   border-radius: 8px;
-  padding: 6px 8px;
+  padding: 6px 6px 6px 9px;
+}
+
+.tags-list__item:hover {
+  background: #fafbfd;
 }
 
 .tags-list__label {
+  flex: 1;
+  min-width: 0;
   font-weight: 600;
   font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tags-list__actions {
+  display: flex;
+  flex: none;
+  gap: 4px;
 }
 
 .tags-list__cat {
@@ -899,6 +946,20 @@ button {
   display: flex;
   gap: 8px;
   justify-content: flex-end;
+}
+
+/* Very short screens (phone landscape): the fixed form and the list cannot
+   both fit, so the modal itself scrolls while the list keeps a bound — the
+   form is still reachable and the list still scrolls on its own. */
+@media (max-height: 560px) {
+  .modal--tags {
+    overflow-y: auto;
+  }
+
+  .modal--tags .tags-list {
+    flex: none;
+    max-height: 42vh;
+  }
 }
 
 /* ---- Tag types management (inside the tags editor) ---- */

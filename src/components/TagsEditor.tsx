@@ -90,7 +90,7 @@ export function TagsEditor({ tags, usage, onSave, onRemove, onBlocked, onClose }
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div
-        className="modal"
+        className="modal modal--tags"
         role="dialog"
         aria-modal="true"
         aria-label="Editor de etiquetas"
@@ -103,34 +103,47 @@ export function TagsEditor({ tags, usage, onSave, onRemove, onBlocked, onClose }
           </button>
         </header>
 
+        {/* Only this list scrolls: the header and the form below stay pinned. */}
         <ul className="tags-list">
           {tags.map((tag) => (
-            <li key={tag.id} className="tags-list__item">
-              <span className="stats__swatch" style={{ backgroundColor: tag.color }} />
-              <span className="tags-list__label">
+            <li
+              key={tag.id}
+              className="tags-list__item"
+              style={{ borderLeftColor: tag.color }}
+            >
+              <span className="tags-list__label" title={tag.label}>
                 {tagIcon(tag, { showGlobal: true })}
                 {tag.label}
               </span>
-              <button type="button" className="btn" onClick={() => startEdit(tag)}>
-                ✏️
-              </button>
-              <button
-                type="button"
-                className="btn"
-                title="Eliminar etiqueta (se quita de todos los días)"
-                onClick={() => {
-                  if ((usage[tag.id] ?? 0) > 0) {
-                    onBlocked(tag.id)
-                    return
-                  }
-                  if (window.confirm(`¿Eliminar la etiqueta “${tag.label}”?`)) {
-                    onRemove(tag.id)
-                    if (editingId === tag.id) startNew()
-                  }
-                }}
-              >
-                🗑️
-              </button>
+              <div className="tags-list__actions">
+                <button
+                  type="button"
+                  className="btn btn--icon"
+                  aria-label={`Editar ${tag.label}`}
+                  title="Editar etiqueta"
+                  onClick={() => startEdit(tag)}
+                >
+                  ✏️
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--icon"
+                  aria-label={`Eliminar ${tag.label}`}
+                  title="Eliminar etiqueta (se quita de todos los días)"
+                  onClick={() => {
+                    if ((usage[tag.id] ?? 0) > 0) {
+                      onBlocked(tag.id)
+                      return
+                    }
+                    if (window.confirm(`¿Eliminar la etiqueta “${tag.label}”?`)) {
+                      onRemove(tag.id)
+                      if (editingId === tag.id) startNew()
+                    }
+                  }}
+                >
+                  🗑️
+                </button>
+              </div>
             </li>
           ))}
         </ul>

@@ -2,8 +2,9 @@
 Project Memory between sessions. Maximum ~50 lines: summarize or remove anything that no longer adds value.
 
 ## Current Status
-- v0.6.0 (tag palette: no default tag, day click = detail, no clear mode).
-  Pages redeploys from `main`; the PWA picks the build up after two reloads.
+- v0.7.0 (tags editor: tags as a 2-column card grid, form pinned, only the list
+  scrolls). Pages redeploys from `main`; the PWA picks the build up after two
+  reloads.
 - Green: `tsc -b`, oxlint, `npm test` (164), `npm run test:e2e` (2, incl. a
   phone-viewport test: portrait + landscape).
 - LAN test: `python3 -m http.server 4831 --bind 0.0.0.0 --directory dist`.
@@ -23,8 +24,7 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
 - Storage v2 under `annual-planner:v2`; v1 never read (blocking "Empezar de cero").
 - **No tag selected by default**: clicking the active palette chip deselects it.
   With no active tag (or an archived planner) a click on a day opens the day
-  detail modal — no toast, no fill. Selection resets when the planner changes
-  (select/create/delete/import); the store has no "clear a whole day" method.
+  detail modal — no toast, no fill. Selection resets when the planner changes.
 - Chip: 1 click = detail modal (250ms debounce), dblclick / 600ms hold = remove;
   a drag >10px cancels the hold (it is a month swipe, not a hold).
 - Day number = button → DayDetailModal (display-only, works read-only, in year
@@ -32,6 +32,12 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
   NOT on Escape, or the modal could not be closed by keyboard.
 - Icon-only month chips only ≤700px + landscape (label/sub hidden in CSS);
   desktop zoom keeps labels. Backdrop z-index 55 (zoom 50, toast 60).
+- **Tags editor (v0.7.0)**: `.modal--tags` is a flex column — header and form
+  `flex: none`, the card grid (`auto-fill minmax(190px, 1fr)` = 2 columns) is
+  the only scroller (`min-height: 0`, it must stay scrollable to shrink), and
+  the colour is the inline `borderLeftColor` of each card. Above 560px tall the
+  whole modal scrolls instead (phone landscape has no room for both areas).
+  Tests read the colour from the row's `style`, not from `.stats__swatch`.
 - Stack: Vite + React 19 + TS + date-fns, plain CSS; PWA via `vite-plugin-pwa@2`
   (the only build-time dep).
 
@@ -51,7 +57,7 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
   swallow the next test's first click.
 - Phones over LAN: plain `http://<IP>` is NOT a secure context, so
   `crypto.randomUUID` is missing (white screen). Use `newId()` from `defaults.ts`.
-- Service workers need a secure context too: PWA only on `localhost`/`https://`.
+- Service workers need a secure context too: PWA only on `localhost`/`https/`.
 - No setState inside updaters; compute derived values (and "did it apply") first.
 - A condition on a patch field must compare the PREVIOUS state (base), not the patch.
 - Two `toggleDayTag` in ONE `act()` are stale → one `act()` per toggle in tests.

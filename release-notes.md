@@ -4,6 +4,23 @@ All notable changes to the Annual Planner webapp.
 Format based on [Keep a Changelog](https://keepachangelog.com/), versioning
 following [SemVer](https://semver.org/).
 
+## [0.7.0] - 2026-11-11
+
+The tags editor shows the tags as a grid and keeps the form on screen all
+the time.
+
+### Changed
+
+- **Tags as a grid**: the tags of a planner are shown as cards, two per row
+  (one on small phones), instead of one row per tag. The colour now paints the
+  left edge of the card, the label truncates with an ellipsis (the full name
+  stays on the tooltip) and the ✏️/🗑️ buttons carry a name for screen readers.
+- **The form is always visible**: the editor modal no longer scrolls as a
+  whole. Its header and the new/edit tag form are pinned and only the tag list
+  scrolls, so the form cannot disappear while looking for a tag. On very short
+  screens (phone landscape, ≤560px tall) the modal scrolls as a fallback while
+  the list keeps a bounded, independent scroll area.
+
 ## [0.6.0] - 2026-11-11
 
 The palette can now leave the planner with no active tag, and the clear-day
