@@ -13,7 +13,6 @@ function renderZoom(overrides: Partial<Parameters<typeof MonthZoom>[0]> = {}) {
       daysData={{}}
       tags={[]}
       readOnly={false}
-      clearing={false}
       stats={STATS}
       onDayClick={vi.fn()}
       onDayInfo={vi.fn()}

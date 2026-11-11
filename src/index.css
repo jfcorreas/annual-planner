@@ -293,16 +293,6 @@ button {
   color: var(--muted);
 }
 
-.chip--clear {
-  background: #fff7e6;
-  border: 2px solid transparent;
-}
-
-.chip--clear.chip--on {
-  border-color: #b7791f;
-  background: #feefc3;
-}
-
 /* ============================================================
    Planner: year view + footer
    ============================================================ */
@@ -381,7 +371,7 @@ button {
 }
 
 .day--readonly {
-  cursor: not-allowed;
+  cursor: pointer;
 }
 
 /* The number is a button (opens the day detail): strip the UA button look. */

@@ -8,7 +8,6 @@ interface WeekRowProps {
   daysData: Record<string, DayTag[]>
   tags: Tag[]
   readOnly: boolean
-  clearing: boolean
   variant: 'year' | 'month'
   onDayClick: (date: string) => void
   onDayInfo: (date: string) => void
@@ -22,7 +21,6 @@ export function WeekRow({
   daysData,
   tags,
   readOnly,
-  clearing,
   variant,
   onDayClick,
   onDayInfo,
@@ -53,7 +51,6 @@ export function WeekRow({
             date={date}
             entries={entries}
             readOnly={readOnly}
-            clearing={clearing}
             variant={variant}
             onDayClick={onDayClick}
             onDayInfo={onDayInfo}

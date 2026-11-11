@@ -25,8 +25,17 @@ function chipsOf(cell: HTMLElement): HTMLElement[] {
   return [...cell.querySelectorAll('.tag-chip')] as HTMLElement[]
 }
 
-/** Click the day (its empty area, not the number) = apply the active tag. */
+/** Select a palette chip by its position (tags first, then the editor button). */
+function selectTag(container: HTMLElement, position: number) {
+  fireEvent.click(container.querySelector(`.palette .chip:nth-child(${position})`)!)
+}
+
+/**
+ * Click a day's empty area (not the number) = apply the active tag. With no
+ * tag selected the first one is picked, so the tests only say which tag.
+ */
 function fillDay(container: HTMLElement, iso: string) {
+  if (!container.querySelector('.palette .chip--on')) selectTag(container, 1)
   fireEvent.click(dayCell(container, iso))
 }
 
@@ -187,24 +196,43 @@ describe('filling days', () => {
         vi.advanceTimersByTime(600)
       })
       expect(chipsOf(dayCell(container, iso))).toHaveLength(0)
+
+      // The hold armed the trailing-click swallower: consume it here, so it
+      // does not swallow the first click of the next test.
+      fireEvent.click(document.body)
     } finally {
       vi.useRealTimers()
     }
   })
 
-  it('clear mode empties a day in one click', () => {
+  it('with no tag selected a day click opens the day detail and fills nothing', () => {
     const { container } = renderApp()
     const iso = firstIso()
 
-    fillDay(container, iso)
-    fireEvent.click(container.querySelector('.chip--clear')!)
-    fillDay(container, iso)
-    expect(chipsOf(dayCell(container, iso))).toHaveLength(0)
+    expect(container.querySelectorAll('.palette .chip--on')).toHaveLength(0)
+    expect(container.querySelector('.palette__label')?.textContent).toContain(
+      'Sin etiqueta activa',
+    )
 
-    // Leave clear mode: filling works again.
-    fireEvent.click(container.querySelector('.chip--clear')!)
-    fillDay(container, iso)
-    expect(chipsOf(dayCell(container, iso))).toHaveLength(1)
+    fireEvent.click(dayCell(container, iso))
+    expect(container.querySelector('.modal--day-detail')).not.toBeNull()
+    expect(chipsOf(dayCell(container, iso))).toHaveLength(0)
+  })
+
+  it('clicking the active tag deselects it, back to the day detail mode', () => {
+    const { container } = renderApp()
+    const iso = firstIso()
+    const guardia = container.querySelector('.palette .chip') as HTMLElement
+
+    fireEvent.click(guardia)
+    expect(container.querySelectorAll('.palette .chip--on')).toHaveLength(1)
+
+    fireEvent.click(guardia)
+    expect(container.querySelectorAll('.palette .chip--on')).toHaveLength(0)
+
+    fireEvent.click(dayCell(container, iso))
+    expect(container.querySelector('.modal--day-detail')).not.toBeNull()
+    expect(chipsOf(dayCell(container, iso))).toHaveLength(0)
   })
 })
 
@@ -474,6 +502,7 @@ describe('month zoom', () => {
 
     const july = `${YEAR}-07-01`
     const june = `${YEAR}-06-01`
+    selectTag(container, 1) // no tag is active by default
     fireEvent.click(container.querySelector(`.zoom .day[data-iso="${july}"]`)!)
 
     // The chip lands on July 1st (zoom + year view), not on June 1st.
@@ -486,16 +515,18 @@ describe('month zoom', () => {
 })
 
 describe('archive (read-only)', () => {
-  it('blocks day editing and disables the palette until reopened', () => {
+  it('shows the day detail on a day click and disables the palette until reopened', () => {
     const { container } = renderApp()
     const iso = firstIso()
 
     fireEvent.click(container.querySelector('.topbar .status')!)
     expect(container.querySelector('.topbar .status')?.textContent).toContain('Archivado')
 
-    fillDay(container, iso)
+    fireEvent.click(dayCell(container, iso))
+    expect(container.querySelector('.modal--day-detail')).not.toBeNull()
     expect(chipsOf(dayCell(container, iso))).toHaveLength(0)
-    expect((container.querySelector('.chip--clear') as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect((container.querySelector('.chip--add') as HTMLButtonElement).disabled).toBe(true)
 
     fireEvent.click(container.querySelector('.topbar .status')!)
     fillDay(container, iso)

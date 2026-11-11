@@ -9,7 +9,6 @@ interface MonthColumnProps {
   daysData: Record<string, DayTag[]>
   tags: Tag[]
   readOnly: boolean
-  clearing: boolean
   onDayClick: (date: string) => void
   onDayInfo: (date: string) => void
   onTagOpen: (date: string, tagId: string) => void
@@ -25,7 +24,6 @@ export function MonthColumn({
   daysData,
   tags,
   readOnly,
-  clearing,
   onDayClick,
   onDayInfo,
   onTagOpen,
@@ -54,7 +52,6 @@ export function MonthColumn({
             daysData={daysData}
             tags={tags}
             readOnly={readOnly}
-            clearing={clearing}
             variant="year"
             onDayClick={onDayClick}
             onDayInfo={onDayInfo}

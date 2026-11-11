@@ -7,7 +7,6 @@ interface YearViewProps {
   daysData: Record<string, DayTag[]>
   tags: Tag[]
   readOnly: boolean
-  clearing: boolean
   onDayClick: (date: string) => void
   onDayInfo: (date: string) => void
   onTagOpen: (date: string, tagId: string) => void
@@ -21,7 +20,6 @@ export function YearView({
   daysData,
   tags,
   readOnly,
-  clearing,
   onDayClick,
   onDayInfo,
   onTagOpen,
@@ -38,7 +36,6 @@ export function YearView({
           daysData={daysData}
           tags={tags}
           readOnly={readOnly}
-          clearing={clearing}
           onDayClick={onDayClick}
           onDayInfo={onDayInfo}
           onTagOpen={onTagOpen}

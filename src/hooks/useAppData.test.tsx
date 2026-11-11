@@ -132,7 +132,7 @@ describe('toggleDayTag', () => {
   })
 })
 
-describe('removeDayTag / clearDay / setDayTagSubtitle', () => {
+describe('removeDayTag / setDayTagSubtitle', () => {
   it('removes one tag from a day', () => {
     const { result } = setup()
     const id = result.current.activePlanner!.id
@@ -146,19 +146,6 @@ describe('removeDayTag / clearDay / setDayTagSubtitle', () => {
     expect(result.current.activePlanner?.days['2026-01-01']).toEqual([
       { tagId: 'diurno-12h' },
     ])
-  })
-
-  it('clears every tag of a day', () => {
-    const { result } = setup()
-    const id = result.current.activePlanner!.id
-    act(() => {
-      result.current.toggleDayTag(id, '2026-01-01', 'guardia-24h')
-      result.current.toggleDayTag(id, '2026-01-01', 'diurno-12h')
-    })
-    act(() => {
-      result.current.clearDay(id, '2026-01-01')
-    })
-    expect(result.current.activePlanner?.days['2026-01-01']).toBeUndefined()
   })
 
   it('sets, updates and clears the subtitle of one application', () => {

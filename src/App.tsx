@@ -23,7 +23,6 @@ export default function App() {
   const planner = store.activePlanner
 
   const [activeTagId, setActiveTagId] = useState<string | null>(null)
-  const [clearing, setClearing] = useState(false)
   const [zoomMonth, setZoomMonth] = useState<number | null>(null)
   const [tagsOpen, setTagsOpen] = useState(false)
   const [tagDetail, setTagDetail] = useState<{ date: string; tagId: string } | null>(null)
@@ -34,11 +33,9 @@ export default function App() {
 
   const readOnly = planner?.status === 'archivado'
 
-  /* A valid tag for the current planner: the selection, else the first tag. */
+  /* The active tag only while it still exists in the planner: no fallback. */
   const effectiveTagId =
-    activeTagId && planner?.tags.some((t) => t.id === activeTagId)
-      ? activeTagId
-      : (planner?.tags[0]?.id ?? null)
+    activeTagId && planner?.tags.some((t) => t.id === activeTagId) ? activeTagId : null
 
   /* Esc closes the month zoom, the tags editor, both detail modals and about. */
   useEffect(() => {
@@ -156,14 +153,11 @@ export default function App() {
 
   /* ---------------- day editing ---------------- */
 
+  /** Click on a day's empty area: fill it with the active tag, or (when no
+   *  tag is selected, or the planner is archived) show the day detail. */
   function handleDayClick(date: string) {
-    if (readOnly) return
-    if (clearing) {
-      store.clearDay(planner!.id, date)
-      return
-    }
-    if (!effectiveTagId) {
-      setNotice('Selecciona una etiqueta primero.')
+    if (readOnly || !effectiveTagId) {
+      setDayDetail(date)
       return
     }
     const applied = store.toggleDayTag(planner!.id, date, effectiveTagId)
@@ -182,9 +176,7 @@ export default function App() {
 
   function handleTagRemove(date: string, tagId: string) {
     if (readOnly) return
-    // In clearing mode any click empties the day; otherwise the chip is removed.
-    if (clearing) store.clearDay(planner!.id, date)
-    else store.removeDayTag(planner!.id, date, tagId)
+    store.removeDayTag(planner!.id, date, tagId)
     setTagDetail(null)
   }
 
@@ -272,6 +264,7 @@ export default function App() {
       )
       if (ok) {
         store.mergePlanners(imported)
+        setActiveTagId(null) // the import may switch the active planner
         setNotice(`📥 Importación completada (${imported.length} planificador(es)).`)
       }
     } catch (error) {
@@ -306,12 +299,7 @@ export default function App() {
       <TagPalette
         tags={planner.tags}
         activeTagId={effectiveTagId}
-        onSelectTag={(id) => {
-          setActiveTagId(id)
-          setClearing(false)
-        }}
-        clearing={clearing}
-        onToggleClearing={() => setClearing((c) => !c)}
+        onSelectTag={(id) => setActiveTagId((current) => (current === id ? null : id))}
         onEditTags={() => setTagsOpen(true)}
         disabled={Boolean(readOnly)}
       />
@@ -322,7 +310,6 @@ export default function App() {
           daysData={planner.days}
           tags={planner.tags}
           readOnly={Boolean(readOnly)}
-          clearing={clearing}
           onDayClick={handleDayClick}
           onDayInfo={handleDayInfo}
           onTagOpen={handleTagOpen}
@@ -338,7 +325,6 @@ export default function App() {
             daysData={planner.days}
             tags={planner.tags}
             readOnly={Boolean(readOnly)}
-            clearing={clearing}
             stats={monthStats}
             onDayClick={handleDayClick}
             onDayInfo={handleDayInfo}
@@ -356,12 +342,14 @@ export default function App() {
         activePlannerId={store.activePlannerId}
         onSelect={(id) => {
           store.setActivePlannerId(id)
+          setActiveTagId(null) // the tag selection belongs to one planner
           setZoomMonth(null)
           setTagDetail(null)
           setDayDetail(null)
         }}
         onCreate={(year) => {
           store.addPlanner(year)
+          setActiveTagId(null)
           setZoomMonth(null)
           setTagDetail(null)
           setDayDetail(null)
@@ -370,6 +358,7 @@ export default function App() {
         onToggleStatus={toggleStatus}
         onDelete={(id) => {
           store.removePlanner(id)
+          setActiveTagId(null)
           setZoomMonth(null)
           setTagDetail(null)
           setDayDetail(null)

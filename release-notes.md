@@ -4,6 +4,34 @@ All notable changes to the Annual Planner webapp.
 Format based on [Keep a Changelog](https://keepachangelog.com/), versioning
 following [SemVer](https://semver.org/).
 
+## [0.6.0] - 2026-11-11
+
+The palette can now leave the planner with no active tag, and the clear-day
+mode is gone.
+
+### Changed
+
+- **No tag selected by default**: the palette no longer pre-selects the first
+  tag, and clicking the active chip deselects it again. While nothing is
+  selected, a click (or tap) anywhere on a day opens its detail modal instead
+  of filling it — a stray click can no longer mark a day. The hint text above
+  the chips says which of the two modes you are in: “Etiqueta activa: …” or
+  “Sin etiqueta activa: …”.
+- **Clicking a day in an archived planner**: the empty area of a day now opens
+  its detail modal as well (only the number did before), so read-only planners
+  are browsable by clicking anywhere on a day. The pointer cursor replaced the
+  “not allowed” one.
+- The tags editor button reads **“✏️ Etiquetas”** (pencil icon) instead of
+  “＋ Etiquetas”.
+- The tag selection belongs to one planner: switching, creating, deleting or
+  importing planners starts again with no tag selected.
+
+### Removed
+
+- **Clear mode (“🧽 Limpiar día”)** and its button: emptying a day keeps
+  working through the tag chip (double click or press-and-hold) and through
+  the tag detail modal (“Quitar del día”).
+
 ## [0.5.1] - 2026-11-10
 
 Readability of the month view on small screens, and a new modal that shows

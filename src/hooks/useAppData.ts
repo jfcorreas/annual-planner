@@ -139,19 +139,6 @@ export function useAppData() {
     [updatePlanner],
   )
 
-  /** Clear every tag of a day. */
-  const clearDay = useCallback(
-    (plannerId: string, date: string) => {
-      updatePlanner(plannerId, (planner) => {
-        if (!planner.days[date]) return planner
-        const days = { ...planner.days }
-        delete days[date]
-        return { ...planner, days }
-      })
-    },
-    [updatePlanner],
-  )
-
   /* ---------------- Tags ---------------- */
 
   const addTag = useCallback(
@@ -287,7 +274,6 @@ export function useAppData() {
     toggleDayTag,
     removeDayTag,
     setDayTagSubtitle,
-    clearDay,
     addTag,
     updateTag,
     removeTag,

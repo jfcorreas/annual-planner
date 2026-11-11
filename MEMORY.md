@@ -2,7 +2,7 @@
 Project Memory between sessions. Maximum ~50 lines: summarize or remove anything that no longer adds value.
 
 ## Current Status
-- v0.5.1 tagged + pushed at `c01c0a6` (day detail modal + icon-only chips).
+- v0.6.0 (tag palette: no default tag, day click = detail, no clear mode).
   Pages redeploys from `main`; the PWA picks the build up after two reloads.
 - Green: `tsc -b`, oxlint, `npm test` (164), `npm run test:e2e` (2, incl. a
   phone-viewport test: portrait + landscape).
@@ -21,6 +21,10 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
 - Statistics: `inStats?` missing = included; permits bypass the filter; month bar
   plain counts, year bar adds "U de N · Restantes R".
 - Storage v2 under `annual-planner:v2`; v1 never read (blocking "Empezar de cero").
+- **No tag selected by default**: clicking the active palette chip deselects it.
+  With no active tag (or an archived planner) a click on a day opens the day
+  detail modal — no toast, no fill. Selection resets when the planner changes
+  (select/create/delete/import); the store has no "clear a whole day" method.
 - Chip: 1 click = detail modal (250ms debounce), dblclick / 600ms hold = remove;
   a drag >10px cancels the hold (it is a month swipe, not a hold).
 - Day number = button → DayDetailModal (display-only, works read-only, in year
@@ -33,16 +37,18 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
 
 ## Month zoom (≤1100px = fixed, viewport-sized overlay)
 - Portrait (≤700px): transposed CSS-only grid, fits with no scroll — untouched.
-- Lateral drag on `.zoom` ≥48px and |dx| ≥ 1.2·|dy| → next/prev month (bounded
-  by Jan/Dec, same as the ◀ ▶ buttons); `onClickCapture` swallows the trailing
-  click so no day is filled by mistake.
-- Landscape (≤1100px + `orientation: landscape`): grid has **no** internal
-  scroll (row/day `min-height: 0`, `.day { overflow: hidden }`); `.zoom` scrolls
-  and `.zoom__stats` is `position: absolute; top: 100%` (out of the flow): the
-  grid takes the whole screen and the panel waits below the fold (e2e-checked).
-- `touch-action: pan-y pinch-zoom` on `.zoom` keeps horizontal drags for us.
+- Lateral drag ≥48px and |dx| ≥ 1.2·|dy| → next/prev month (bounded by Jan/Dec,
+  same as ◀ ▶); `onClickCapture` swallows the trailing click (no accidental fill).
+- Landscape (≤1100px + landscape): grid has **no** internal scroll (`min-height:
+  0`, `.day { overflow: hidden }`); `.zoom` scrolls, `.zoom__stats` sits at
+  `top: 100%` below the fold (e2e-checked). `touch-action: pan-y pinch-zoom`.
 
 ## Lessons Learned and Mistakes to Avoid
+- The open zoom overlay covers the palette: in e2e click palette chips before
+  opening the month (Playwright waits forever on an obstructed click).
+- A test ending right after a chip hold leaves `swallowNextClick()` armed at
+  document level: fire one throwaway click (`document.body`) so it cannot
+  swallow the next test's first click.
 - Phones over LAN: plain `http://<IP>` is NOT a secure context, so
   `crypto.randomUUID` is missing (white screen). Use `newId()` from `defaults.ts`.
 - Service workers need a secure context too: PWA only on `localhost`/`https://`.

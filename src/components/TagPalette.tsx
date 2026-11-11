@@ -3,12 +3,10 @@ import { tagIcon } from '../utils/tags'
 
 interface TagPaletteProps {
   tags: Tag[]
-  /** Tag selected to fill days with one click. */
+  /** Tag selected to fill days with one click (null = none, days show detail). */
   activeTagId: string | null
+  /** Selects a tag, or deselects it when it is already the active one. */
   onSelectTag: (tagId: string) => void
-  /** When true, clicking a day clears it instead of filling it. */
-  clearing: boolean
-  onToggleClearing: () => void
   onEditTags: () => void
   disabled: boolean
 }
@@ -18,25 +16,23 @@ export function TagPalette({
   tags,
   activeTagId,
   onSelectTag,
-  clearing,
-  onToggleClearing,
   onEditTags,
   disabled,
 }: TagPaletteProps) {
   return (
     <div className="palette" role="toolbar" aria-label="Etiquetas para rellenar">
       <span className="palette__label">
-        {clearing
-          ? 'Modo limpiar: clic en un día para vaciarlo'
-          : 'Etiqueta activa: clic en un día para aplicarla · clic en la etiqueta = detalle · doble clic o mantener pulsado = quitarla'}
+        {activeTagId
+          ? 'Etiqueta activa: clic en un día para aplicarla · clic en la etiqueta = detalle · doble clic o mantener pulsado = quitarla'
+          : 'Sin etiqueta activa: clic en un día para ver su detalle · elige una etiqueta para rellenar'}
       </span>
       <div className="palette__chips">
         {tags.map((tag) => (
           <button
             key={tag.id}
             type="button"
-            className={`chip${!clearing && activeTagId === tag.id ? ' chip--on' : ''}`}
-            aria-pressed={!clearing && activeTagId === tag.id}
+            className={`chip${activeTagId === tag.id ? ' chip--on' : ''}`}
+            aria-pressed={activeTagId === tag.id}
             disabled={disabled}
             onClick={() => onSelectTag(tag.id)}
           >
@@ -46,19 +42,9 @@ export function TagPalette({
           </button>
         ))}
         <button type="button" className="chip chip--add" disabled={disabled} onClick={onEditTags}>
-          ＋ Etiquetas
+          ✏️ Etiquetas
         </button>
       </div>
-      <span className="spacer" />
-      <button
-        type="button"
-        className={`chip chip--clear${clearing ? ' chip--on' : ''}`}
-        aria-pressed={clearing}
-        disabled={disabled}
-        onClick={onToggleClearing}
-      >
-        🧽 Limpiar día
-      </button>
     </div>
   )
 }

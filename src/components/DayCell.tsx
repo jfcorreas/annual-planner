@@ -23,9 +23,8 @@ interface DayCellProps {
   entries: DayEntry[]
   /** When true the day cannot be edited (archived planner). */
   readOnly: boolean
-  /** Clearing mode: a chip click empties the day instead of opening the modal. */
-  clearing: boolean
-  /** Click on the empty area: apply the active tag (or clear when clearing). */
+  /** Click on the empty area: apply the active tag, or show the day detail
+   *  when no tag is selected (or the planner is archived). */
   onDayClick: (date: string) => void
   /** Click on the day number: show the day detail modal. */
   onDayInfo: (date: string) => void
@@ -42,7 +41,6 @@ export function DayCell({
   date,
   entries,
   readOnly,
-  clearing,
   onDayClick,
   onDayInfo,
   onTagOpen,
@@ -54,7 +52,6 @@ export function DayCell({
   const weekend = isWeekend(date)
 
   function handleDayClick() {
-    if (readOnly) return
     onDayClick(iso)
   }
 
@@ -65,7 +62,7 @@ export function DayCell({
   }
 
   const title = readOnly
-    ? `${iso} — planner archivado (solo lectura)`
+    ? `${iso} — planner archivado (solo lectura)\nClic: detalle del día`
     : full
       ? `${iso} — máximo ${MAX_TAGS_PER_DAY} etiquetas por día`
       : iso
@@ -106,7 +103,6 @@ export function DayCell({
             entry={entry}
             iso={iso}
             readOnly={readOnly}
-            clearing={clearing}
             variant={variant}
             onOpen={onTagOpen}
             onRemove={onTagRemove}
@@ -121,7 +117,6 @@ interface TagChipProps {
   entry: DayEntry
   iso: string
   readOnly: boolean
-  clearing: boolean
   variant: 'year' | 'month'
   onOpen: (date: string, tagId: string) => void
   onRemove: (date: string, tagId: string) => void
@@ -132,7 +127,7 @@ interface TagChipProps {
  * OPEN_DELAY so a double click can be told apart), double click or a
  * HOLD_DELAY press removes it from the day.
  */
-function TagChip({ entry, iso, readOnly, clearing, variant, onOpen, onRemove }: TagChipProps) {
+function TagChip({ entry, iso, readOnly, variant, onOpen, onRemove }: TagChipProps) {
   const { tag, subtitle } = entry
   const openTimer = useRef<number | null>(null)
   const holdTimer = useRef<number | null>(null)
@@ -164,7 +159,7 @@ function TagChip({ entry, iso, readOnly, clearing, variant, onOpen, onRemove }: 
   }
 
   function handlePointerDown(event: PointerEvent<HTMLButtonElement>) {
-    if (readOnly || clearing) return
+    if (readOnly) return
     suppressClick.current = false
     origin.current = { x: event.clientX, y: event.clientY }
     clearHoldTimer()
@@ -200,11 +195,6 @@ function TagChip({ entry, iso, readOnly, clearing, variant, onOpen, onRemove }: 
       suppressClick.current = false
       return
     }
-    // Clearing mode keeps the old behaviour: one click empties the day.
-    if (clearing) {
-      onRemove(iso, tag.id)
-      return
-    }
     if (openTimer.current !== null) {
       // Second click inside the debounce window = double click → remove.
       clearOpenTimer()
@@ -224,9 +214,7 @@ function TagChip({ entry, iso, readOnly, clearing, variant, onOpen, onRemove }: 
 
   const title = readOnly
     ? `${tag.label}\nsolo lectura`
-    : clearing
-      ? `${tag.label}\nclic para vaciar el día`
-      : `${tag.label}${subtitle ? ` — ${subtitle}` : ''}\nClic: detalle\nDoble clic: quitar`
+    : `${tag.label}${subtitle ? ` — ${subtitle}` : ''}\nClic: detalle\nDoble clic: quitar`
 
   return (
     <button

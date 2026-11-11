@@ -18,7 +18,6 @@ interface MonthZoomProps {
   daysData: Record<string, DayTag[]>
   tags: Tag[]
   readOnly: boolean
-  clearing: boolean
   /** Statistics of this month, shown at the bottom of the planner. */
   stats: Stats
   onDayClick: (date: string) => void
@@ -45,7 +44,6 @@ export function MonthZoom({
   daysData,
   tags,
   readOnly,
-  clearing,
   stats,
   onDayClick,
   onDayInfo,
@@ -175,7 +173,6 @@ export function MonthZoom({
               daysData={daysData}
               tags={tags}
               readOnly={readOnly}
-              clearing={clearing}
               variant="month"
               onDayClick={onDayClick}
               onDayInfo={onDayInfo}

@@ -36,7 +36,16 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
     const dayCount = await page.locator('.day[data-iso]').count()
     expect(dayCount === 365 || dayCount === 366).toBe(true)
 
-    await expect(page.locator('.chip--on', { hasText: 'Guardia 24h' })).toHaveCount(1)
+    // No tag is selected by default: a click on a day shows its detail.
+    await expect(page.locator('.chip--on')).toHaveCount(0)
+    const firstDay = page.locator('.day[data-iso]').first()
+    await fillDay(page, firstDay)
+    await expect(page.locator('.modal--day-detail')).toHaveCount(1)
+    await expect(page.locator('.day-detail__empty')).toHaveCount(1)
+    await page.keyboard.press('Escape')
+    await expect(page.locator('.modal--day-detail')).toHaveCount(0)
+    await expect(firstDay.locator('.tag-chip')).toHaveCount(0)
+
     await expect(page.locator('.stats__year')).toHaveCount(1)
     expect(await page.locator('.stats__year').innerText()).toMatch(/^\d{4}$/)
   })
@@ -76,6 +85,10 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
   })
 
   await test.step('2. Fill days with one click', async () => {
+    // Pick a tag first: nothing is selected by default.
+    await page.locator('.palette .chip', { hasText: 'Guardia 24h' }).click()
+    await expect(page.locator('.chip--on', { hasText: 'Guardia 24h' })).toHaveCount(1)
+
     const firstDay = page.locator('.day[data-iso]').first()
     await fillDay(page, firstDay)
     await expect(firstDay.locator('.tag-chip')).toHaveCount(1)
@@ -189,15 +202,7 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
     await expect(page.locator('.zoom')).toHaveCount(0)
   })
 
-  await test.step('6. Clear day mode', async () => {
-    await page.locator('.chip--clear').click()
-    await expect(page.locator('.chip--clear.chip--on')).toHaveCount(1)
-    await fillDay(page, firstDay)
-    await expect(firstDay.locator('.tag-chip')).toHaveCount(0)
-    await page.locator('.chip--clear').click() // leave clear mode
-  })
-
-  await test.step('7. Persistence (localStorage)', async () => {
+  await test.step('6. Persistence (localStorage)', async () => {
     await fillDay(page, page.locator('.day[data-iso]').nth(3))
     await page.reload({ waitUntil: 'networkidle' })
     await expect(page.locator('.day[data-iso]').nth(3).locator('.tag-chip')).toHaveCount(1)
@@ -205,7 +210,7 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
     expect(stored).toContain('"version":2')
   })
 
-  await test.step('8. Tags editor: create → apply → rename', async () => {
+  await test.step('7. Tags editor: create → apply → rename', async () => {
     await page.locator('.chip--add').click()
     await expect(page.locator('.modal')).toHaveCount(1)
     await expect(page.locator('.modal select')).toHaveCount(0) // no type field
@@ -264,15 +269,18 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
     await expect(tagDay.locator('.tag-chip')).toHaveCount(1) // still applied
   })
 
-  await test.step('9. Archive: read-only', async () => {
+  await test.step('8. Archive: read-only', async () => {
     await page.locator('.topbar .status').click() // archivar
     expect(await page.locator('.topbar .status').innerText()).toContain('Archivado')
 
     const someDay = page.locator('.day[data-iso]').nth(5)
     const beforeArch = await someDay.locator('.tag-chip').count()
-    await fillDay(page, someDay) // read-only: the click must do nothing
+    await fillDay(page, someDay) // read-only: a day click opens the detail
+    await expect(page.locator('.modal--day-detail')).toHaveCount(1)
     await expect(someDay.locator('.tag-chip')).toHaveCount(beforeArch)
-    await expect(page.locator('.palette .chip--clear')).toBeDisabled()
+    await page.keyboard.press('Escape')
+    await expect(page.locator('.modal--day-detail')).toHaveCount(0)
+    await expect(page.locator('.palette .chip--add')).toBeDisabled()
     await testInfo.attach('archived.png', {
       body: await page.screenshot(),
       contentType: 'image/png',
@@ -282,7 +290,7 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
     expect(await page.locator('.topbar .status').innerText()).toContain('Activo')
   })
 
-  await test.step('10. Create a second planner', async () => {
+  await test.step('9. Create a second planner', async () => {
     await page.locator('.panel__new').click()
     await page.locator('.panel__create input[type="number"]').fill('2030')
     await page.locator('.panel__create button[type="submit"]').click()
@@ -296,7 +304,7 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
     expect(await page.locator('.topbar__title').innerText()).not.toContain('2030')
   })
 
-  await test.step('11. Export / import JSON', async () => {
+  await test.step('10. Export / import JSON', async () => {
     const imported = await page.evaluate(() => localStorage.getItem('annual-planner:v2'))
     expect(await page.locator('.topbar .btn', { hasText: 'Importar' }).count()).toBe(1)
 
@@ -310,7 +318,7 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
     expect(dialogs.some((m) => m.includes('importar'))).toBe(true)
   })
 
-  await test.step('12. Print rules (A4 / A5)', async () => {
+  await test.step('11. Print rules (A4 / A5)', async () => {
     // stub print so the dialog does not block the test
     await page.evaluate(() => {
       ;(window as unknown as Record<string, unknown>).__printed = false
@@ -337,7 +345,7 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
     expect(a5.paper).toBe('A5')
   })
 
-  await test.step('13. No JS errors during the whole run', async () => {
+  await test.step('12. No JS errors during the whole run', async () => {
     await testInfo.attach('year-view.png', {
       body: await page.screenshot({ fullPage: true }),
       contentType: 'image/png',
@@ -382,6 +390,11 @@ async function dragAcrossZoom(page: Page, dx: number, dayIndex = 15) {
 test('month zoom on a phone: portrait and landscape', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/', { waitUntil: 'networkidle' })
+
+  // Nothing is selected by default: pick the tag the checks below apply.
+  // (Do it before the zoom, whose overlay covers the palette.)
+  await page.locator('.palette .chip', { hasText: 'Guardia 24h' }).click()
+  await expect(page.locator('.chip--on', { hasText: 'Guardia 24h' })).toHaveCount(1)
   await page.locator('.month-col__zoom', { hasText: 'Enero' }).click()
   await expect(page.locator('.zoom')).toHaveCount(1)
 
