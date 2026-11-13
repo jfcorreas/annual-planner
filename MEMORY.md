@@ -2,9 +2,8 @@
 Project Memory between sessions. Maximum ~50 lines: summarize or remove anything that no longer adds value.
 
 ## Current Status
-- v0.7.0 (tags editor: tags as a 2-column card grid, form pinned, only the list
-  scrolls). Pages redeploys from `main`; the PWA picks the build up after two
-  reloads.
+- v0.7.1 (stats: work-permit stats in two columns). Pages redeploy from `main`;
+  the PWA picks the build up after two reloads.
 - Green: `tsc -b`, oxlint, `npm test` (164), `npm run test:e2e` (2, incl. a
   phone-viewport test: portrait + landscape).
 - LAN test: `python3 -m http.server 4831 --bind 0.0.0.0 --directory dist`.
@@ -21,6 +20,15 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
   negative), global (same-id copies synced, 🌐 only in editor + detail modal).
 - Statistics: `inStats?` missing = included; permits bypass the filter; month bar
   plain counts, year bar adds "U de N · Restantes R".
+- **Stats panel look (v0.7.1)**: `.stats__list--permits` is a 2-col grid applied
+  everywhere (year footer, month zoom, print) with `flex: 1.5 1 0` (3/5 of the
+  panel, the regular counts keep 1); `.stats__count` is 11px (was 16) and
+  `.stats` is `align-items: flex-start`, so year, counts and permits share the
+  top line instead of being bottom-aligned. The count is right-aligned and never
+  truncated: it drops to a second line inside its column when name + count do not
+  fit side by side; only a name wider than the column ellipsizes (the `title`
+  keeps the full text), and a single permit spans both columns. Checked with
+  Chromium at 1440/1280/900/390 + A5 PDF (still 1 page).
 - Storage v2 under `annual-planner:v2`; v1 never read (blocking "Empezar de cero").
 - **No tag selected by default**: clicking the active palette chip deselects it.
   With no active tag (or an archived planner) a click on a day opens the day
@@ -32,12 +40,10 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
   NOT on Escape, or the modal could not be closed by keyboard.
 - Icon-only month chips only ≤700px + landscape (label/sub hidden in CSS);
   desktop zoom keeps labels. Backdrop z-index 55 (zoom 50, toast 60).
-- **Tags editor (v0.7.0)**: `.modal--tags` is a flex column — header and form
-  `flex: none`, the card grid (`auto-fill minmax(190px, 1fr)` = 2 columns) is
-  the only scroller (`min-height: 0`, it must stay scrollable to shrink), and
-  the colour is the inline `borderLeftColor` of each card. Above 560px tall the
-  whole modal scrolls instead (phone landscape has no room for both areas).
-  Tests read the colour from the row's `style`, not from `.stats__swatch`.
+- Tags editor (v0.7.0): `.modal--tags` is a flex column — header/form pinned,
+  the card grid (`auto-fill minmax(190px, 1fr)`) is the only scroller; above
+  560px tall the whole modal scrolls instead. Tests read colours from the row's
+  `style`, not from `.stats__swatch`.
 - Stack: Vite + React 19 + TS + date-fns, plain CSS; PWA via `vite-plugin-pwa@2`
   (the only build-time dep).
 
@@ -63,6 +69,9 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
 - Two `toggleDayTag` in ONE `act()` are stale → one `act()` per toggle in tests.
 - Date tests: compare calendar fields (getDate()) not timestamps (DST).
 - pt→px in print: A5 landscape content ≈515px tall; keep print styles compact.
+- A layout change is verified with real Chromium metrics (`getBoundingClientRect`
+  + screenshots), not by reading the CSS: the 2-column fit was measured at 4
+  widths before writing the rules.
 
 ## Next Steps
 - Optional `/code-review`.

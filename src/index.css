@@ -478,9 +478,11 @@ button {
    Year footer: big year + statistics
    ============================================================ */
 
+/* Everything hangs from the top (year, counts and permits), so the first row
+   of each group lines up even when one of them is taller than the others. */
 .stats {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 24px;
   padding-top: 12px;
 }
@@ -518,7 +520,7 @@ button {
 }
 
 .stats__count {
-  font-size: 16px;
+  font-size: 11px;
 }
 
 .stats__count--zero {
@@ -527,6 +529,42 @@ button {
 
 .stats__count--negative {
   color: var(--danger);
+}
+
+/* Work permits: two columns instead of one. The count keeps its full
+   "X de N · Restantes R" text and drops to a second line inside the column
+   when the name is too long for both on one line; only a name wider than the
+   column itself ellipsizes (its full text stays on the tooltip).
+   It also gets 3/5 of the footer width (1.5 vs 1 for the regular counts). */
+.stats__list--permits {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 16px;
+  align-content: start;
+  flex: 1.5 1 0;
+}
+
+.stats__list--permits .stats__item {
+  min-width: 0;
+  flex-wrap: wrap;
+  row-gap: 2px;
+}
+
+/* A lone permit uses the whole width instead of half of it. */
+.stats__list--permits > .stats__item:only-child {
+  grid-column: 1 / -1;
+}
+
+.stats__list--permits .stats__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stats__list--permits .stats__count {
+  margin-left: auto;
+  white-space: nowrap;
 }
 
 /* ============================================================

@@ -4,6 +4,30 @@ All notable changes to the Annual Planner webapp.
 Format based on [Keep a Changelog](https://keepachangelog.com/), versioning
 following [SemVer](https://semver.org/).
 
+## [0.7.1] - 2026-11-13
+
+The statistics panel shows the work permits in two columns and reads as one
+compact row of data.
+
+### Changed
+
+- **Permit stats in two columns**: in the year footer, the month zoom and the
+  PDF export, the permits of the planner (🪪) are shown side by side, two per
+  row, instead of one under the other, and the group takes 3/5 of the width of
+  the panel so a name and its count fit on one line on a laptop. The count keeps
+  its full “2 de 4 · Restantes R” text: when the column is not wide enough for
+  both on one line, the count moves to a second line **inside the same column**
+  (numbers are never cut off) and only a name longer than the whole column is
+  shortened with an ellipsis — its full text stays on the tooltip. The count is
+  right-aligned inside its column, and a single permit takes the whole width
+  rather than half of it.
+- **Smaller counts**: the number of every statistic is 11px instead of 16px, so
+  the panel is not dominated by big numbers.
+- **Everything aligned to the top**: the year, the regular counts and the
+  permits all start at the top of the panel, so their first line lines up even
+  when one group is taller than the others (they were bottom-aligned before,
+  which pushed the regular counts below the taller permit group).
+
 ## [0.7.0] - 2026-11-11
 
 The tags editor shows the tags as a grid and keeps the form on screen all
