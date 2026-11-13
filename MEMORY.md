@@ -29,11 +29,11 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
   (`Guardia 24h` → `G24`); lowercase words ignored (`Festivo local` → `F`); a label
   with no capital → the first letter of every word. Year view: a one-tag day shows
   icon + acronym + `(subtitle)`, a two-tag day only the acronym (no icon, `wide`
-  prop in `DayCell`). Month zoom: desktop keeps label on line 1 + `(subtitle)` on
-  line 2; the one-line cells (portrait and landscape phones/tablets) hide the
-  label and show the acronym (+ subtitle only outside portrait). The subtitle needs
-  `flex: 0 100 auto` or it squeezes the acronym out of its box. Measured with
-  Chromium at 1460/1280/900/390 + A5 (still 1 PDF page).
+  prop in `DayCell`). Month zoom: a chip on ONE line (no subtitle on desktop, or a
+  small cell in portrait/landscape) hides the label → icon + acronym (`--single`
+  class + media queries); a two-line chip (label / `(subtitle)`) is untouched.
+  The subtitle needs `flex: 0 100 auto` or it squeezes the acronym out of its box.
+  Measured with Chromium at 1460/1280/900/390 + A5 (still 1 PDF page).
 - Chip: 1 click = detail modal (250ms debounce), dblclick / 600ms hold = remove;
   a drag >10px cancels the hold (it is a month swipe, not a hold).
 - Day number = button → DayDetailModal (read-only, year view and zoom);

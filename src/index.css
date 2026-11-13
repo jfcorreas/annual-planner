@@ -471,11 +471,23 @@ button {
 }
 
 /* Wide month chips show the full label on the first line; the acronym only
-   takes over when the cell collapses the chip to a single line. */
+   takes over when the chip has a single line (no subtitle for a second one,
+   or a cell small enough to collapse it). */
 .tag-chip--month .tag-chip__acro {
   display: none;
   font-size: 8px;
   font-weight: 700;
+}
+
+/* One-line desktop chip: the compact format wins over the full label (which
+   stays on the tooltip and in the day detail). Chips that do have a subtitle
+   keep their two lines untouched: label on line 1, "(subtitle)" on line 2. */
+.tag-chip--month.tag-chip--single .tag-chip__label {
+  display: none;
+}
+
+.tag-chip--month.tag-chip--single .tag-chip__acro {
+  display: inline;
 }
 
 /* Press feedback while removing with a long press. */

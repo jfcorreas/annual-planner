@@ -372,14 +372,30 @@ describe('day chip text', () => {
     expect(chip.textContent).toBe('🏖️ F')
   })
 
-  it('month chips keep the full label and carry the acronym for small cells', () => {
+  it('a one-line month chip drops the label for the compact acronym', () => {
     const { container } = renderApp()
     fillDay(container, firstIso())
 
     fireEvent.click(container.querySelector('.month-col__zoom')!) // Enero
     const chip = container.querySelector('.zoom .tag-chip') as HTMLElement
+    // No subtitle → a single line → CSS shows icon + acronym instead of the
+    // full label (which stays on the tooltip and in the day detail).
+    expect(chip.className).toContain('tag-chip--single')
     expect(chip.querySelector('.tag-chip__label')?.textContent).toBe('Guardia 24h')
     expect(chip.querySelector('.tag-chip__acro')?.textContent).toBe('G24')
+  })
+
+  it('a month chip with a subtitle keeps its two lines (no --single)', async () => {
+    const { container } = renderApp()
+    const iso = firstIso()
+    fillDay(container, iso)
+    await setSubtitle(container, iso, 'de tarde')
+
+    fireEvent.click(container.querySelector('.month-col__zoom')!) // Enero
+    const chip = container.querySelector('.zoom .tag-chip') as HTMLElement
+    expect(chip.className).not.toContain('tag-chip--single')
+    expect(chip.querySelector('.tag-chip__label')?.textContent).toBe('Guardia 24h')
+    expect(chip.querySelector('.tag-chip__sub')?.textContent).toBe('(de tarde)')
   })
 })
 

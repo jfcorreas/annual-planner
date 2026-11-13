@@ -23,12 +23,14 @@ icon, using a short form of the tag name.
   in its 12px bar (`G24(Titular: Juanfran)`, shortened with an ellipsis when
   the column is narrow). A day with two tags has no room for that, so both
   chips become acronym-only dots without the icon.
-- **Month zoom on small cells**: chips that collapse to a single line (phone
-  portrait, and phone/tablet landscape) now show the acronym instead of only
-  the icon. Landscape cells are wide enough to keep the subtitle next to it;
-  the narrow portrait column shows the acronym alone. Wide desktop chips keep
-  the full label on the first line and the subtitle (now wrapped in
-  parentheses, `G24(Titular: Juanfran)`) on the second one.
+- **Month zoom**: a chip that ends up on a single line shows icon + acronym
+  instead of the full label. That is every chip on small cells (phone portrait,
+  and phone/tablet landscape — landscape is wide enough to keep the subtitle
+  next to the acronym, the narrow portrait column shows the acronym alone), and
+  on desktop every chip without a subtitle (a chip with one keeps its two lines
+  untouched: full label on the first one, the subtitle, now wrapped in
+  parentheses, `G24(Titular: Juanfran)`, on the second). The full label always
+  stays on the tooltip and in the day detail.
 - The subtitle is what gives up its width first, so the acronym is never cut.
 
 ## [0.7.1] - 2026-11-13

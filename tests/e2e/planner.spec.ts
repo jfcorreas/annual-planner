@@ -204,8 +204,23 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
     await expect(page.locator('.zoom__dow')).toHaveCount(7)
     expect((await page.locator('.zoom__title').innerText()).toLowerCase()).toContain('enero')
     await expect(page.locator('.zoom__stats')).toHaveCount(1)
-    // Wide screens keep the full labels on the month chips.
-    await expect(page.locator('.zoom .tag-chip__label').first()).toBeVisible()
+    // Wide screens: a chip with no subtitle is a single line, so it uses the
+    // compact format (icon + acronym) and drops the full label…
+    const zoomChip = page.locator('.zoom .tag-chip').first()
+    await expect(zoomChip.locator('.tag-chip__label')).toBeHidden()
+    await expect(zoomChip.locator('.tag-chip__acro')).toBeVisible()
+
+    // …and a subtitle gives it its two lines back: label + "(subtitle)".
+    await zoomChip.click()
+    await expect(page.locator('.modal--tag-detail')).toHaveCount(1)
+    await page.locator('.tag-detail__form input').fill('de tarde')
+    await page.locator('.tag-detail__form button[type="submit"]').click()
+    await expect(page.locator('.modal--tag-detail')).toHaveCount(0)
+
+    await expect(zoomChip.locator('.tag-chip__label')).toBeVisible()
+    await expect(zoomChip.locator('.tag-chip__label')).toHaveText('Festivo nacional')
+    await expect(zoomChip.locator('.tag-chip__sub')).toHaveText('(de tarde)')
+    await expect(zoomChip.locator('.tag-chip__acro')).toBeHidden()
     await testInfo.attach('month-zoom.png', {
       body: await page.screenshot(),
       contentType: 'image/png',

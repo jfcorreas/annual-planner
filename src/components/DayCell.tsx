@@ -226,11 +226,15 @@ function TagChip({ entry, iso, readOnly, variant, wide, onOpen, onRemove }: TagC
   const roomy = variant === 'month' || wide
   const icon = roomy ? tagIcon(tag) : ''
   const sub = subtitle && roomy ? `(${subtitle})` : null
+  // A month chip with no subtitle only has one line: CSS then drops the full
+  // label for the compact acronym. Chips that do have a subtitle keep their
+  // two lines (label / "(subtitle)") untouched.
+  const single = variant === 'month' && !sub
 
   return (
     <button
       type="button"
-      className={`tag-chip tag-chip--${variant}${readOnly ? '' : ' tag-chip--removable'}`}
+      className={`tag-chip tag-chip--${variant}${single ? ' tag-chip--single' : ''}${readOnly ? '' : ' tag-chip--removable'}`}
       style={{ backgroundColor: tag.color, color: contrastOn(tag.color) }}
       title={title}
       disabled={readOnly}
@@ -244,8 +248,9 @@ function TagChip({ entry, iso, readOnly, variant, wide, onOpen, onRemove }: TagC
     >
       {/* Year chips are 12px-high bars: they always carry the acronym and,
           on a wide (single-tag) day, the icon and the subtitle too. Month
-          chips keep the full label on their first line; the acronym takes
-          over when the cell collapses them to a single line. */}
+          chips keep the full label on their first line when there is a
+          subtitle; the acronym takes over on the single-line ones (no
+          subtitle, or a cell small enough to collapse the chip). */}
       <span className="tag-chip__line">
         {icon ? <span className="tag-chip__icon">{icon}</span> : null}
         {variant === 'month' ? <span className="tag-chip__label">{tag.label}</span> : null}
