@@ -15,6 +15,27 @@ export function tagIcon(tag: Tag, options: { showGlobal?: boolean } = {}): strin
 }
 
 /**
+ * Short text of a tag shown inside a day chip when the full label does not
+ * fit: the uppercase initial of every word and the digits inside it
+ * ("Guardia 24h" → "G24", "Turno 24h" → "T24", "Festivo local" → "F").
+ * Lowercase words ("de", "local") are ignored, so a long label stays short.
+ * Falls back to the first letter of every word when the label has no
+ * capital at all (a lower-case label), so a chip is never empty.
+ */
+export function tagAcronym(label: string): string {
+  const words = label.split(/[\s\-_/]+/).filter(Boolean)
+  let acronym = ''
+  for (const word of words) {
+    const initial = word.match(/[A-ZÁÉÍÓÚÑÜ]/)?.[0] ?? ''
+    const digits = word.match(/\d+/)?.[0] ?? ''
+    acronym += initial + digits
+  }
+  if (acronym) return acronym
+  const lowered = words.map((word) => word.charAt(0)).join('').toUpperCase()
+  return lowered || '•'
+}
+
+/**
  * Usage of a tag across planners: total applications and how many planners
  * carry at least one. `excludePlannerId` supports the unmark guard, which
  * only cares about the other planners.

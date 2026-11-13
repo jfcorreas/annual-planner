@@ -3,7 +3,7 @@ import type { KeyboardEvent, MouseEvent, PointerEvent } from 'react'
 import type { Tag } from '../types'
 import { MAX_TAGS_PER_DAY } from '../types'
 import { WEEKDAY_INITIALS, isoDate, isWeekend } from '../utils/dates'
-import { tagIcon } from '../utils/tags'
+import { tagAcronym, tagIcon } from '../utils/tags'
 
 /** One tag applied on a day, resolved for display (with its subtitle). */
 export interface DayEntry {
@@ -104,6 +104,7 @@ export function DayCell({
             iso={iso}
             readOnly={readOnly}
             variant={variant}
+            wide={entries.length === 1}
             onOpen={onTagOpen}
             onRemove={onTagRemove}
           />
@@ -118,6 +119,9 @@ interface TagChipProps {
   iso: string
   readOnly: boolean
   variant: 'year' | 'month'
+  /** The day carries a single tag: the year chip has room for the icon and
+   *  the subtitle next to the acronym (two tags = acronym-only dot chip). */
+  wide: boolean
   onOpen: (date: string, tagId: string) => void
   onRemove: (date: string, tagId: string) => void
 }
@@ -127,7 +131,7 @@ interface TagChipProps {
  * OPEN_DELAY so a double click can be told apart), double click or a
  * HOLD_DELAY press removes it from the day.
  */
-function TagChip({ entry, iso, readOnly, variant, onOpen, onRemove }: TagChipProps) {
+function TagChip({ entry, iso, readOnly, variant, wide, onOpen, onRemove }: TagChipProps) {
   const { tag, subtitle } = entry
   const openTimer = useRef<number | null>(null)
   const holdTimer = useRef<number | null>(null)
@@ -216,6 +220,13 @@ function TagChip({ entry, iso, readOnly, variant, onOpen, onRemove }: TagChipPro
     ? `${tag.label}\nsolo lectura`
     : `${tag.label}${subtitle ? ` — ${subtitle}` : ''}\nClic: detalle\nDoble clic: quitar`
 
+  const acronym = tagAcronym(tag.label)
+  // A year chip only has room for the icon and the subtitle when the day
+  // carries a single tag; month chips always show them.
+  const roomy = variant === 'month' || wide
+  const icon = roomy ? tagIcon(tag) : ''
+  const sub = subtitle && roomy ? `(${subtitle})` : null
+
   return (
     <button
       type="button"
@@ -231,17 +242,16 @@ function TagChip({ entry, iso, readOnly, variant, onOpen, onRemove }: TagChipPro
       onPointerCancel={handlePointerUp}
       onKeyDown={handleKeyDown}
     >
-      {variant === 'month' ? (
-        <>
-          <span className="tag-chip__line">
-            <span className="tag-chip__icon">{tagIcon(tag)}</span>
-            <span className="tag-chip__label">{tag.label}</span>
-          </span>
-          {subtitle ? <span className="tag-chip__sub">{subtitle}</span> : null}
-        </>
-      ) : (
-        tagIcon(tag).trim()
-      )}
+      {/* Year chips are 12px-high bars: they always carry the acronym and,
+          on a wide (single-tag) day, the icon and the subtitle too. Month
+          chips keep the full label on their first line; the acronym takes
+          over when the cell collapses them to a single line. */}
+      <span className="tag-chip__line">
+        {icon ? <span className="tag-chip__icon">{icon}</span> : null}
+        {variant === 'month' ? <span className="tag-chip__label">{tag.label}</span> : null}
+        <span className="tag-chip__acro">{acronym}</span>
+      </span>
+      {sub ? <span className="tag-chip__sub">{sub}</span> : null}
     </button>
   )
 }

@@ -404,8 +404,19 @@ button {
   height: 12px;
   min-width: 6px;
   flex: 1;
-  padding: 0;
+  padding: 0 2px;
   cursor: pointer;
+  /* Every chip carries text: one line that shrinks (never wraps) and
+     clips at the edges, with the acronym centred in the bar. */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  overflow: hidden;
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .tag-chip--removable {
@@ -421,6 +432,27 @@ button {
   cursor: not-allowed;
 }
 
+/* ---- Year chips: 12px-high bars ---- */
+
+/* A day with one tag shows icon + acronym + subtitle; a day with two tags
+   only has room for the acronym (the icon is not rendered then). The gap is
+   0 so the subtitle is glued to the acronym: "G24(Titular: Juanfran)". */
+.tag-chip--year {
+  gap: 0;
+}
+
+.tag-chip--year .tag-chip__sub {
+  font-size: 7px;
+  font-weight: 500;
+  opacity: 0.9;
+}
+
+/* The icon of a holiday/permit tag stays small enough for the bar. */
+.tag-chip--year .tag-chip__icon {
+  font-size: 8px;
+  line-height: 1;
+}
+
 .tag-chip--month {
   height: auto;
   flex: none;
@@ -432,9 +464,18 @@ button {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  justify-content: flex-start;
   gap: 1px;
   line-height: 1.2;
   transition: transform 80ms ease-out;
+}
+
+/* Wide month chips show the full label on the first line; the acronym only
+   takes over when the cell collapses the chip to a single line. */
+.tag-chip--month .tag-chip__acro {
+  display: none;
+  font-size: 8px;
+  font-weight: 700;
 }
 
 /* Press feedback while removing with a long press. */
@@ -442,8 +483,8 @@ button {
   transform: scale(0.94);
 }
 
-/* Icon + label of a month chip side by side (the label is dropped on
-   small cells, leaving an icon-only chip). */
+/* Icon + text of a chip side by side (the label is dropped on small cells,
+   leaving an icon + acronym chip). */
 .tag-chip__line {
   display: flex;
   align-items: center;
@@ -459,6 +500,7 @@ button {
 }
 
 .tag-chip__label,
+.tag-chip__acro,
 .tag-chip__sub {
   min-width: 0;
   max-width: 100%;
@@ -467,11 +509,19 @@ button {
   white-space: nowrap;
 }
 
-/* Day subtitle of a month chip: smaller, slightly faded. */
+/* The acronym is what identifies a chip: it never gives up its room, so the
+   subtitle shrinks first (both end up ellipsised when nothing fits). */
+.tag-chip__acro {
+  flex: none;
+}
+
+/* Day subtitle of a month chip: smaller, slightly faded. It gives up its
+   room first (a huge shrink factor), so the acronym is never squeezed. */
 .tag-chip__sub {
   font-size: 8.5px;
   font-weight: 500;
   opacity: 0.85;
+  flex: 0 100 auto;
 }
 
 /* ============================================================
@@ -1345,9 +1395,10 @@ button {
     margin-top: 2px;
   }
 
-  /* Small cells: month chips drop their labels and become icon-only bars
-     (plain tags keep a bar of their colour). Full text lives in the
-     day detail modal. */
+  /* Small cells: month chips drop their labels and become one-line bars
+     (icon + acronym). The subtitle joins them where the cell is wide
+     enough (landscape); the full text always lives in the detail modal.
+     The gap is 0 so the subtitle stays glued to the acronym. */
   .tag-chip--month {
     height: 12px;
     padding: 0 4px;
@@ -1358,14 +1409,26 @@ button {
     overflow: hidden;
   }
 
-  .tag-chip--month .tag-chip__label,
-  .tag-chip--month .tag-chip__sub {
+  .tag-chip--month .tag-chip__label {
     display: none;
+  }
+
+  .tag-chip--month .tag-chip__acro {
+    display: inline;
+    font-size: 8px;
   }
 
   .tag-chip--month .tag-chip__icon {
     font-size: 10px;
     line-height: 1;
+  }
+}
+
+/* Narrow portrait columns: there is no room for the subtitle next to the
+   acronym in a one-line chip, so only the acronym is shown there. */
+@media (max-width: 700px) and (orientation: portrait) {
+  .tag-chip--month .tag-chip__sub {
+    display: none;
   }
 }
 
@@ -1411,7 +1474,8 @@ button {
     gap: 2px;
   }
 
-  /* Same icon-only chips as portrait: the landscape cells are narrow too. */
+  /* One-line chips as in portrait, but the landscape cells keep the
+     subtitle next to the acronym (glued to it, no gap). */
   .tag-chip--month {
     height: 12px;
     padding: 0 4px;
@@ -1422,9 +1486,13 @@ button {
     overflow: hidden;
   }
 
-  .tag-chip--month .tag-chip__label,
-  .tag-chip--month .tag-chip__sub {
+  .tag-chip--month .tag-chip__label {
     display: none;
+  }
+
+  .tag-chip--month .tag-chip__acro {
+    display: inline;
+    font-size: 8px;
   }
 
   .tag-chip--month .tag-chip__icon {

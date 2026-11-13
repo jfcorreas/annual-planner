@@ -307,8 +307,79 @@ describe('tag detail modal', () => {
 
     fireEvent.click(container.querySelector('.month-col__zoom')!) // Enero
     const chip = container.querySelector('.zoom .tag-chip') as HTMLElement
-    expect(chip.querySelector('.tag-chip__sub')?.textContent).toBe('de tarde')
+    expect(chip.querySelector('.tag-chip__sub')?.textContent).toBe('(de tarde)')
     expect(chip.title).toContain('de tarde')
+  })
+})
+
+describe('day chip text', () => {
+  /** Set the subtitle of a day's first chip through the tag detail modal. */
+  async function setSubtitle(container: HTMLElement, iso: string, value: string) {
+    fireEvent.click(chipsOf(dayCell(container, iso))[0])
+    await waitFor(() => expect(container.querySelector('.modal--tag-detail')).not.toBeNull())
+    const modal = container.querySelector('.modal--tag-detail')!
+    fireEvent.change(modal.querySelector('.tag-detail__form input')!, {
+      target: { value },
+    })
+    fireEvent.click(modal.querySelector('.tag-detail__form button[type="submit"]')!)
+    await waitFor(() => expect(container.querySelector('.modal--tag-detail')).toBeNull())
+  }
+
+  it('shows the acronym + "(subtitle)" on a single-tag year chip', async () => {
+    const { container } = renderApp()
+    const iso = firstIso()
+    fillDay(container, iso)
+
+    // A plain tag has no icon: the bar reads "G24" alone…
+    expect(chipsOf(dayCell(container, iso))[0].textContent).toBe('G24')
+
+    await setSubtitle(container, iso, 'Titular: Juanfran')
+    const chip = chipsOf(dayCell(container, iso))[0]
+    expect(chip.querySelector('.tag-chip__acro')?.textContent).toBe('G24')
+    expect(chip.querySelector('.tag-chip__sub')?.textContent).toBe('(Titular: Juanfran)')
+    expect(chip.textContent).toBe('G24(Titular: Juanfran)')
+  })
+
+  it('keeps only the acronym on a two-tag year chip (no icon, no subtitle)', async () => {
+    const { container } = renderApp()
+    const iso = firstIso()
+    fillDay(container, iso)
+    await setSubtitle(container, iso, 'de tarde')
+
+    selectTag(container, 3) // Diurno 12h
+    fillDay(container, iso)
+
+    const chips = chipsOf(dayCell(container, iso))
+    expect(chips).toHaveLength(2)
+    const guardia = chips.find((c) => c.title.startsWith('Guardia 24h'))!
+    const diurno = chips.find((c) => c.title.startsWith('Diurno 12h'))!
+    expect(guardia.textContent).toBe('G24')
+    expect(diurno.textContent).toBe('D12')
+    // No room for the icon or the subtitle on a dot chip.
+    expect(guardia.querySelector('.tag-chip__icon')).toBeNull()
+    expect(diurno.querySelector('.tag-chip__icon')).toBeNull()
+    expect(guardia.querySelector('.tag-chip__sub')).toBeNull()
+    expect(diurno.querySelector('.tag-chip__sub')).toBeNull()
+  })
+
+  it('keeps the icon on a single-tag holiday year chip', () => {
+    const { container } = renderApp()
+    selectTag(container, 6) // Festivo local
+    fillDay(container, firstIso())
+
+    const chip = chipsOf(dayCell(container, firstIso()))[0]
+    // Only words with a capital contribute: "local" is dropped → "F".
+    expect(chip.textContent).toBe('🏖️ F')
+  })
+
+  it('month chips keep the full label and carry the acronym for small cells', () => {
+    const { container } = renderApp()
+    fillDay(container, firstIso())
+
+    fireEvent.click(container.querySelector('.month-col__zoom')!) // Enero
+    const chip = container.querySelector('.zoom .tag-chip') as HTMLElement
+    expect(chip.querySelector('.tag-chip__label')?.textContent).toBe('Guardia 24h')
+    expect(chip.querySelector('.tag-chip__acro')?.textContent).toBe('G24')
   })
 })
 
@@ -1397,14 +1468,21 @@ describe('tags editor', () => {
     fireEvent.click(holidayPaletteChip)
     fillDay(container, iso)
 
-    // Year chips: the holiday chip shows the icon, the regular one stays empty
-    // (titles keep the plain label, no icon — tooltips are unaffected).
+    // Year chips of a two-tag day: acronym only, no icon — a dot chip has
+    // no room for it (titles keep the plain label, tooltips are unaffected).
     const yearChips = chipsOf(dayCell(container, iso))
     expect(yearChips).toHaveLength(2)
     const holidayYear = yearChips.find((c) => c.getAttribute('title')?.startsWith('Puente'))!
     const regularYear = yearChips.find((c) => c.getAttribute('title')?.startsWith('Guardia 24h'))!
-    expect(holidayYear.textContent).toContain('🏖️')
-    expect(regularYear.textContent).toBe('')
+    expect(holidayYear.textContent).toBe('P')
+    expect(regularYear.textContent).toBe('G24')
+
+    // A day with a single holiday tag is wide enough to keep the icon.
+    const wideIso = isoDate(daysOfYear(YEAR)[1])
+    fillDay(container, wideIso)
+    const wideChip = chipsOf(dayCell(container, wideIso))[0]
+    expect(wideChip.textContent).toContain('🏖️')
+    expect(wideChip.textContent).toContain('P')
 
     // Month chips: same rule next to the label.
     fireEvent.click(container.querySelector('.month-col__zoom')!) // Enero
@@ -1440,15 +1518,22 @@ describe('tags editor', () => {
     fireEvent.click(permitPaletteChip)
     fillDay(container, iso)
 
-    // Year chips: the permit chip shows the icon, the regular one stays empty.
+    // Year chips of a two-tag day: acronym only, no icon.
     const yearChips = chipsOf(dayCell(container, iso))
     expect(yearChips).toHaveLength(2)
     const permitYear = yearChips.find((c) =>
       c.getAttribute('title')?.startsWith('Permiso médico'),
     )!
     const regularYear = yearChips.find((c) => c.getAttribute('title')?.startsWith('Guardia 24h'))!
-    expect(permitYear.textContent).toContain('🪪')
-    expect(regularYear.textContent).toBe('')
+    expect(permitYear.textContent).toBe('P')
+    expect(regularYear.textContent).toBe('G24')
+
+    // A day with a single permit tag is wide enough to keep the icon.
+    const wideIso = isoDate(daysOfYear(YEAR)[1])
+    fillDay(container, wideIso)
+    const wideChip = chipsOf(dayCell(container, wideIso))[0]
+    expect(wideChip.textContent).toContain('🪪')
+    expect(wideChip.textContent).toContain('P')
 
     // Month chips: same rule next to the label.
     fireEvent.click(container.querySelector('.month-col__zoom')!) // Enero

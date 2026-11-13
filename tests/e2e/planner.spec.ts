@@ -172,6 +172,32 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
     expect(statsText).not.toContain('Festivo nacional')
   })
 
+  await test.step('4b. Year chips always show text', async () => {
+    await page.locator('.palette .chip', { hasText: 'Guardia 24h' }).click()
+    const day = page.locator('.day[data-iso]').nth(12)
+    await fillDay(page, day)
+
+    // A day with a single tag has room for the subtitle, next to the acronym.
+    await expect(day.locator('.tag-chip__acro')).toHaveText('G24')
+    await expect(day.locator('.tag-chip__icon')).toHaveCount(0) // plain tag
+
+    await day.locator('.tag-chip').click()
+    await expect(page.locator('.modal--tag-detail')).toHaveCount(1)
+    await page.locator('.tag-detail__form input').fill('Titular: Juanfran')
+    await page.locator('.tag-detail__form button[type="submit"]').click()
+    await expect(page.locator('.modal--tag-detail')).toHaveCount(0)
+    await expect(day.locator('.tag-chip')).toHaveText('G24(Titular: Juanfran)')
+
+    // Two tags: both chips become acronym-only dots (no icon, no subtitle).
+    await page.locator('.palette .chip', { hasText: 'Diurno 12h' }).click()
+    await fillDay(page, day)
+    await expect(day.locator('.tag-chip')).toHaveCount(2)
+    await expect(day.locator('.tag-chip__acro').first()).toHaveText('G24')
+    await expect(day.locator('.tag-chip__acro').nth(1)).toHaveText('D12')
+    await expect(day.locator('.tag-chip__icon')).toHaveCount(0)
+    await expect(day.locator('.tag-chip__sub')).toHaveCount(0)
+  })
+
   await test.step('5. Month zoom overlaps year view', async () => {
     await page.locator('.month-col__zoom', { hasText: 'Enero' }).click()
     await expect(page.locator('.zoom')).toHaveCount(1)
@@ -414,13 +440,16 @@ test('month zoom on a phone: portrait and landscape', async ({ page }) => {
     expect(await page.locator('.zoom .tag-chip').count()).toBe(chips)
   })
 
-  await test.step('portrait: chips are icon-only and the number opens the day detail', async () => {
-    // A filled day: the label and subtitle are hidden in small cells…
+  await test.step('portrait: one-line chips show the acronym, the number opens the detail', async () => {
+    // A filled day: the chip collapses to a single line — the label and the
+    // subtitle are dropped, the acronym takes their place.
     const day = page.locator('.zoom .day[data-iso]').nth(5)
     await fillDay(page, day)
     await expect(day.locator('.tag-chip')).toHaveCount(1)
     await expect(day.locator('.tag-chip__label')).toBeHidden()
     await expect(day.locator('.tag-chip__sub')).toBeHidden()
+    await expect(day.locator('.tag-chip__acro')).toBeVisible()
+    await expect(day.locator('.tag-chip__acro')).toHaveText('G24')
 
     // …and the day number shows them in full inside the modal.
     await day.locator('.day__number').click()
@@ -455,6 +484,24 @@ test('month zoom on a phone: portrait and landscape', async ({ page }) => {
     await zoom.evaluate((el) => el.scrollTo(0, 0))
     await expect(page.locator('.zoom__bar')).toBeInViewport()
     expect(await statsTop()).toBeGreaterThanOrEqual(374)
+  })
+
+  await test.step('landscape: one-line chips show the acronym + the subtitle', async () => {
+    const day = page.locator('.zoom .day[data-iso]').nth(5)
+    await expect(day.locator('.tag-chip__acro')).toBeVisible()
+    await expect(day.locator('.tag-chip__acro')).toHaveText('G24')
+    await expect(day.locator('.tag-chip__label')).toBeHidden()
+
+    // The subtitle joins the acronym on a cell wide enough to hold it.
+    await day.locator('.tag-chip').click()
+    await expect(page.locator('.modal--tag-detail')).toHaveCount(1)
+    await page.locator('.tag-detail__form input').fill('Titular: Juanfran')
+    await page.locator('.tag-detail__form button[type="submit"]').click()
+    await expect(page.locator('.modal--tag-detail')).toHaveCount(0)
+
+    await expect(day.locator('.tag-chip__sub')).toBeVisible()
+    await expect(day.locator('.tag-chip__sub')).toHaveText('(Titular: Juanfran)')
+    await expect(day.locator('.tag-chip__acro')).toHaveText('G24')
   })
 
   await test.step('landscape: the same lateral drag moves to the next month', async () => {

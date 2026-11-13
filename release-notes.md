@@ -4,6 +4,33 @@ All notable changes to the Annual Planner webapp.
 Format based on [Keep a Changelog](https://keepachangelog.com/), versioning
 following [SemVer](https://semver.org/).
 
+## [0.7.2] - 2026-11-13
+
+Every day chip now carries readable text instead of a bare colour bar or an
+icon, using a short form of the tag name.
+
+### Added
+
+- **Acronym on every chip**: a new helper turns a tag name into its acronym —
+  the uppercase initial of each word plus its digits (`Guardia 24h` → `G24`,
+  `Diurno 12h` → `D12`). Lowercase words are ignored (`Guardia de tarde` →
+  `G`), and a name with no capital falls back to the first letter of each word
+  so a chip is never empty. The full name and subtitle stay on the tooltip.
+
+### Changed
+
+- **Year view**: a chip with a single tag shows icon + acronym + `(subtitle)`
+  in its 12px bar (`G24(Titular: Juanfran)`, shortened with an ellipsis when
+  the column is narrow). A day with two tags has no room for that, so both
+  chips become acronym-only dots without the icon.
+- **Month zoom on small cells**: chips that collapse to a single line (phone
+  portrait, and phone/tablet landscape) now show the acronym instead of only
+  the icon. Landscape cells are wide enough to keep the subtitle next to it;
+  the narrow portrait column shows the acronym alone. Wide desktop chips keep
+  the full label on the first line and the subtitle (now wrapped in
+  parentheses, `G24(Titular: Juanfran)`) on the second one.
+- The subtitle is what gives up its width first, so the acronym is never cut.
+
 ## [0.7.1] - 2026-11-13
 
 The statistics panel shows the work permits in two columns and reads as one
