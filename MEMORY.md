@@ -39,10 +39,14 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
   acronym only, no icon. Month desktop: two lines iff subtitle (icon + full
   name / `(subtitle)`), else one line; top line falls back to icon + acronym
   when it does not fit. Subtitle yields width first (acronym never cut; a
-  long subtitle ellipsises, full text on tooltip). Small cells unchanged
-  (media queries force the acronym). Flagged for review: a too-long year
-  name also falls back to the acronym; A4/A5 print reuses screen-measured
-  chips. Verified with Chromium at 1460 + phone (e2e step 7b).
+  long subtitle ellipsises, full text on tooltip). Small cells: portrait
+  (≤700) keeps forcing the acronym and hiding the subtitle (untouched);
+  landscape (≤1100) shows text — with subtitle icon + acro + glued
+  `(subtitle)`, without subtitle icon + full name (fit fallback → acro),
+  driven by `:has(.tag-chip__sub)` hiding the label there. Flagged for
+  review: a too-long year name also falls back to the acronym; A4/A5 print
+  reuses screen-measured chips. Verified with Chromium at 1460 + phone
+  portrait/landscape (e2e step 7b + phone test).
 - Chip: 1 click = detail modal (250ms debounce), dblclick / 600ms hold = remove;
   a drag >10px cancels the hold (it is a month swipe, not a hold).
 - Day number = button → DayDetailModal (read-only, year view and zoom);
@@ -73,5 +77,6 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
   reading the CSS (the stats grid and the chip text were measured at 4 widths).
 
 ## Next Steps
-- Desktop chip spec done (commits local, push to `main` deploys Pages — ask).
-- Later: smartphone chip UI, then A4/A5 print chip layouts.
+- Desktop chip spec + phone landscape chips done (commits local, push to
+  `main` deploys Pages — ask).
+- Later: A4/A5 print chip layouts.

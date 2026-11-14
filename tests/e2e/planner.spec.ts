@@ -537,22 +537,27 @@ test('month zoom on a phone: portrait and landscape', async ({ page }) => {
     expect(await statsTop()).toBeGreaterThanOrEqual(374)
   })
 
-  await test.step('landscape: one-line chips show the acronym + the subtitle', async () => {
+  await test.step('landscape: chips show the name, or acronym + subtitle', async () => {
     const day = page.locator('.zoom .day[data-iso]').nth(5)
-    await expect(day.locator('.tag-chip__acro')).toBeVisible()
-    await expect(day.locator('.tag-chip__acro')).toHaveText('G24')
-    await expect(day.locator('.tag-chip__label')).toBeHidden()
 
-    // The subtitle joins the acronym on a cell wide enough to hold it.
+    // No subtitle: the one line carries the full tag name (the acronym only
+    // takes over when the name does not fit the cell).
+    await expect(day.locator('.tag-chip__label')).toBeVisible()
+    await expect(day.locator('.tag-chip__label')).toHaveText('Guardia 24h')
+    await expect(day.locator('.tag-chip__acro')).toBeHidden()
+
+    // The subtitle joins the same line: acronym + "(subtitle)".
     await day.locator('.tag-chip').click()
     await expect(page.locator('.modal--tag-detail')).toHaveCount(1)
     await page.locator('.tag-detail__form input').fill('Titular: Juanfran')
     await page.locator('.tag-detail__form button[type="submit"]').click()
     await expect(page.locator('.modal--tag-detail')).toHaveCount(0)
 
+    await expect(day.locator('.tag-chip__label')).toBeHidden()
+    await expect(day.locator('.tag-chip__acro')).toBeVisible()
+    await expect(day.locator('.tag-chip__acro')).toHaveText('G24')
     await expect(day.locator('.tag-chip__sub')).toBeVisible()
     await expect(day.locator('.tag-chip__sub')).toHaveText('(Titular: Juanfran)')
-    await expect(day.locator('.tag-chip__acro')).toHaveText('G24')
   })
 
   await test.step('landscape: the same lateral drag moves to the next month', async () => {

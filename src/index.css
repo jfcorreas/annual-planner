@@ -1406,10 +1406,11 @@ button {
     margin-top: 2px;
   }
 
-  /* Small cells: month chips drop their labels and become one-line bars
-     (icon + acronym). The subtitle joins them where the cell is wide
-     enough (landscape); the full text always lives in the detail modal.
-     The gap is 0 so the subtitle stays glued to the acronym. */
+  /* Small cells: month chips become one-line bars (12px, nothing wraps)
+     and the acronym gets its small-cell style. Portrait drops the label
+     and the subtitle too (icon + acronym, below); landscape keeps both —
+     see its own block. The gap is 0 so the subtitle stays glued to the
+     acronym. */
   .tag-chip--month {
     height: 12px;
     padding: 0 4px;
@@ -1418,10 +1419,6 @@ button {
     justify-content: center;
     gap: 0;
     overflow: hidden;
-  }
-
-  .tag-chip--month .tag-chip__label {
-    display: none;
   }
 
   .tag-chip--month .tag-chip__acro {
@@ -1435,9 +1432,15 @@ button {
   }
 }
 
-/* Narrow portrait columns: there is no room for the subtitle next to the
-   acronym in a one-line chip, so only the acronym is shown there. */
+/* Narrow portrait columns: there is no room for the label or the subtitle
+   next to the acronym in a one-line chip, so only the acronym is shown
+   there. (A label hidden here counts as "does not fit" in the chip's own
+   measurement, which is what puts the acronym on the chip.) */
 @media (max-width: 700px) and (orientation: portrait) {
+  .tag-chip--month .tag-chip__label {
+    display: none;
+  }
+
   .tag-chip--month .tag-chip__sub {
     display: none;
   }
@@ -1485,8 +1488,11 @@ button {
     gap: 2px;
   }
 
-  /* One-line chips as in portrait, but the landscape cells keep the
-     subtitle next to the acronym (glued to it, no gap). */
+  /* One-line chips as in portrait, but the landscape cells keep text: a
+     chip with a subtitle reads icon + acronym + "(subtitle)" glued
+     together ("🏖️ FL(Día de la Cruz)"); a chip without one shows the full
+     tag name ("🏖️ Festivo local"), which the fit measurement replaces with
+     the acronym when the cell is too narrow for it. */
   .tag-chip--month {
     height: 12px;
     padding: 0 4px;
@@ -1497,7 +1503,10 @@ button {
     overflow: hidden;
   }
 
-  .tag-chip--month .tag-chip__label {
+  /* With a subtitle only the acronym fits on the line. Hiding the label
+     counts as "does not fit" in the chip's measurement, which is exactly
+     what puts the acronym (and the subtitle next to it) on the chip. */
+  .tag-chip--month:has(.tag-chip__sub) .tag-chip__label {
     display: none;
   }
 

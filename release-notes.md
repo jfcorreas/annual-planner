@@ -37,8 +37,14 @@ acronym when it does not.
   full name on the top one, `(subtitle)` on the bottom one — and a chip
   without one is a single line. When the top line does not fit, it shows
   icon + acronym instead of a clipped name.
-- **Small cells (phone/tablet)** keep their existing behaviour: the media
-  queries still force the acronym, so nothing changed there yet.
+- **Month zoom in landscape (phones/tablets up to 1100px)**: the one-line
+  chips keep their text. With a subtitle they read icon + acronym + the
+  subtitle glued to it (`🏖️ FL(Día de la Cruz)`); without one they show the
+  full tag name (`🏖️ Festivo local`), falling back to icon + acronym when
+  the name does not fit the cell.
+- **Small cells in portrait** keep their existing behaviour: the media
+  queries still force the acronym and hide the subtitle, so nothing changed
+  there (nor in the year view, nor on desktop).
 - The subtitle is what gives up its width first, so the acronym is never cut.
 
 ## [0.7.1] - 2026-11-13
