@@ -18,12 +18,13 @@ statistics panel is locked to the desktop styles.
 
 ### Changed
 
-- **A4 statistics panel = desktop styles**: the printed statistics keep
-  exactly what the screen shows — the row layout with the big year on the
-  left, the small text (12px items, 11px counts) and the two-column work
-  permit group with its "U de N · Restantes R" count. An e2e check now
-  measures those styles under print media at the A4 page box (1077×748px),
-  so the PDF cannot drift away from the desktop panel again.
+- **A4 statistics panel = desktop styles, 2px smaller type**: the printed
+  statistics keep the desktop layout — the row with the big year on the left
+  and the two-column work permit group with its "U de N · Restantes R"
+  count — while every font drops 2px for paper (year 64→62px, items
+  12→10px, counts 11→9px). An e2e check measures those sizes under print
+  media at the A4 page box (1077×748px), so the PDF cannot drift away from
+  the desktop panel again.
 
 ## [0.7.2] - 2026-11-14
 

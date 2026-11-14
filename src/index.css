@@ -1589,7 +1589,18 @@ button {
     display: none !important;
   }
 
-  /* The statistics panel needs no print rules of its own: it keeps the
-     desktop styles (row layout, small text, two-column permit group),
-     which an e2e check measures under print media so it cannot drift. */
+  /* The statistics panel keeps the desktop styles (row layout, two-column
+     permit group); only its type is 2px smaller for paper. An e2e check
+     measures these sizes under print media so the PDF cannot drift. */
+  .stats__year {
+    font-size: 62px;
+  }
+
+  .stats__item {
+    font-size: 10px;
+  }
+
+  .stats__count {
+    font-size: 9px;
+  }
 }

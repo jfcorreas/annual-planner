@@ -2,9 +2,9 @@
 Project Memory between sessions. Maximum ~50 lines: summarize or remove anything that no longer adds value.
 
 ## Current Status
-- v0.8.0 (A4-only PDF; A5 button and rules removed; print stats locked to the
-  desktop styles by e2e). Pages redeploy from `main`; the PWA picks the build
-  up after two reloads.
+- v0.8.0 (A4-only PDF; A5 button and rules removed; print stats = desktop
+  layout with 2px smaller fonts, locked by e2e). Pages redeploy from `main`; the
+  PWA picks the build up after two reloads.
 - Green: `tsc -b`, oxlint, `npm test` (174), `npm run test:e2e` (2: full flow +
   phone portrait/landscape).
 - Installed as Omarchy web app (:4830, systemd `annual-planner`): after a build
@@ -25,8 +25,9 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
   2nd line inside its column); `.stats` is `align-items: flex-start`.
 - Storage v2 under `annual-planner:v2`; v1 never read (blocking "Empezar de cero").
 - PDF: **A4 landscape only** (A5 removed in 0.8.0); `printPlanner()` injects the
-  `@page` rule and sets `body[data-paper="A4"]`. Print stats = desktop styles,
-  locked by an e2e measurement under print media at the A4 page box.
+  `@page` rule and sets `body[data-paper="A4"]`. Print stats = desktop layout
+  with fonts 2px smaller (year 62 / items 10 / counts 9px), locked by an e2e
+  measurement under print media at the A4 page box.
 - No tag selected by default: clicking the active palette chip deselects it; with
   no tag (or an archived planner) a day click opens the day detail modal.
 - **Chip text (desktop spec)**: `tagAcronym` = uppercase initial of each word +

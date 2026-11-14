@@ -426,14 +426,15 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
     await expect(page.locator('.palette .chip', { hasText: 'Permiso e2e' })).toHaveCount(1)
 
     // Under print media at the A4 landscape page box (285×198mm ≈ 1077×748px)
-    // the stats panel keeps the desktop styles: row layout, small text and
-    // the two-column permit grid.
+    // the stats panel keeps the desktop styles — row layout and the
+    // two-column permit grid — with every font 2px smaller than the screen.
     await page.setViewportSize({ width: 1077, height: 748 })
     await page.emulateMedia({ media: 'print' })
     const stats = await page.evaluate(() => {
       const cs = (sel: string) => getComputedStyle(document.querySelector(sel)!)
       return {
         direction: cs('.stats').flexDirection,
+        year: cs('.stats__year').fontSize,
         item: cs('.stats__item').fontSize,
         count: cs('.stats__count').fontSize,
         permits: cs('.stats__list--permits').display,
@@ -442,8 +443,9 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
     })
     expect(stats).toEqual({
       direction: 'row',
-      item: '12px',
-      count: '11px',
+      year: '62px', // 64px on screen
+      item: '10px', // 12px on screen
+      count: '9px', // 11px on screen
       permits: 'grid',
       permitCols: 2,
     })
