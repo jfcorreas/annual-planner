@@ -4,33 +4,41 @@ All notable changes to the Annual Planner webapp.
 Format based on [Keep a Changelog](https://keepachangelog.com/), versioning
 following [SemVer](https://semver.org/).
 
-## [0.7.2] - 2026-11-13
+## [0.7.2] - 2026-11-14
 
 Every day chip now carries readable text instead of a bare colour bar or an
-icon, using a short form of the tag name.
+icon, following a fixed rule per view: the full tag name when it fits, its
+acronym when it does not.
 
 ### Added
 
 - **Acronym on every chip**: a new helper turns a tag name into its acronym —
   the uppercase initial of each word plus its digits (`Guardia 24h` → `G24`,
-  `Diurno 12h` → `D12`). Lowercase words are ignored (`Guardia de tarde` →
-  `G`), and a name with no capital falls back to the first letter of each word
+  `Diurno 12h` → `D12`). Lowercase words are ignored (`Festivo local` →
+  `F`), and a name with no capital falls back to the first letter of each word
   so a chip is never empty. The full name and subtitle stay on the tooltip.
+- **Real fit measurement**: each chip measures its own label on every render
+  and resize (a `ResizeObserver` on the chip). When the full name does not fit
+  next to the icon, the acronym takes the line over — the name is never
+  clipped mid-word, and the hidden label stays in the DOM (width 0, still
+  measurable) so the decision can be retaken at any time.
 
 ### Changed
 
-- **Year view**: a chip with a single tag shows icon + acronym + `(subtitle)`
-  in its 12px bar (`G24(Titular: Juanfran)`, shortened with an ellipsis when
-  the column is narrow). A day with two tags has no room for that, so both
-  chips become acronym-only dots without the icon.
-- **Month zoom**: a chip that ends up on a single line shows icon + acronym
-  instead of the full label. That is every chip on small cells (phone portrait,
-  and phone/tablet landscape — landscape is wide enough to keep the subtitle
-  next to the acronym, the narrow portrait column shows the acronym alone), and
-  on desktop every chip without a subtitle (a chip with one keeps its two lines
-  untouched: full label on the first one, the subtitle, now wrapped in
-  parentheses, `G24(Titular: Juanfran)`, on the second). The full label always
-  stays on the tooltip and in the day detail.
+- **Year view (always one line)**: a day with a single tag and no subtitle
+  shows icon + full name (`🏖️ Festivo local`). The subtitle takes the room
+  instead, so the chip reads icon + acronym + glued subtitle
+  (`G24(Titular: Juanfran)` — the acronym is never ellipsised; a very long
+  subtitle shortens with an ellipsis, its full text on the tooltip). A day
+  with two tags only has room for the acronym on both chips — no icon, no
+  subtitle. If a single tag's name is too long for the bar, it also falls
+  back to icon + acronym.
+- **Month zoom on desktop**: a chip with a subtitle has two lines — icon +
+  full name on the top one, `(subtitle)` on the bottom one — and a chip
+  without one is a single line. When the top line does not fit, it shows
+  icon + acronym instead of a clipped name.
+- **Small cells (phone/tablet)** keep their existing behaviour: the media
+  queries still force the acronym, so nothing changed there yet.
 - The subtitle is what gives up its width first, so the acronym is never cut.
 
 ## [0.7.1] - 2026-11-13

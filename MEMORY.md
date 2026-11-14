@@ -4,7 +4,7 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
 ## Current Status
 - v0.7.2 (chips always show text: acronym + subtitle). Pages redeploy from `main`;
   the PWA picks the build up after two reloads.
-- Green: `tsc -b`, oxlint, `npm test` (172), `npm run test:e2e` (2: full flow +
+- Green: `tsc -b`, oxlint, `npm test` (174), `npm run test:e2e` (2: full flow +
   phone portrait/landscape).
 - Installed as Omarchy web app (:4830, systemd `annual-planner`): after a build
   `cp -a dist/. ~/.local/share/annual-planner/`, then reload twice (the PWA worker
@@ -25,15 +25,24 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
 - Storage v2 under `annual-planner:v2`; v1 never read (blocking "Empezar de cero").
 - No tag selected by default: clicking the active palette chip deselects it; with
   no tag (or an archived planner) a day click opens the day detail modal.
-- **Chip text**: `tagAcronym(label)` = uppercase initial of each word + its digits
-  (`Guardia 24h` → `G24`); lowercase words ignored (`Festivo local` → `F`); a label
-  with no capital → the first letter of every word. Year view: a one-tag day shows
-  icon + acronym + `(subtitle)`, a two-tag day only the acronym (no icon, `wide`
-  prop in `DayCell`). Month zoom: a chip on ONE line (no subtitle on desktop, or a
-  small cell in portrait/landscape) hides the label → icon + acronym (`--single`
-  class + media queries); a two-line chip (label / `(subtitle)`) is untouched.
-  The subtitle needs `flex: 0 100 auto` or it squeezes the acronym out of its box.
-  Measured with Chromium at 1460/1280/900/390 + A5 (still 1 PDF page).
+- **Chip text (desktop spec)**: `tagAcronym` = uppercase initial of each word +
+  digits (`Guardia 24h` → `G24`, `Festivo local` → `F`; user kept this rule);
+  no capital → first letter of every word. Fit is **measured** in `TagChip`
+  (`useLayoutEffect` each commit + `ResizeObserver`): `label.scrollWidth` vs
+  chip width − padding − icon − gap; the hidden label stays in the DOM at
+  `position:absolute; width:0` so measurement never depends on the decision
+  (`display:none` via media query counts as "does not fit"). Flags:
+  `labelled = month || (wide && !sub)`, `abbrev = labelled && !fits` →
+  `--abbrev` class. Year (always one line): 1 tag no subtitle → icon + full
+  name (`🏖️ Festivo local`); 1 tag + subtitle → acronym + glued
+  `(subtitle)` (`G24(Titular: Juanfran)`, label not rendered); 2 tags →
+  acronym only, no icon. Month desktop: two lines iff subtitle (icon + full
+  name / `(subtitle)`), else one line; top line falls back to icon + acronym
+  when it does not fit. Subtitle yields width first (acronym never cut; a
+  long subtitle ellipsises, full text on tooltip). Small cells unchanged
+  (media queries force the acronym). Flagged for review: a too-long year
+  name also falls back to the acronym; A4/A5 print reuses screen-measured
+  chips. Verified with Chromium at 1460 + phone (e2e step 7b).
 - Chip: 1 click = detail modal (250ms debounce), dblclick / 600ms hold = remove;
   a drag >10px cancels the hold (it is a month swipe, not a hold).
 - Day number = button → DayDetailModal (read-only, year view and zoom);
@@ -64,4 +73,5 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
   reading the CSS (the stats grid and the chip text were measured at 4 widths).
 
 ## Next Steps
-- Optional `/code-review`.
+- Desktop chip spec done (commits local, push to `main` deploys Pages — ask).
+- Later: smartphone chip UI, then A4/A5 print chip layouts.

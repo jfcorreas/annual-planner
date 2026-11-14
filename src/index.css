@@ -406,8 +406,8 @@ button {
   flex: 1;
   padding: 0 2px;
   cursor: pointer;
-  /* Every chip carries text: one line that shrinks (never wraps) and
-     clips at the edges, with the acronym centred in the bar. */
+  /* Every chip carries text on one line that shrinks (never wraps) and
+     clips at the edges; month chips stack the subtitle on a second one. */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -434,9 +434,11 @@ button {
 
 /* ---- Year chips: 12px-high bars ---- */
 
-/* A day with one tag shows icon + acronym + subtitle; a day with two tags
-   only has room for the acronym (the icon is not rendered then). The gap is
-   0 so the subtitle is glued to the acronym: "G24(Titular: Juanfran)". */
+/* A day with one tag has room for the icon and, without a subtitle, its
+   full name ("🏖️ Festivo local"); with a subtitle it reads icon + acronym
+   + subtitle ("G24(Titular: Juanfran)"). A day with two tags only has room
+   for the acronym (the icon is not rendered then). The chip gap is 0 so
+   the subtitle is glued to the acronym. */
 .tag-chip--year {
   gap: 0;
 }
@@ -470,24 +472,22 @@ button {
   transition: transform 80ms ease-out;
 }
 
-/* Wide month chips show the full label on the first line; the acronym only
-   takes over when the chip has a single line (no subtitle for a second one,
-   or a cell small enough to collapse it). */
+/* The acronym of a month chip: smaller than the label it stands in for.
+   It is only in the DOM when it is the chip's text (the label did not fit),
+   so it needs no hiding rule of its own — the media queries below only
+   restate it for the small cells. */
 .tag-chip--month .tag-chip__acro {
-  display: none;
   font-size: 8px;
   font-weight: 700;
 }
 
-/* One-line desktop chip: the compact format wins over the full label (which
-   stays on the tooltip and in the day detail). Chips that do have a subtitle
-   keep their two lines untouched: label on line 1, "(subtitle)" on line 2. */
-.tag-chip--month.tag-chip--single .tag-chip__label {
-  display: none;
-}
-
-.tag-chip--month.tag-chip--single .tag-chip__acro {
-  display: inline;
+/* The label steps aside when it does not fit next to the icon (JS measures
+   it on every render and resize): it leaves the flow but stays in the DOM,
+   width 0 and still measurable, so the decision can be taken again. The
+   full name always remains on the tooltip and in the day detail. */
+.tag-chip--abbrev .tag-chip__label {
+  position: absolute;
+  width: 0;
 }
 
 /* Press feedback while removing with a long press. */
@@ -495,8 +495,8 @@ button {
   transform: scale(0.94);
 }
 
-/* Icon + text of a chip side by side (the label is dropped on small cells,
-   leaving an icon + acronym chip). */
+/* Icon + text of a chip side by side (the label steps aside when it does
+   not fit, leaving an icon + acronym chip). */
 .tag-chip__line {
   display: flex;
   align-items: center;
@@ -512,7 +512,6 @@ button {
 }
 
 .tag-chip__label,
-.tag-chip__acro,
 .tag-chip__sub {
   min-width: 0;
   max-width: 100%;

@@ -325,16 +325,21 @@ describe('day chip text', () => {
     await waitFor(() => expect(container.querySelector('.modal--tag-detail')).toBeNull())
   }
 
-  it('shows the acronym + "(subtitle)" on a single-tag year chip', async () => {
+  it('shows the full name on a single-tag year chip, the acronym with a subtitle', async () => {
     const { container } = renderApp()
     const iso = firstIso()
     fillDay(container, iso)
 
-    // A plain tag has no icon: the bar reads "G24" alone…
-    expect(chipsOf(dayCell(container, iso))[0].textContent).toBe('G24')
+    // Without a subtitle the bar carries the full name (plain tag: no icon).
+    const plain = chipsOf(dayCell(container, iso))[0]
+    expect(plain.querySelector('.tag-chip__label')?.textContent).toBe('Guardia 24h')
+    expect(plain.querySelector('.tag-chip__acro')).toBeNull()
+    expect(plain.textContent).toBe('Guardia 24h')
 
+    // The subtitle takes the room: acronym + "(subtitle)" (never ellipsised).
     await setSubtitle(container, iso, 'Titular: Juanfran')
     const chip = chipsOf(dayCell(container, iso))[0]
+    expect(chip.querySelector('.tag-chip__label')).toBeNull()
     expect(chip.querySelector('.tag-chip__acro')?.textContent).toBe('G24')
     expect(chip.querySelector('.tag-chip__sub')?.textContent).toBe('(Titular: Juanfran)')
     expect(chip.textContent).toBe('G24(Titular: Juanfran)')
@@ -362,30 +367,28 @@ describe('day chip text', () => {
     expect(diurno.querySelector('.tag-chip__sub')).toBeNull()
   })
 
-  it('keeps the icon on a single-tag holiday year chip', () => {
+  it('keeps the icon and the name on a single-tag holiday year chip', () => {
     const { container } = renderApp()
     selectTag(container, 6) // Festivo local
     fillDay(container, firstIso())
 
     const chip = chipsOf(dayCell(container, firstIso()))[0]
-    // Only words with a capital contribute: "local" is dropped → "F".
-    expect(chip.textContent).toBe('🏖️ F')
+    expect(chip.textContent).toBe('🏖️ Festivo local')
+    expect(chip.querySelector('.tag-chip__acro')).toBeNull()
   })
 
-  it('a one-line month chip drops the label for the compact acronym', () => {
+  it('a month chip carries the full label and keeps the acronym out while it fits', () => {
     const { container } = renderApp()
     fillDay(container, firstIso())
 
     fireEvent.click(container.querySelector('.month-col__zoom')!) // Enero
     const chip = container.querySelector('.zoom .tag-chip') as HTMLElement
-    // No subtitle → a single line → CSS shows icon + acronym instead of the
-    // full label (which stays on the tooltip and in the day detail).
-    expect(chip.className).toContain('tag-chip--single')
+    expect(chip.className).not.toContain('tag-chip--abbrev')
     expect(chip.querySelector('.tag-chip__label')?.textContent).toBe('Guardia 24h')
-    expect(chip.querySelector('.tag-chip__acro')?.textContent).toBe('G24')
+    expect(chip.querySelector('.tag-chip__acro')).toBeNull()
   })
 
-  it('a month chip with a subtitle keeps its two lines (no --single)', async () => {
+  it('a month chip with a subtitle keeps its two lines (label / "(subtitle)")', async () => {
     const { container } = renderApp()
     const iso = firstIso()
     fillDay(container, iso)
@@ -393,9 +396,28 @@ describe('day chip text', () => {
 
     fireEvent.click(container.querySelector('.month-col__zoom')!) // Enero
     const chip = container.querySelector('.zoom .tag-chip') as HTMLElement
-    expect(chip.className).not.toContain('tag-chip--single')
+    expect(chip.className).not.toContain('tag-chip--abbrev')
     expect(chip.querySelector('.tag-chip__label')?.textContent).toBe('Guardia 24h')
     expect(chip.querySelector('.tag-chip__sub')?.textContent).toBe('(de tarde)')
+    expect(chip.querySelector('.tag-chip__acro')).toBeNull()
+  })
+
+  it('replaces a label that does not fit with the acronym', () => {
+    const { container } = renderApp()
+    fillDay(container, firstIso())
+
+    fireEvent.click(container.querySelector('.month-col__zoom')!) // Enero
+    const chip = container.querySelector('.zoom .tag-chip') as HTMLElement
+    const label = chip.querySelector('.tag-chip__label')!
+
+    // jsdom has no layout: fake a label far wider than the chip…
+    Object.defineProperty(label, 'scrollWidth', { value: 400, configurable: true })
+
+    // …and force a re-render (the active tag changes), which measures again.
+    selectTag(container, 3) // Diurno 12h
+
+    expect(chip.className).toContain('tag-chip--abbrev')
+    expect(chip.querySelector('.tag-chip__acro')?.textContent).toBe('G24')
   })
 })
 

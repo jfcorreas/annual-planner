@@ -177,16 +177,20 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
     const day = page.locator('.day[data-iso]').nth(12)
     await fillDay(page, day)
 
-    // A day with a single tag has room for the subtitle, next to the acronym.
-    await expect(day.locator('.tag-chip__acro')).toHaveText('G24')
+    // A single tag without subtitle shows the full name (plain tag: no icon).
+    await expect(day.locator('.tag-chip__label')).toBeVisible()
+    await expect(day.locator('.tag-chip__label')).toHaveText('Guardia 24h')
+    await expect(day.locator('.tag-chip__acro')).toBeHidden()
     await expect(day.locator('.tag-chip__icon')).toHaveCount(0) // plain tag
 
+    // The subtitle takes the room: acronym (never ellipsised) + "(subtitle)".
     await day.locator('.tag-chip').click()
     await expect(page.locator('.modal--tag-detail')).toHaveCount(1)
     await page.locator('.tag-detail__form input').fill('Titular: Juanfran')
     await page.locator('.tag-detail__form button[type="submit"]').click()
     await expect(page.locator('.modal--tag-detail')).toHaveCount(0)
     await expect(day.locator('.tag-chip')).toHaveText('G24(Titular: Juanfran)')
+    await expect(day.locator('.tag-chip__label')).toHaveCount(0) // no room for it
 
     // Two tags: both chips become acronym-only dots (no icon, no subtitle).
     await page.locator('.palette .chip', { hasText: 'Diurno 12h' }).click()
@@ -204,13 +208,13 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
     await expect(page.locator('.zoom__dow')).toHaveCount(7)
     expect((await page.locator('.zoom__title').innerText()).toLowerCase()).toContain('enero')
     await expect(page.locator('.zoom__stats')).toHaveCount(1)
-    // Wide screens: a chip with no subtitle is a single line, so it uses the
-    // compact format (icon + acronym) and drops the full label…
+    // Wide screens: the full name fits on the top line of the chip…
     const zoomChip = page.locator('.zoom .tag-chip').first()
-    await expect(zoomChip.locator('.tag-chip__label')).toBeHidden()
-    await expect(zoomChip.locator('.tag-chip__acro')).toBeVisible()
+    await expect(zoomChip.locator('.tag-chip__label')).toBeVisible()
+    await expect(zoomChip.locator('.tag-chip__label')).toHaveText('Festivo nacional')
+    await expect(zoomChip.locator('.tag-chip__acro')).toBeHidden()
 
-    // …and a subtitle gives it its two lines back: label + "(subtitle)".
+    // …and a subtitle gives it its second line: label + "(subtitle)".
     await zoomChip.click()
     await expect(page.locator('.modal--tag-detail')).toHaveCount(1)
     await page.locator('.tag-detail__form input').fill('de tarde')
@@ -308,6 +312,38 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
     await expect(page.locator('.tags-list__item', { hasText: 'Prueba renombrada' })).toHaveCount(1)
     await page.locator('.modal__head .btn').click()
     await expect(tagDay.locator('.tag-chip')).toHaveCount(1) // still applied
+  })
+
+  await test.step('7b. A label that does not fit is replaced by its acronym', async () => {
+    // Rename it to a name too long for any chip (the editor allows 40 chars):
+    // at both sizes it is wider than the room the chip has for it.
+    const longName = 'Festivo Nacional Comunidad Autónoma' // 35 chars → FNCA
+    await page.locator('.chip--add').click()
+    await page
+      .locator('.tags-list__item', { hasText: 'Prueba renombrada' })
+      .locator('button')
+      .first()
+      .click()
+    await page.locator('.tag-form input[type="text"]').fill(longName)
+    await page.locator('.tag-form button[type="submit"]').click()
+    await expect(page.locator('.tags-list__item', { hasText: longName })).toHaveCount(1)
+    await page.locator('.modal__head .btn').click()
+
+    // Year bar: the acronym takes the line over, the name is not clipped.
+    const tagDay = page.locator('.day[data-iso]').nth(4)
+    await expect(tagDay.locator('.tag-chip__label')).toBeHidden()
+    await expect(tagDay.locator('.tag-chip__acro')).toBeVisible()
+    await expect(tagDay.locator('.tag-chip__acro')).toHaveText('FNCA')
+
+    // Month zoom: the top line of the chip abridges the same way.
+    const iso = await tagDay.getAttribute('data-iso')
+    await page.locator('.month-col__zoom', { hasText: 'Enero' }).click()
+    const zoomChip = page.locator(`.zoom .day[data-iso="${iso}"] .tag-chip`)
+    await expect(zoomChip.locator('.tag-chip__label')).toBeHidden()
+    await expect(zoomChip.locator('.tag-chip__acro')).toBeVisible()
+    await expect(zoomChip.locator('.tag-chip__acro')).toHaveText('FNCA')
+    await page.locator('.zoom .zoom__bar .btn', { hasText: 'Volver al año' }).click()
+    await expect(page.locator('.zoom')).toHaveCount(0)
   })
 
   await test.step('8. Archive: read-only', async () => {

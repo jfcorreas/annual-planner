@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { KeyboardEvent, MouseEvent, PointerEvent } from 'react'
 import type { Tag } from '../types'
 import { MAX_TAGS_PER_DAY } from '../types'
@@ -119,8 +119,8 @@ interface TagChipProps {
   iso: string
   readOnly: boolean
   variant: 'year' | 'month'
-  /** The day carries a single tag: the year chip has room for the icon and
-   *  the subtitle next to the acronym (two tags = acronym-only dot chip). */
+  /** The day carries a single tag: the year bar then has room for the icon,
+   *  the full name and the subtitle (two tags = acronym-only dot chip). */
   wide: boolean
   onOpen: (date: string, tagId: string) => void
   onRemove: (date: string, tagId: string) => void
@@ -139,6 +139,10 @@ function TagChip({ entry, iso, readOnly, variant, wide, onOpen, onRemove }: TagC
   const suppressClick = useRef(false)
   // Where the press started, to tell a hold from a drag (month swipe).
   const origin = useRef<{ x: number; y: number } | null>(null)
+  // Full label or acronym: the label is kept only while it fits.
+  const chipRef = useRef<HTMLButtonElement>(null)
+  const labelRef = useRef<HTMLSpanElement>(null)
+  const [fits, setFits] = useState(true)
 
   useEffect(
     () => () => {
@@ -147,6 +151,42 @@ function TagChip({ entry, iso, readOnly, variant, wide, onOpen, onRemove }: TagC
     },
     [],
   )
+
+  /**
+   * The full label stays on the chip only while it fits next to the icon;
+   * when it does not, the acronym takes the line over (.tag-chip--abbrev).
+   * The measurement must not depend on that decision — the hidden label
+   * stays in the DOM at width 0, so its scrollWidth keeps reporting the
+   * natural text width — or it would flip back and forth forever. A label
+   * hidden by a media query (small cells) counts as "does not fit": those
+   * rules want the acronym there anyway.
+   */
+  useLayoutEffect(() => {
+    const chip = chipRef.current
+    const label = labelRef.current
+    if (!chip || !label) return
+    const measure = () => {
+      if (getComputedStyle(label).display === 'none') {
+        setFits(false)
+        return
+      }
+      const line = label.parentElement
+      const icon = line?.querySelector<HTMLElement>('.tag-chip__icon') ?? null
+      const iconWidth = icon?.offsetWidth ?? 0
+      const lineGap = line ? parseFloat(getComputedStyle(line).columnGap) || 0 : 0
+      const style = getComputedStyle(chip)
+      const padding =
+        (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0)
+      // Room the label has: the whole line minus what the icon takes.
+      const available = chip.clientWidth - padding - iconWidth - (iconWidth > 0 ? lineGap : 0)
+      setFits(label.scrollWidth <= available + 1)
+    }
+    measure()
+    if (typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(measure)
+    observer.observe(chip)
+    return () => observer.disconnect()
+  })
 
   function clearOpenTimer() {
     if (openTimer.current !== null) {
@@ -226,15 +266,19 @@ function TagChip({ entry, iso, readOnly, variant, wide, onOpen, onRemove }: TagC
   const roomy = variant === 'month' || wide
   const icon = roomy ? tagIcon(tag) : ''
   const sub = subtitle && roomy ? `(${subtitle})` : null
-  // A month chip with no subtitle only has one line: CSS then drops the full
-  // label for the compact acronym. Chips that do have a subtitle keep their
-  // two lines (label / "(subtitle)") untouched.
-  const single = variant === 'month' && !sub
+  // The full label is the chip's text while it has room for it: the top
+  // line of a month chip, and a single-tag year bar without subtitle (the
+  // subtitle needs the room the name would take). Everything else — a year
+  // bar with a subtitle, a two-tag dot — reads the acronym.
+  const labelled = variant === 'month' || (wide && !sub)
+  // The label is measured for real: too long → the acronym replaces it.
+  const abbrev = labelled && !fits
 
   return (
     <button
+      ref={chipRef}
       type="button"
-      className={`tag-chip tag-chip--${variant}${single ? ' tag-chip--single' : ''}${readOnly ? '' : ' tag-chip--removable'}`}
+      className={`tag-chip tag-chip--${variant}${abbrev ? ' tag-chip--abbrev' : ''}${readOnly ? '' : ' tag-chip--removable'}`}
       style={{ backgroundColor: tag.color, color: contrastOn(tag.color) }}
       title={title}
       disabled={readOnly}
@@ -246,15 +290,16 @@ function TagChip({ entry, iso, readOnly, variant, wide, onOpen, onRemove }: TagC
       onPointerCancel={handlePointerUp}
       onKeyDown={handleKeyDown}
     >
-      {/* Year chips are 12px-high bars: they always carry the acronym and,
-          on a wide (single-tag) day, the icon and the subtitle too. Month
-          chips keep the full label on their first line when there is a
-          subtitle; the acronym takes over on the single-line ones (no
-          subtitle, or a cell small enough to collapse the chip). */}
+      {/* Year chips are 12px-high bars: the full name when the day has a
+          single tag and no subtitle, otherwise the acronym (plus the icon
+          and the subtitle where a single tag leaves room for them). Month
+          chips always start from the full name on their first line; the
+          acronym takes over when the measurement says it does not fit —
+          and small cells force it from their media queries. */}
       <span className="tag-chip__line">
         {icon ? <span className="tag-chip__icon">{icon}</span> : null}
-        {variant === 'month' ? <span className="tag-chip__label">{tag.label}</span> : null}
-        <span className="tag-chip__acro">{acronym}</span>
+        {labelled ? <span className="tag-chip__label" ref={labelRef}>{tag.label}</span> : null}
+        {!labelled || !fits ? <span className="tag-chip__acro">{acronym}</span> : null}
       </span>
       {sub ? <span className="tag-chip__sub">{sub}</span> : null}
     </button>
