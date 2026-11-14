@@ -4,6 +4,27 @@ All notable changes to the Annual Planner webapp.
 Format based on [Keep a Changelog](https://keepachangelog.com/), versioning
 following [SemVer](https://semver.org/).
 
+## [0.8.0] - 2026-11-14
+
+The PDF export drops the A5 paper: A4 is now the only option, and its
+statistics panel is locked to the desktop styles.
+
+### Removed
+
+- **PDF A5 button and export**: the top bar only shows "🖨️ PDF A4" now, and
+  `printPlanner()` always sets `A4 landscape`. The A5-only print rules (smaller
+  day type, compact year and statistics) are gone from the stylesheet, so the
+  print CSS has a single, paper-independent set of rules.
+
+### Changed
+
+- **A4 statistics panel = desktop styles**: the printed statistics keep
+  exactly what the screen shows — the row layout with the big year on the
+  left, the small text (12px items, 11px counts) and the two-column work
+  permit group with its "U de N · Restantes R" count. An e2e check now
+  measures those styles under print media at the A4 page box (1077×748px),
+  so the PDF cannot drift away from the desktop panel again.
+
 ## [0.7.2] - 2026-11-14
 
 Every day chip now carries readable text instead of a bare colour bar or an

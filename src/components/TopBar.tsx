@@ -5,7 +5,7 @@ interface TopBarProps {
   onToggleStatus: () => void
   onExport: () => void
   onImport: () => void
-  onPrint: (paper: 'A4' | 'A5') => void
+  onPrint: () => void
   onDelete: () => void
   /** Open the about modal (version + short description). */
   onAbout: () => void
@@ -56,11 +56,8 @@ export function TopBar({
         <button type="button" className="btn" onClick={onExport} title="Exportar todos los planificadores a un archivo JSON">
           📤 Exportar
         </button>
-        <button type="button" className="btn" onClick={() => onPrint('A4')} title="Exportar a PDF en A4 horizontal">
+        <button type="button" className="btn" onClick={onPrint} title="Exportar a PDF en A4 horizontal">
           🖨️ PDF A4
-        </button>
-        <button type="button" className="btn" onClick={() => onPrint('A5')} title="Exportar a PDF en A5 horizontal">
-          🖨️ PDF A5
         </button>
         <button
           type="button"

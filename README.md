@@ -28,7 +28,7 @@ Webapp to create, customize and fill annual planners (year wall-planner style).
   year); double click or press-and-hold removes the tag from that day.
 - Export / import all planners as a JSON file (with confirmation before
   importing). Files from 0.2.x and older are refused.
-- Export the planner to **PDF in A4 or A5** (landscape) through the browser print
+- Export the planner to **PDF in A4** (landscape) through the browser print
   dialog.
 - Unicode icons throughout the UI.
 
@@ -74,7 +74,7 @@ src/
   utils/dates.ts           # ES/ES names, Monday-first weeks, ISO keys
   utils/stats.ts           # tag counts per period (incl. permits)
   utils/tags.ts            # tag badges (🏖️ / 🪪 / 🌐)
-  utils/print.ts           # A4/A5 landscape print (PDF)
+  utils/print.ts           # A4 landscape print (PDF)
   test/setup.ts            # Vitest setup (crypto polyfill, localStorage reset)
   components/              # TopBar, TagPalette, YearView, MonthColumn,
                            # WeekRow, DayCell, MonthZoom, StatsBar,

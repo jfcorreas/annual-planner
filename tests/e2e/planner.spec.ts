@@ -395,7 +395,7 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
     expect(dialogs.some((m) => m.includes('importar'))).toBe(true)
   })
 
-  await test.step('11. Print rules (A4 / A5)', async () => {
+  await test.step('11. Print rules (A4) and desktop stats styles on paper', async () => {
     // stub print so the dialog does not block the test
     await page.evaluate(() => {
       ;(window as unknown as Record<string, unknown>).__printed = false
@@ -413,13 +413,42 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
     expect(a4.rule).toContain('size: A4 landscape')
     expect(a4.paper).toBe('A4')
 
-    await page.locator('.topbar .btn', { hasText: 'PDF A5' }).click()
-    const a5 = await page.evaluate(() => ({
-      rule: [...document.head.querySelectorAll('style')].map((s) => s.textContent).join(' '),
-      paper: document.body.dataset.paper,
-    }))
-    expect(a5.rule).toContain('size: A5 landscape')
-    expect(a5.paper).toBe('A5')
+    // The A5 export is gone for good.
+    await expect(page.locator('.topbar .btn', { hasText: 'PDF A5' })).toHaveCount(0)
+
+    // A permit tag, so the group whose columns the PDF must keep is there.
+    await page.locator('.chip--add').click()
+    await page.locator('.tag-form input[type="text"]').fill('Permiso e2e')
+    await page.locator('.field--permit input[type="checkbox"]').click()
+    await page.locator('.field--permit input[type="number"]').fill('4')
+    await page.locator('.tag-form button[type="submit"]').click()
+    await page.locator('.modal__head .btn').click()
+    await expect(page.locator('.palette .chip', { hasText: 'Permiso e2e' })).toHaveCount(1)
+
+    // Under print media at the A4 landscape page box (285×198mm ≈ 1077×748px)
+    // the stats panel keeps the desktop styles: row layout, small text and
+    // the two-column permit grid.
+    await page.setViewportSize({ width: 1077, height: 748 })
+    await page.emulateMedia({ media: 'print' })
+    const stats = await page.evaluate(() => {
+      const cs = (sel: string) => getComputedStyle(document.querySelector(sel)!)
+      return {
+        direction: cs('.stats').flexDirection,
+        item: cs('.stats__item').fontSize,
+        count: cs('.stats__count').fontSize,
+        permits: cs('.stats__list--permits').display,
+        permitCols: cs('.stats__list--permits').gridTemplateColumns.split(' ').length,
+      }
+    })
+    expect(stats).toEqual({
+      direction: 'row',
+      item: '12px',
+      count: '11px',
+      permits: 'grid',
+      permitCols: 2,
+    })
+    await page.emulateMedia({ media: null })
+    await page.setViewportSize({ width: 1460, height: 1050 })
   })
 
   await test.step('12. No JS errors during the whole run', async () => {

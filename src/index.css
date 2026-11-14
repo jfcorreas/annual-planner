@@ -1535,7 +1535,7 @@ button {
 }
 
 /* ============================================================
-   Print (PDF A4 / A5, landscape — set by utils/print.ts)
+   Print (PDF A4, landscape — set by utils/print.ts)
    ============================================================ */
 
 @media print {
@@ -1589,35 +1589,7 @@ button {
     display: none !important;
   }
 
-  /* Smaller type for A5 (A5 landscape height ≈ 515px of content) */
-  body[data-paper='A5'] .day {
-    font-size: 7.5px;
-    padding: 0;
-  }
-
-  body[data-paper='A5'] .year-view {
-    gap: 3px;
-  }
-
-  body[data-paper='A5'] .stats {
-    padding-top: 4px;
-  }
-
-  body[data-paper='A5'] .stats__year {
-    font-size: 30px;
-  }
-
-  body[data-paper='A5'] .stats__item {
-    font-size: 9px;
-    gap: 4px;
-  }
-
-  body[data-paper='A5'] .stats__count {
-    font-size: 12px;
-  }
-
-  body[data-paper='A5'] .month-col__zoom {
-    font-size: 8px;
-    padding: 2px 0 3px;
-  }
+  /* The statistics panel needs no print rules of its own: it keeps the
+     desktop styles (row layout, small text, two-column permit group),
+     which an e2e check measures under print media so it cannot drift. */
 }
