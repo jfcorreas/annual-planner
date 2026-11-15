@@ -202,6 +202,29 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
     await expect(day.locator('.tag-chip__sub')).toHaveCount(0)
   })
 
+  await test.step('4c. Day rows use the tightened columns (desktop)', async () => {
+    // The year view shares the print layout's compact number/weekday columns,
+    // so the chips get their extra width on screen as well.
+    const rows = await page.evaluate(() => {
+      const day = document.querySelector('.year-view .day[data-iso]')!
+      const tags = day.querySelector('.day__tags')!
+      const fits = (sel: string) =>
+        [...document.querySelectorAll<HTMLElement>(sel)].every(
+          (el) => el.scrollWidth <= el.clientWidth + 1,
+        )
+      return {
+        cols: getComputedStyle(day).gridTemplateColumns,
+        leftGap: Math.round(tags.getBoundingClientRect().left - day.getBoundingClientRect().left),
+        numbersFit: fits('.year-view .day__number'),
+        weekdaysFit: fits('.year-view .day__weekday'),
+      }
+    })
+    expect(rows.cols).toMatch(/^15px 9px /)
+    expect(rows.leftGap).toBe(26) // was 42px before 0.8.1
+    expect(rows.numbersFit).toBe(true)
+    expect(rows.weekdaysFit).toBe(true)
+  })
+
   await test.step('5. Month zoom overlaps year view', async () => {
     await page.locator('.month-col__zoom', { hasText: 'Enero' }).click()
     await expect(page.locator('.zoom')).toHaveCount(1)
@@ -538,6 +561,28 @@ test('month zoom on a phone: portrait and landscape', async ({ page }) => {
   // (Do it before the zoom, whose overlay covers the palette.)
   await page.locator('.palette .chip', { hasText: 'Guardia 24h' }).click()
   await expect(page.locator('.chip--on', { hasText: 'Guardia 24h' })).toHaveCount(1)
+
+  // The year view (portrait, 11px day font) wears the tightened columns
+  // too: nothing clips in the 15px/9px columns.
+  const rows = await page.evaluate(() => {
+    const day = document.querySelector('.year-view .day[data-iso]')!
+    const tags = day.querySelector('.day__tags')!
+    const fits = (sel: string) =>
+      [...document.querySelectorAll<HTMLElement>(sel)].every(
+        (el) => el.scrollWidth <= el.clientWidth + 1,
+      )
+    return {
+      cols: getComputedStyle(day).gridTemplateColumns,
+      leftGap: Math.round(tags.getBoundingClientRect().left - day.getBoundingClientRect().left),
+      numbersFit: fits('.year-view .day__number'),
+      weekdaysFit: fits('.year-view .day__weekday'),
+    }
+  })
+  expect(rows.cols).toMatch(/^15px 9px /)
+  expect(rows.leftGap).toBe(26)
+  expect(rows.numbersFit).toBe(true)
+  expect(rows.weekdaysFit).toBe(true)
+
   await page.locator('.month-col__zoom', { hasText: 'Enero' }).click()
   await expect(page.locator('.zoom')).toHaveCount(1)
 

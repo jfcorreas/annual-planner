@@ -2,9 +2,10 @@
 Project Memory between sessions. Maximum ~50 lines: summarize or remove anything that no longer adds value.
 
 ## Current Status
-- v0.8.0 (A4-only PDF; print = tightened day columns, outlined black-text
-  chips, stats 2px smaller — all locked by e2e). Pages redeploy from `main`;
-  the PWA picks the build up after two reloads.
+- v0.8.1 (A4-only PDF with outlined black-text chips + stats 2px smaller;
+  tightened day columns now on screen too — year view desktop + mobile; all
+  locked by e2e). Pages redeploy from `main`; the PWA picks the build up after
+  two reloads.
 - Green: `tsc -b`, oxlint, `npm test` (174), `npm run test:e2e` (2: full flow +
   phone portrait/landscape).
 - Installed as Omarchy web app (:4830, systemd `annual-planner`): after a build
@@ -25,14 +26,15 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
   2nd line inside its column); `.stats` is `align-items: flex-start`.
 - Storage v2 under `annual-planner:v2`; v1 never read (blocking "Empezar de cero").
 - PDF: **A4 landscape only** (A5 removed in 0.8.0); `printPlanner()` injects the
-  `@page` rule and sets `body[data-paper="A4"]`. Print-only (`@media print`):
-  day columns tightened to 15/9px + 1px gaps (chips start at 26px, not 42, and
-  gain ~16px of text width; right side already touched the limit), chips lose
-  their fill for a 1px `var(--tag-color)` border (the hex the chip already sets
-  inline, for the B&W legibility the user asked) with forced black text
-  (`!important` beats the inline bg/colour), stats = desktop layout with fonts
-  2px smaller (year 62 / items 10 / counts 9px). All locked by e2e step 11
-  under print media at the A4 page box (1077×748px); screen styles untouched.
+  `@page` rule and sets `body[data-paper="A4"]`. Day rows use the tightened
+  columns (number 22→15px, weekday 16→9px, gaps → 1px: chips start at 26px not
+  42, +16px of text width) in the **base `.day` rule** since 0.8.1 — screen year
+  view and paper share them (`.zoom .day` is `display: block`, so the month zoom
+  never sees grid columns). Print-only: chips lose their fill for a 1px
+  `var(--tag-color)` border (hex set inline on DayCell) with forced black text
+  (`!important` beats the inline bg/colour); stats = desktop layout with fonts
+  2px smaller (year 62 / items 10 / counts 9px). Locked by e2e: columns at
+  1460 + 390 + print media, print chip styles at the A4 page box (1077×748px).
 - No tag selected by default: clicking the active palette chip deselects it; with
   no tag (or an archived planner) a day click opens the day detail modal.
 - **Chips (spec, all locked by unit + e2e)**: acronym = uppercase initials +

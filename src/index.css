@@ -346,9 +346,12 @@ button {
 
 .day {
   display: grid;
-  grid-template-columns: 22px 16px minmax(0, 1fr);
+  /* Tightened columns: the number (15px) and weekday (9px) take what they
+     need and nothing more, so the chips gain ~16px of width (they already
+     reach the row's right limit). Same values on paper. */
+  grid-template-columns: 15px 9px minmax(0, 1fr);
   align-items: center;
-  gap: 2px;
+  gap: 1px;
   font-size: 10px;
   padding: 2.5px 0;
   border-bottom: 1px solid var(--line);
@@ -1589,18 +1592,12 @@ button {
     display: none !important;
   }
 
-  /* Day rows give their chips more room for paper: the number and weekday
-     columns and the gaps are tightened, so a chip starts close to the day's
-     left limit (on the right it already touches it). */
-  .day {
-    grid-template-columns: 15px 9px minmax(0, 1fr);
-    gap: 1px;
-  }
-
   /* Chips print as outlined boxes: no fill (a solid colour only wastes
      toner and becomes a grey blob in B&W), a 1px border in the tag colour
      (--tag-color, set inline) and black text for contrast. The !important
-     beats the inline background/colour meant for the screen. */
+     beats the inline background/colour meant for the screen. The tightened
+     day columns are the base rule's (the year view's grid), shared with
+     screen and locked by e2e under print media. */
   .tag-chip {
     background: transparent !important;
     border: 1px solid var(--tag-color, currentColor);

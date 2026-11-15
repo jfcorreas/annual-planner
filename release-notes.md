@@ -4,6 +4,20 @@ All notable changes to the Annual Planner webapp.
 Format based on [Keep a Changelog](https://keepachangelog.com/), versioning
 following [SemVer](https://semver.org/).
 
+## [0.8.1] - 2026-11-15
+
+The tightened day rows of the A4 export now apply on screen too.
+
+### Changed
+
+- **Year view, desktop and mobile**: the day rows adopt the print layout's
+  tighter number (22→15px) and weekday (16→9px) columns and gaps, so the
+  chips start at 26px from the row's left edge (was 42) and gain ~16px of
+  width on every screen size. Nothing clips at any width (the 11px mobile
+  day font included) — checked by e2e at 1460px, 390px and under print
+  media. The month zoom and the print-only chip styles (outlined boxes,
+  black text) are untouched.
+
 ## [0.8.0] - 2026-11-14
 
 The PDF export drops the A5 paper: A4 is now the only option, and its
