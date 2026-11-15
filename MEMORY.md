@@ -75,6 +75,14 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
 - Layout changes are verified with real Chromium metrics + screenshots, never by
   reading the CSS (the stats grid and the chip text were measured at 4 widths).
 
+## Planned — v0.9.0 (manual tag order, see `backlog.md`)
+- 3 stories: reorder in the editor (up/down buttons) → palette order → stats
+  order. One order shared by editor + palette + stats; permits group stays
+  apart; day chips keep their applied order (no change).
+- Not implemented yet; nothing below depends on it. Story #1 is refined and
+  approved in `current-plan.md` (arrows in the row action group, disabled at the
+  ends, order = list position, move affects the open planner only).
+
 ## Next Steps
 - Chip specs done (desktop / phone portrait+landscape / A4 print). Everything
   through v0.8.1 is pushed to `main` (tags `v0.3.0`…`v0.8.1` on the remote,

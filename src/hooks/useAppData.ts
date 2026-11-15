@@ -236,6 +236,26 @@ export function useAppData() {
   }, [])
 
   /**
+   * Move a tag one position up or down in its planner's list: the position
+   * IS the order, so only that planner's array is rewritten (a global tag
+   * keeps its old position in the other planners). Out of range = no change.
+   */
+  const moveTag = useCallback(
+    (plannerId: string, tagId: string, direction: 'up' | 'down') => {
+      updatePlanner(plannerId, (planner) => {
+        const index = planner.tags.findIndex((t) => t.id === tagId)
+        const target = direction === 'up' ? index - 1 : index + 1
+        if (index < 0 || target < 0 || target >= planner.tags.length) return planner
+        const tags = [...planner.tags]
+        tags[index] = planner.tags[target]
+        tags[target] = planner.tags[index]
+        return { ...planner, tags }
+      })
+    },
+    [updatePlanner],
+  )
+
+  /**
    * Import planners (already validated by the caller): same id = update,
    * new id = append. Current planners not present in the import are kept.
    */
@@ -276,6 +296,7 @@ export function useAppData() {
     setDayTagSubtitle,
     addTag,
     updateTag,
+    moveTag,
     removeTag,
     mergePlanners,
   }

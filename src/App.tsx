@@ -371,6 +371,7 @@ export default function App() {
           usage={tagUsage}
           onSave={saveTag}
           onRemove={(tagId) => store.removeTag(planner.id, tagId)}
+          onMove={(tagId, direction) => store.moveTag(planner.id, tagId, direction)}
           onBlocked={(tagId) => {
             const tag = planner.tags.find((t) => t.id === tagId)
             if (!tag) return

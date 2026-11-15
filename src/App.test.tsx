@@ -1922,6 +1922,145 @@ describe('tags editor', () => {
     ).toBe(false)
     vi.restoreAllMocks()
   })
+
+  describe('reordering', () => {
+    /** Labels of the editor rows, in the order they are shown. */
+    function rowLabels(container: HTMLElement): (string | null)[] {
+      return [...container.querySelectorAll('.tags-list__label')].map((el) =>
+        el.getAttribute('title'),
+      )
+    }
+
+    it('pressing ⬆️ on a tag swaps it with the tag above and the list updates at once', () => {
+      const { container } = renderApp()
+
+      fireEvent.click(container.querySelector('.chip--add')!)
+      expect(rowLabels(container).slice(0, 2)).toEqual(['Guardia 24h', 'Guardia 17h'])
+
+      fireEvent.click(container.querySelector('[aria-label="Subir Guardia 17h"]')!)
+
+      // The two swapped places; the rest of the list is untouched.
+      expect(rowLabels(container)).toEqual([
+        'Guardia 17h',
+        'Guardia 24h',
+        'Diurno 12h',
+        'Nocturno 12h',
+        'Turno 24h',
+        'Festivo local',
+        'Festivo regional',
+        'Festivo nacional',
+      ])
+    })
+
+    it('pressing ⬇️ on a tag swaps it with the tag below', () => {
+      const { container } = renderApp()
+
+      fireEvent.click(container.querySelector('.chip--add')!)
+      expect(rowLabels(container).slice(0, 2)).toEqual(['Guardia 24h', 'Guardia 17h'])
+
+      fireEvent.click(container.querySelector('[aria-label="Bajar Guardia 24h"]')!)
+
+      expect(rowLabels(container)).toEqual([
+        'Guardia 17h',
+        'Guardia 24h',
+        'Diurno 12h',
+        'Nocturno 12h',
+        'Turno 24h',
+        'Festivo local',
+        'Festivo regional',
+        'Festivo nacional',
+      ])
+    })
+
+    it('the ⬆️ of the first tag and the ⬇️ of the last tag are disabled, the middle arrows are enabled', () => {
+      const { container } = renderApp()
+
+      fireEvent.click(container.querySelector('.chip--add')!)
+      const rows = [...container.querySelectorAll('.tags-list__item')] as HTMLElement[]
+      const upOf = (row: HTMLElement) =>
+        row.querySelector('[aria-label^="Subir "]') as HTMLButtonElement
+      const downOf = (row: HTMLElement) =>
+        row.querySelector('[aria-label^="Bajar "]') as HTMLButtonElement
+
+      // First row: nothing above it.
+      expect(upOf(rows[0]).disabled).toBe(true)
+      expect(downOf(rows[0]).disabled).toBe(false)
+
+      // Middle row: both directions available.
+      expect(upOf(rows[1]).disabled).toBe(false)
+      expect(downOf(rows[1]).disabled).toBe(false)
+
+      // Last row: nothing below it.
+      expect(upOf(rows[rows.length - 1]).disabled).toBe(false)
+      expect(downOf(rows[rows.length - 1]).disabled).toBe(true)
+    })
+
+    it('the arrows carry Spanish aria-labels', () => {
+      const { container } = renderApp()
+
+      fireEvent.click(container.querySelector('.chip--add')!)
+      const rows = [...container.querySelectorAll('.tags-list__item')]
+
+      for (const row of rows) {
+        const label = row.querySelector('.tags-list__label')!.getAttribute('title')!
+        expect(row.querySelector('[aria-label^="Subir "]')?.getAttribute('aria-label')).toBe(
+          `Subir ${label}`,
+        )
+        expect(row.querySelector('[aria-label^="Bajar "]')?.getAttribute('aria-label')).toBe(
+          `Bajar ${label}`,
+        )
+      }
+    })
+
+    it('the tag order survives a reload', () => {
+      // Move a tag, then simulate a reload (unmount + fresh mount reads
+      // localStorage, like a browser refresh).
+      const first = renderApp()
+      fireEvent.click(first.container.querySelector('.chip--add')!)
+      fireEvent.click(first.container.querySelector('[aria-label="Subir Guardia 17h"]')!)
+      expect(rowLabels(first.container)[0]).toBe('Guardia 17h')
+      fireEvent.click(first.container.querySelector('.modal__head .btn')!) // close editor
+      first.unmount()
+
+      const second = renderApp()
+      fireEvent.click(second.container.querySelector('.chip--add')!)
+      expect(rowLabels(second.container)).toEqual([
+        'Guardia 17h',
+        'Guardia 24h',
+        'Diurno 12h',
+        'Nocturno 12h',
+        'Turno 24h',
+        'Festivo local',
+        'Festivo regional',
+        'Festivo nacional',
+      ])
+    })
+
+    it('moving a tag only reorders the open planner (a global tag keeps its place elsewhere)', () => {
+      const { container } = renderApp()
+
+      // The global tag is appended last in planner 1…
+      createGlobalTag(container, 'Compartida')
+      // …and planner 2 gets its copy at the end too.
+      fireEvent.click(container.querySelector('.panel__new')!)
+      fireEvent.click(container.querySelector('.panel__create button[type="submit"]')!)
+
+      // Back in planner 1: move the global tag up one position.
+      fireEvent.click(yearButton(container, YEAR))
+      fireEvent.click(container.querySelector('.chip--add')!)
+      expect(rowLabels(container).at(-1)).toBe('Compartida')
+      fireEvent.click(container.querySelector('[aria-label="Subir Compartida"]')!)
+      expect(rowLabels(container).at(-2)).toBe('Compartida')
+      expect(rowLabels(container).at(-1)).toBe('Festivo nacional')
+      fireEvent.click(container.querySelector('.modal__head .btn')!) // close editor
+
+      // Planner 2 keeps the global tag where it was.
+      fireEvent.click(yearButton(container, YEAR + 1))
+      fireEvent.click(container.querySelector('.chip--add')!)
+      expect(rowLabels(container).at(-1)).toBe('Compartida')
+      expect(rowLabels(container).at(-2)).toBe('Festivo nacional')
+    })
+  })
 })
 
 describe('persistence', () => {

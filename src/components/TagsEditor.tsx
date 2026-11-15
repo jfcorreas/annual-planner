@@ -22,6 +22,8 @@ interface TagsEditorProps {
   onRemove: (tagId: string) => void
   /** Called instead of removing when the tag is applied on at least one day. */
   onBlocked: (tagId: string) => void
+  /** Moves the tag one position up or down in the list. */
+  onMove: (tagId: string, direction: 'up' | 'down') => void
   onClose: () => void
 }
 
@@ -32,7 +34,15 @@ const COLOR_SWATCHES = [
 ]
 
 /** Modal to create, rename, recolor and delete tags. */
-export function TagsEditor({ tags, usage, onSave, onRemove, onBlocked, onClose }: TagsEditorProps) {
+export function TagsEditor({
+  tags,
+  usage,
+  onSave,
+  onRemove,
+  onBlocked,
+  onMove,
+  onClose,
+}: TagsEditorProps) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [label, setLabel] = useState('')
   const [color, setColor] = useState(COLOR_SWATCHES[0])
@@ -105,7 +115,7 @@ export function TagsEditor({ tags, usage, onSave, onRemove, onBlocked, onClose }
 
         {/* Only this list scrolls: the header and the form below stay pinned. */}
         <ul className="tags-list">
-          {tags.map((tag) => (
+          {tags.map((tag, index) => (
             <li
               key={tag.id}
               className="tags-list__item"
@@ -142,6 +152,24 @@ export function TagsEditor({ tags, usage, onSave, onRemove, onBlocked, onClose }
                   }}
                 >
                   🗑️
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--icon"
+                  aria-label={`Subir ${tag.label}`}
+                  disabled={index === 0}
+                  onClick={() => onMove(tag.id, 'up')}
+                >
+                  ⬆️
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--icon"
+                  aria-label={`Bajar ${tag.label}`}
+                  disabled={index === tags.length - 1}
+                  onClick={() => onMove(tag.id, 'down')}
+                >
+                  ⬇️
                 </button>
               </div>
             </li>
