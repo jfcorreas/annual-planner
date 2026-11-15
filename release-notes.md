@@ -18,6 +18,13 @@ statistics panel is locked to the desktop styles.
 
 ### Changed
 
+- **Legible chips on paper (B&W friendly)**: print only, the day rows tighten
+  their number (22→15px) and weekday (16→9px) columns and gaps, so chips start
+  at 26px from the day's left edge instead of 42 and gain ~16px of text width
+  (they already touched the right edge). The chips drop their fill for a 1px
+  border in the tag colour (a new inline `--tag-color`) and all their text
+  prints in black — a solid colour only wasted toner and turned into a grey
+  blob in black & white. Screen styles are untouched.
 - **A4 statistics panel = desktop styles, 2px smaller type**: the printed
   statistics keep the desktop layout — the row with the big year on the left
   and the two-column work permit group with its "U de N · Restantes R"

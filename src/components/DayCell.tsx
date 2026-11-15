@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import type { KeyboardEvent, MouseEvent, PointerEvent } from 'react'
+import type { CSSProperties, KeyboardEvent, MouseEvent, PointerEvent } from 'react'
 import type { Tag } from '../types'
 import { MAX_TAGS_PER_DAY } from '../types'
 import { WEEKDAY_INITIALS, isoDate, isWeekend } from '../utils/dates'
@@ -279,7 +279,14 @@ function TagChip({ entry, iso, readOnly, variant, wide, onOpen, onRemove }: TagC
       ref={chipRef}
       type="button"
       className={`tag-chip tag-chip--${variant}${abbrev ? ' tag-chip--abbrev' : ''}${readOnly ? '' : ' tag-chip--removable'}`}
-      style={{ backgroundColor: tag.color, color: contrastOn(tag.color) }}
+      style={
+        {
+          backgroundColor: tag.color,
+          color: contrastOn(tag.color),
+          /* The print styles swap the fill for a 1px border in this colour. */
+          '--tag-color': tag.color,
+        } as CSSProperties
+      }
       title={title}
       disabled={readOnly}
       onClick={handleClick}

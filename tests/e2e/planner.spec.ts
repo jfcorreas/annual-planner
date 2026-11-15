@@ -395,7 +395,7 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
     expect(dialogs.some((m) => m.includes('importar'))).toBe(true)
   })
 
-  await test.step('11. Print rules (A4) and desktop stats styles on paper', async () => {
+  await test.step('11. Print rules (A4): tightened day rows, outlined chips, stats', async () => {
     // stub print so the dialog does not block the test
     await page.evaluate(() => {
       ;(window as unknown as Record<string, unknown>).__printed = false
@@ -425,23 +425,58 @@ test('annual planner: full flow', async ({ page }, testInfo) => {
     await page.locator('.modal__head .btn').click()
     await expect(page.locator('.palette .chip', { hasText: 'Permiso e2e' })).toHaveCount(1)
 
-    // Under print media at the A4 landscape page box (285×198mm ≈ 1077×748px)
-    // the stats panel keeps the desktop styles — row layout and the
-    // two-column permit grid — with every font 2px smaller than the screen.
+    // Under print media at the A4 landscape page box (285×198mm ≈ 1077×748px):
+    // tighter number/weekday columns so chips gain room, outlined chips
+    // (no fill, 1px border in the tag colour, black text) and the stats
+    // panel with its desktop layout and 2px-smaller fonts.
     await page.setViewportSize({ width: 1077, height: 748 })
     await page.emulateMedia({ media: 'print' })
-    const stats = await page.evaluate(() => {
+    const printed = await page.evaluate(() => {
       const cs = (sel: string) => getComputedStyle(document.querySelector(sel)!)
+      const chipEl = document.querySelector('.year-view .day .tag-chip') as HTMLElement
+      const chip = getComputedStyle(chipEl)
+      // Normalise --tag-color (inline hex) the same way the border resolves it.
+      const tagHex = chipEl.style.getPropertyValue('--tag-color').trim()
+      const probe = document.createElement('span')
+      probe.style.color = tagHex
+      document.body.append(probe)
+      const tagColor = getComputedStyle(probe).color
+      probe.remove()
+      const fits = (sel: string) =>
+        [...document.querySelectorAll<HTMLElement>(sel)].every(
+          (el) => el.scrollWidth <= el.clientWidth + 1,
+        )
       return {
-        direction: cs('.stats').flexDirection,
-        year: cs('.stats__year').fontSize,
-        item: cs('.stats__item').fontSize,
-        count: cs('.stats__count').fontSize,
-        permits: cs('.stats__list--permits').display,
-        permitCols: cs('.stats__list--permits').gridTemplateColumns.split(' ').length,
+        dayCols: cs('.year-view .day').gridTemplateColumns,
+        numbersFit: fits('.year-view .day__number'),
+        weekdaysFit: fits('.year-view .day__weekday'),
+        tagHex,
+        tagColor,
+        chip: {
+          bg: chip.backgroundColor,
+          border: `${chip.borderTopWidth} ${chip.borderTopStyle}`,
+          borderCol: chip.borderTopColor,
+          text: chip.color,
+        },
+        stats: {
+          direction: cs('.stats').flexDirection,
+          year: cs('.stats__year').fontSize,
+          item: cs('.stats__item').fontSize,
+          count: cs('.stats__count').fontSize,
+          permits: cs('.stats__list--permits').display,
+          permitCols: cs('.stats__list--permits').gridTemplateColumns.split(' ').length,
+        },
       }
     })
-    expect(stats).toEqual({
+    expect(printed.dayCols).toMatch(/^15px 9px /)
+    expect(printed.numbersFit).toBe(true)
+    expect(printed.weekdaysFit).toBe(true)
+    expect(printed.tagHex).toMatch(/^#/)
+    expect(printed.chip.bg).toBe('rgba(0, 0, 0, 0)')
+    expect(printed.chip.border).toBe('1px solid')
+    expect(printed.chip.borderCol).toBe(printed.tagColor)
+    expect(printed.chip.text).toBe('rgb(0, 0, 0)')
+    expect(printed.stats).toEqual({
       direction: 'row',
       year: '62px', // 64px on screen
       item: '10px', // 12px on screen

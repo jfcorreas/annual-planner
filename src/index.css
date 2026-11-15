@@ -1589,6 +1589,24 @@ button {
     display: none !important;
   }
 
+  /* Day rows give their chips more room for paper: the number and weekday
+     columns and the gaps are tightened, so a chip starts close to the day's
+     left limit (on the right it already touches it). */
+  .day {
+    grid-template-columns: 15px 9px minmax(0, 1fr);
+    gap: 1px;
+  }
+
+  /* Chips print as outlined boxes: no fill (a solid colour only wastes
+     toner and becomes a grey blob in B&W), a 1px border in the tag colour
+     (--tag-color, set inline) and black text for contrast. The !important
+     beats the inline background/colour meant for the screen. */
+  .tag-chip {
+    background: transparent !important;
+    border: 1px solid var(--tag-color, currentColor);
+    color: #000 !important;
+  }
+
   /* The statistics panel keeps the desktop styles (row layout, two-column
      permit group); only its type is 2px smaller for paper. An e2e check
      measures these sizes under print media so the PDF cannot drift. */

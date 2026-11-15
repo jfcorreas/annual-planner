@@ -2,9 +2,9 @@
 Project Memory between sessions. Maximum ~50 lines: summarize or remove anything that no longer adds value.
 
 ## Current Status
-- v0.8.0 (A4-only PDF; A5 button and rules removed; print stats = desktop
-  layout with 2px smaller fonts, locked by e2e). Pages redeploy from `main`; the
-  PWA picks the build up after two reloads.
+- v0.8.0 (A4-only PDF; print = tightened day columns, outlined black-text
+  chips, stats 2px smaller — all locked by e2e). Pages redeploy from `main`;
+  the PWA picks the build up after two reloads.
 - Green: `tsc -b`, oxlint, `npm test` (174), `npm run test:e2e` (2: full flow +
   phone portrait/landscape).
 - Installed as Omarchy web app (:4830, systemd `annual-planner`): after a build
@@ -25,33 +25,25 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
   2nd line inside its column); `.stats` is `align-items: flex-start`.
 - Storage v2 under `annual-planner:v2`; v1 never read (blocking "Empezar de cero").
 - PDF: **A4 landscape only** (A5 removed in 0.8.0); `printPlanner()` injects the
-  `@page` rule and sets `body[data-paper="A4"]`. Print stats = desktop layout
-  with fonts 2px smaller (year 62 / items 10 / counts 9px), locked by an e2e
-  measurement under print media at the A4 page box.
+  `@page` rule and sets `body[data-paper="A4"]`. Print-only (`@media print`):
+  day columns tightened to 15/9px + 1px gaps (chips start at 26px, not 42, and
+  gain ~16px of text width; right side already touched the limit), chips lose
+  their fill for a 1px `var(--tag-color)` border (the hex the chip already sets
+  inline, for the B&W legibility the user asked) with forced black text
+  (`!important` beats the inline bg/colour), stats = desktop layout with fonts
+  2px smaller (year 62 / items 10 / counts 9px). All locked by e2e step 11
+  under print media at the A4 page box (1077×748px); screen styles untouched.
 - No tag selected by default: clicking the active palette chip deselects it; with
   no tag (or an archived planner) a day click opens the day detail modal.
-- **Chip text (desktop spec)**: `tagAcronym` = uppercase initial of each word +
-  digits (`Guardia 24h` → `G24`, `Festivo local` → `F`; user kept this rule);
-  no capital → first letter of every word. Fit is **measured** in `TagChip`
-  (`useLayoutEffect` each commit + `ResizeObserver`): `label.scrollWidth` vs
-  chip width − padding − icon − gap; the hidden label stays in the DOM at
-  `position:absolute; width:0` so measurement never depends on the decision
-  (`display:none` via media query counts as "does not fit"). Flags:
-  `labelled = month || (wide && !sub)`, `abbrev = labelled && !fits` →
-  `--abbrev` class. Year (always one line): 1 tag no subtitle → icon + full
-  name (`🏖️ Festivo local`); 1 tag + subtitle → acronym + glued
-  `(subtitle)` (`G24(Titular: Juanfran)`, label not rendered); 2 tags →
-  acronym only, no icon. Month desktop: two lines iff subtitle (icon + full
-  name / `(subtitle)`), else one line; top line falls back to icon + acronym
-  when it does not fit. Subtitle yields width first (acronym never cut; a
-  long subtitle ellipsises, full text on tooltip). Small cells: portrait
-  (≤700) keeps forcing the acronym and hiding the subtitle (untouched);
-  landscape (≤1100) shows text — with subtitle icon + acro + glued
-  `(subtitle)`, without subtitle icon + full name (fit fallback → acro),
-  driven by `:has(.tag-chip__sub)` hiding the label there. Flagged for
-  review: a too-long year name also falls back to the acronym; A4 print
-  reuses screen-measured chips. Verified with Chromium at 1460 + phone
-  portrait/landscape (e2e step 7b + phone test).
+- **Chips (spec, all locked by unit + e2e)**: acronym = uppercase initials +
+  digits (`Guardia 24h` → `G24`, `Festivo local` → `F`; user's rule). Fit is
+  **measured** in `TagChip` (`label.scrollWidth` vs chip room; the hidden label
+  stays `position:absolute; width:0` so measurement never depends on the
+  decision; media-query `display:none` counts as "does not fit"). Year: full
+  name / acro + glued `(sub)` / acro only (2 tags). Month desktop: two lines
+  iff subtitle, top line falls back to icon + acro. Phone portrait: forced
+  acro + hidden sub; landscape (≤1100): acro + `(sub)` or full name (`:has()`
+  rule). Flagged for review: a too-long name falls back to the acronym.
 - Chip: 1 click = detail modal (250ms debounce), dblclick / 600ms hold = remove;
   a drag >10px cancels the hold (it is a month swipe, not a hold).
 - Day number = button → DayDetailModal (read-only, year view and zoom);
@@ -82,6 +74,5 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
   reading the CSS (the stats grid and the chip text were measured at 4 widths).
 
 ## Next Steps
-- Desktop chip spec + phone landscape chips done (commits local, push to
-  `main` deploys Pages — ask).
-- Later: A4 print chip layouts.
+- Chip specs done (desktop / phone portrait+landscape / A4 print); commits
+  stay local — push to `main` (deploys Pages) only when the user says.
