@@ -76,5 +76,6 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
   reading the CSS (the stats grid and the chip text were measured at 4 widths).
 
 ## Next Steps
-- Chip specs done (desktop / phone portrait+landscape / A4 print); commits
-  stay local — push to `main` (deploys Pages) only when the user says.
+- Chip specs done (desktop / phone portrait+landscape / A4 print). Everything
+  through v0.8.1 is pushed to `main` (tags `v0.3.0`…`v0.8.1` on the remote,
+  Pages workflow green); never push again without asking the user.
