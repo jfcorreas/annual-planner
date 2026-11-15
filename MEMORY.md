@@ -6,7 +6,7 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
   tightened day columns now on screen too — year view desktop + mobile; all
   locked by e2e). Pages redeploy from `main`; the PWA picks the build up after
   two reloads.
-- Green: `tsc -b`, oxlint, `npm test` (174), `npm run test:e2e` (2: full flow +
+- Green: `tsc -b`, oxlint, `npm test` (180), `npm run test:e2e` (2: full flow +
   phone portrait/landscape).
 - Installed as Omarchy web app (:4830, systemd `annual-planner`): after a build
   `cp -a dist/. ~/.local/share/annual-planner/`, then reload twice (the PWA worker
@@ -18,6 +18,9 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
 ## Decisions (and why)
 - Tag = {id, label, color, inStats?, holiday?, permit?, maxPerYear?, global?};
   flat list (no types), subtitle per-day on DayTag, delete blocked if used.
+- Tag order = position in `planner.tags` (no field): `moveTag` → `updatePlanner`
+  rewrites only the open planner (globals keep their place elsewhere); the
+  palette and stats already follow that array order.
 - Flags: holiday (stats off, 🏖️), permit (own stats group, 🪪, max/year, can go
   negative), global (same-id copies synced, 🌐 only in editor + detail modal).
 - Statistics: `inStats?` missing = included; permits bypass the filter; month bar
@@ -79,9 +82,10 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
 - 3 stories: reorder in the editor (up/down buttons) → palette order → stats
   order. One order shared by editor + palette + stats; permits group stays
   apart; day chips keep their applied order (no change).
-- Not implemented yet; nothing below depends on it. Story #1 is refined and
-  approved in `current-plan.md` (arrows in the row action group, disabled at the
-  ends, order = list position, move affects the open planner only).
+- #1 done (`0f704f7`): arrows after ✏️/🗑️ (so `button[0]/[1]` still mean
+  edit/delete), disabled at the ends, ES aria-labels; list one column again so
+  names fit beside the 4 buttons. #2/#3 = tests only (order comes for free);
+  version bump + release notes with #3.
 
 ## Next Steps
 - Chip specs done (desktop / phone portrait+landscape / A4 print). Everything
