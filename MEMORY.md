@@ -84,9 +84,10 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
   apart; day chips keep their applied order (no change).
 - #1 done (`0f704f7`): arrows after ✏️/🗑️ (so `button[0]/[1]` still mean
   edit/delete), disabled at the ends, ES aria-labels; list one column again so
-  names fit beside the 4 buttons).
-- #2 refined/approved in `current-plan.md`: palette order = editor order,
-  survives reload, per planner; behaviour already works, so checks only.
+  names fit beside the 4 buttons.
+- #2 done (`31e59d3`): palette = editor order (per planner, survives reload,
+  ✏️ Etiquetas last); behaviour already worked — 3 component + 1 e2e checks,
+  no product change.
 - #3 + version bump + release notes still open.
 
 ## Next Steps
