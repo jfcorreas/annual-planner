@@ -1717,6 +1717,49 @@ describe('tags editor', () => {
     expect(count.className).toContain('stats__count--negative')
   })
 
+  it('the year count turns grey only when "Restantes" is 0 and keeps the normal colour otherwise', () => {
+    const { container } = renderApp()
+
+    // A permit with a yearly max of 2, exhausted on two days.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    const input = container.querySelector('.tag-form input[type="text"]') as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'Permiso médico' } })
+    fireEvent.click(formCheckbox(container, 'Permiso de trabajo')!)
+    fireEvent.change(formNumber(container, 'Máximo por año')!, { target: { value: '2' } })
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close
+
+    const paletteChip = [...container.querySelectorAll('.palette .chip')].find((c) =>
+      c.textContent?.includes('Permiso médico'),
+    )!
+    fireEvent.click(paletteChip)
+    fillDay(container, firstIso())
+    fillDay(container, isoDate(daysOfYear(YEAR)[1]))
+
+    // Exhausted: "Restantes 0" is grey (and never flagged as negative).
+    const yearCount = [...container.querySelectorAll('.stats__item')].find((li) =>
+      li.textContent?.includes('Permiso médico'),
+    )!.querySelector('.stats__count')!
+    expect(yearCount.textContent).toBe('2 de 2 · Restantes 0')
+    expect(yearCount.className).toContain('stats__count--zero')
+    expect(yearCount.className).not.toContain('stats__count--negative')
+
+    // Regular counts have no "Restantes": never grey, even at 0.
+    const regularCount = [...container.querySelectorAll('.stats__item')].find((li) =>
+      li.textContent?.includes('Guardia 24h'),
+    )!.querySelector('.stats__count')!
+    expect(regularCount.textContent).toBe('0')
+    expect(regularCount.className).not.toContain('stats__count--zero')
+
+    // The month bar has no remaining counter: no grey there either.
+    fireEvent.click(container.querySelector('.month-col__zoom')!) // Enero
+    const zoomCount = [...container.querySelectorAll('.zoom__stats .stats__item')].find((li) =>
+      li.textContent?.includes('Permiso médico'),
+    )!.querySelector('.stats__count')!
+    expect(zoomCount.textContent).toBe('2') // both days are in Enero
+    expect(zoomCount.className).not.toContain('stats__count--zero')
+  })
+
   it('editing the max updates the year counter', () => {
     const { container } = renderApp()
 

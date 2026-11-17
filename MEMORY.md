@@ -2,12 +2,10 @@
 Project Memory between sessions. Maximum ~50 lines: summarize or remove anything that no longer adds value.
 
 ## Current Status
-- v0.8.1 (A4-only PDF with outlined black-text chips + stats 2px smaller;
-  tightened day columns now on screen too — year view desktop + mobile; all
-  locked by e2e). Pages redeploy from `main`; the PWA picks the build up after
-  two reloads.
-- Green: `tsc -b`, oxlint, `npm test` (180), `npm run test:e2e` (2: full flow +
-  phone portrait/landscape).
+- v0.9.1 (stats text colour: grey only at `Restantes 0`, red at negative,
+  normal otherwise). Release notes in `release-notes.md`; not pushed.
+- Green: `tsc -b`, oxlint, `npm test` (187), `npm run test:e2e` (4: full flow,
+  phone portrait/landscape, palette order, stats order).
 - Installed as Omarchy web app (:4830, systemd `annual-planner`): after a build
   `cp -a dist/. ~/.local/share/annual-planner/`, then reload twice (the PWA worker
   serves the previous build once). LAN: `python3 -m http.server 4831 --bind
@@ -27,6 +25,10 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
   plain counts, year bar adds "U de N · Restantes R". Permits = 2-col grid
   (`flex: 1.5 1 0`), count 11px right-aligned and never truncated (it drops to a
   2nd line inside its column); `.stats` is `align-items: flex-start`.
+- Stats count colour (0.9.1, user spec): grey (`.stats__count--zero`) only when
+  a permit's `Restantes === 0`, red (`.stats__count--negative`) when `< 0`,
+  normal `--ink` (#2b3440, not pure #000) in every other case; regular counts
+  (no "Restantes") are never grey — they lost their old `count === 0` grey.
 - Storage v2 under `annual-planner:v2`; v1 never read (blocking "Empezar de cero").
 - PDF: **A4 landscape only** (A5 removed in 0.8.0); `printPlanner()` injects the
   `@page` rule and sets `body[data-paper="A4"]`. Day rows use the tightened
@@ -78,17 +80,12 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
 - Layout changes are verified with real Chromium metrics + screenshots, never by
   reading the CSS (the stats grid and the chip text were measured at 4 widths).
 
-## Planned — v0.9.0 (manual tag order, see `backlog.md`)
-- 3 stories: reorder in the editor (up/down buttons) → palette order → stats
-  order. One order shared by editor + palette + stats; permits group stays
-  apart; day chips keep their applied order (no change).
-- #1 done (`0f704f7`): arrows after ✏️/🗑️ (so `button[0]/[1]` still mean
-  edit/delete), disabled at the ends, ES aria-labels; list one column again so
-  names fit beside the 4 buttons.
-- #2 done (`31e59d3`): palette = editor order (per planner, survives reload,
-  ✏️ Etiquetas last); behaviour already worked — 3 component + 1 e2e checks,
-  no product change.
-- #3 + version bump + release notes still open.
+## Done
+- **v0.9.1**: stats text colour per user spec (grey only at `Restantes 0`,
+  red when negative, normal otherwise; regular counts never grey) + version
+  bump and release notes. New component test in `App.test.tsx`.
+- v0.9.0 (`0f704f7`, `31e59d3`): manual tag order (editor arrows, palette +
+  stats follow `planner.tags`), one-column editor; About asserts `pkg.version`.
 
 ## Next Steps
 - Chip specs done (desktop / phone portrait+landscape / A4 print). Everything

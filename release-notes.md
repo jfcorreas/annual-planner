@@ -4,6 +4,18 @@ All notable changes to the Annual Planner webapp.
 Format based on [Keep a Changelog](https://keepachangelog.com/), versioning
 following [SemVer](https://semver.org/).
 
+## [0.9.1] - 2026-11-17
+
+The statistics counters now turn grey exactly when a work permit runs out.
+
+### Changed
+
+- **Statistics text colour**: the year counter of a permit is grey only when
+  "Restantes" is 0 — it used to turn grey whenever the used count was 0, even
+  with permits left. Every other case keeps the normal text colour, and a
+  negative remaining is still highlighted in red. Regular counts (which have
+  no "Restantes") are never grey anymore.
+
 ## [0.9.0] - 2026-11-17
 
 You can now arrange your tags in your own order: the editor, the day palette

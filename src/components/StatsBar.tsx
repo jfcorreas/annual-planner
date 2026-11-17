@@ -19,7 +19,8 @@ export function StatsBar({ stats, year, className = '' }: StatsBarProps) {
           <li key={tag.id} className="stats__item" title={tag.label}>
             <span className="stats__swatch" style={{ backgroundColor: tag.color }} />
             <span className="stats__label">{tag.label}</span>
-            <b className={`stats__count${count === 0 ? ' stats__count--zero' : ''}`}>{count}</b>
+            {/* No "Restantes" here: the count always keeps the normal colour. */}
+            <b className="stats__count">{count}</b>
           </li>
         ))}
       </ul>
@@ -35,8 +36,11 @@ export function StatsBar({ stats, year, className = '' }: StatsBarProps) {
               <span className="stats__swatch" style={{ backgroundColor: tag.color }} />
               <span className="stats__icon" aria-hidden="true">{tagIcon(tag).trim()}</span>
               <span className="stats__label">{tag.label}</span>
+              {/* Colour rule: grey only when the permit is used up
+                  (Restantes 0), red when overused (Restantes < 0);
+                  any other case keeps the normal text colour. */}
               <b
-                className={`stats__count${count === 0 ? ' stats__count--zero' : ''}${
+                className={`stats__count${remaining === 0 ? ' stats__count--zero' : ''}${
                   remaining !== undefined && remaining < 0 ? ' stats__count--negative' : ''
                 }`}
               >

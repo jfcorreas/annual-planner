@@ -583,10 +583,13 @@ button {
   flex: none;
 }
 
+/* Counts keep the panel's normal text colour (inherited) except for the two
+   permit states below: exhausted (Restantes 0) and overused (Restantes < 0). */
 .stats__count {
   font-size: 11px;
 }
 
+/* "Restantes 0": the yearly permit is used up. */
 .stats__count--zero {
   color: var(--faint);
 }
