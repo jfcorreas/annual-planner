@@ -2063,6 +2063,95 @@ describe('tags editor', () => {
   })
 })
 
+describe('palette order', () => {
+  /** Text of the palette chips in order: the tag chips, then the ✏️ button. */
+  function paletteLabels(container: HTMLElement): (string | undefined)[] {
+    return [...container.querySelectorAll('.palette .chip')].map((el) => el.textContent?.trim())
+  }
+
+  it('the palette chips follow the editor list after a move, with the ✏️ Etiquetas button last', () => {
+    const { container } = renderApp()
+
+    // Move the second tag up in the editor, then close it.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    fireEvent.click(container.querySelector('[aria-label="Subir Guardia 17h"]')!)
+    fireEvent.click(container.querySelector('.modal__head .btn')!)
+
+    expect(paletteLabels(container)).toEqual([
+      'Guardia 17h',
+      'Guardia 24h',
+      'Diurno 12h',
+      'Nocturno 12h',
+      'Turno 24h',
+      '🏖️ Festivo local',
+      '🏖️ Festivo regional',
+      '🏖️ Festivo nacional',
+      '✏️ Etiquetas',
+    ])
+  })
+
+  it('the palette keeps the moved order after a reload', () => {
+    // Move a tag, then simulate a reload (unmount + fresh mount reads
+    // localStorage, like a browser refresh).
+    const first = renderApp()
+    fireEvent.click(first.container.querySelector('.chip--add')!)
+    fireEvent.click(first.container.querySelector('[aria-label="Subir Guardia 17h"]')!)
+    fireEvent.click(first.container.querySelector('.modal__head .btn')!)
+    first.unmount()
+
+    const second = renderApp()
+    expect(paletteLabels(second.container)).toEqual([
+      'Guardia 17h',
+      'Guardia 24h',
+      'Diurno 12h',
+      'Nocturno 12h',
+      'Turno 24h',
+      '🏖️ Festivo local',
+      '🏖️ Festivo regional',
+      '🏖️ Festivo nacional',
+      '✏️ Etiquetas',
+    ])
+  })
+
+  it("each planner's palette shows its own tag order", () => {
+    const { container } = renderApp()
+
+    // Planner 1: move the second tag up.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    fireEvent.click(container.querySelector('[aria-label="Subir Guardia 17h"]')!)
+    fireEvent.click(container.querySelector('.modal__head .btn')!)
+
+    // Planner 2 is created with the default order.
+    fireEvent.click(container.querySelector('.panel__new')!)
+    fireEvent.click(container.querySelector('.panel__create button[type="submit"]')!)
+    expect(paletteLabels(container)).toEqual([
+      'Guardia 24h',
+      'Guardia 17h',
+      'Diurno 12h',
+      'Nocturno 12h',
+      'Turno 24h',
+      '🏖️ Festivo local',
+      '🏖️ Festivo regional',
+      '🏖️ Festivo nacional',
+      '✏️ Etiquetas',
+    ])
+
+    // Back to planner 1: its own order is still the one it was left with.
+    fireEvent.click(yearButton(container, YEAR))
+    expect(paletteLabels(container)).toEqual([
+      'Guardia 17h',
+      'Guardia 24h',
+      'Diurno 12h',
+      'Nocturno 12h',
+      'Turno 24h',
+      '🏖️ Festivo local',
+      '🏖️ Festivo regional',
+      '🏖️ Festivo nacional',
+      '✏️ Etiquetas',
+    ])
+  })
+})
+
 describe('persistence', () => {
   it('keeps filled days across a remount (localStorage)', () => {
     const first = renderApp()

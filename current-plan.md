@@ -1,25 +1,25 @@
 ## Story
-As a planner user, I want to move a tag up or down in the tags editor, so that the list reflects my own priority instead of creation order.
+As a planner user, I want the day palette to show tags in the order I set, so that my most-used tags are where I expect them.
 
 ## Acceptance criteria
-- [ ] Given the tags editor is open with at least two tags, when I press ⬆️ on a tag, then it swaps position with the tag above it and the list shows the new order at once.
-- [ ] Given a tag is the first or the last in the list, when I look at its ⬆️ / ⬇️ button, then that button is disabled so it can't leave the list.
-- [ ] Given I moved a tag, when I reload the planner, then the tags editor shows the tags in the order I left them.
+- [ ] Given I moved tags in the editor, when I close the editor and look at the palette, then the tag chips appear in the same order as in the editor list, with the ✏️ Etiquetas button still last.
+- [ ] Given I set an order and then reload the planner, when the palette appears, then its chips keep that order.
+- [ ] Given two planners have different tag orders, when I switch between them, then each palette shows the order of the planner I'm viewing.
 
 ## Plan
-- Store the move in the planner's tag list itself, so position = order and no new data field is added; it saves through the same path as any other change in that planner.
-- Add ⬆️ / ⬇️ buttons to each tag row, inside the existing action group next to edit and delete, disabled at both ends and labelled in Spanish for screen readers.
-- Route the move through the editor's existing "change a tag" callback into the planner, replacing the position of the open planner only (a global tag keeps its old position in the other planners).
-- Leave the form, the global sync of tag *content* and the delete blocking exactly as they are.
-- Cover it with tests: swap up and down, disabled at the ends, and the order surviving a reload.
+- Use the planner's stored tag list as the palette's source of order, with no second ordering state.
+- Lock the order with a component check: after a move, palette chips follow the editor list.
+- Add an end-to-end check that goes through the real editor, closes it and reads the palette order.
+- Check the order after a reload and when switching planners.
+- Leave chip labels, icons, selection behavior and day chips exactly as they are.
 
 ## Out of scope
-- The palette and the statistics bar following the new order (stories #2 and #3).
-- Drag and drop, sorting alphabetically, and any "restore default order".
-- Day chips inside a cell (they keep their applied order).
-- Version bump to v0.9.0 and release notes — those come with the last story.
+- The statistics bar following the order (story #3).
+- Day chips inside a cell, which keep their applied order.
+- New reorder controls or changes to the editor.
+- Version bump to v0.9.0 and release notes.
 
 ## Suggestions (your call)
-- Each row already renders edit and delete as a small action group; adding the two arrows there keeps one visual pattern instead of a second mini-toolbar. If that group starts repeating its markup badly, we can look at a small shared icon-button then, not now.
+- The palette currently renders the tag list in its existing order, so this story may need no product change — just the checks that keep it true. If you expected a visible difference here, tell me what it should be before we build.
 
-@backlog.md #1
+@backlog.md #2

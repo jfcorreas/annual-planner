@@ -676,3 +676,26 @@ test('month zoom on a phone: portrait and landscape', async ({ page }) => {
     expect((await page.locator('.zoom__title').innerText()).toLowerCase()).toContain('febrero')
   })
 })
+
+test('palette order follows the editor: move, close, read the palette', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'networkidle' })
+
+  // Move the second tag up through the real editor, then close it.
+  await page.locator('.chip--add').click()
+  await page.locator('[aria-label="Subir Guardia 17h"]').click()
+  await page.locator('.modal__head .btn').click()
+  await expect(page.locator('.modal')).toHaveCount(0)
+
+  // The palette shows the new order, with the ✏️ Etiquetas button still last.
+  await expect(page.locator('.palette .chip')).toHaveText([
+    'Guardia 17h',
+    'Guardia 24h',
+    'Diurno 12h',
+    'Nocturno 12h',
+    'Turno 24h',
+    '🏖️ Festivo local',
+    '🏖️ Festivo regional',
+    '🏖️ Festivo nacional',
+    '✏️ Etiquetas',
+  ])
+})
