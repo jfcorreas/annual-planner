@@ -699,3 +699,25 @@ test('palette order follows the editor: move, close, read the palette', async ({
     '✏️ Etiquetas',
   ])
 })
+
+test('stats order follows the editor: reorder, read the year bar, reload, read again', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'networkidle' })
+
+  // Move the second tag up through the real editor.
+  await page.locator('.chip--add').click()
+  await page.locator('[aria-label="Subir Guardia 17h"]').click()
+  await page.locator('.modal__head .btn').click()
+
+  const expected = ['Guardia 17h', 'Guardia 24h', 'Diurno 12h', 'Nocturno 12h', 'Turno 24h']
+  const readYearBar = () =>
+    page
+      .locator('.stats:not(.zoom__stats) .stats__list:not(.stats__list--permits) .stats__label')
+      .allTextContents()
+
+  // The year bar shows the new order right away…
+  expect(await readYearBar()).toEqual(expected)
+
+  // …and keeps it after a reload.
+  await page.reload({ waitUntil: 'networkidle' })
+  expect(await readYearBar()).toEqual(expected)
+})

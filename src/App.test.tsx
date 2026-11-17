@@ -2152,6 +2152,176 @@ describe('palette order', () => {
   })
 })
 
+describe('stats order', () => {
+  /** Rows of the year statistics bar (regular group), in displayed order. */
+  function yearRows(container: HTMLElement) {
+    const items = [
+      ...container.querySelectorAll(
+        '.stats:not(.zoom__stats) .stats__list:not(.stats__list--permits) .stats__item',
+      ),
+    ]
+    return items.map((li) => ({
+      label: li.querySelector('.stats__label')?.textContent,
+      color: li.querySelector('.stats__swatch')?.getAttribute('style')?.match(/rgb\([^)]*\)/)?.[0],
+      count: li.querySelector('.stats__count')?.textContent,
+    }))
+  }
+
+  it('the year stats bar follows the editor order after a move and a reload, keeping color, label and count', () => {
+    const first = renderApp()
+
+    // Count something first: Guardia 24h on day 1, Diurno 12h on day 2.
+    selectTag(first.container, 1)
+    fillDay(first.container, firstIso())
+    selectTag(first.container, 3)
+    fillDay(first.container, isoDate(daysOfYear(YEAR)[1]))
+
+    // Move the second tag up, then simulate a reload (unmount + fresh mount).
+    fireEvent.click(first.container.querySelector('.chip--add')!)
+    fireEvent.click(first.container.querySelector('[aria-label="Subir Guardia 17h"]')!)
+    fireEvent.click(first.container.querySelector('.modal__head .btn')!)
+    first.unmount()
+
+    const second = renderApp()
+    const rows = yearRows(second.container)
+    expect(rows.map((r) => r.label)).toEqual([
+      'Guardia 17h',
+      'Guardia 24h',
+      'Diurno 12h',
+      'Nocturno 12h',
+      'Turno 24h',
+    ])
+    expect(rows.map((r) => r.color)).toEqual([
+      'rgb(161, 98, 7)',
+      'rgb(250, 204, 21)',
+      'rgb(47, 111, 237)',
+      'rgb(124, 92, 224)',
+      'rgb(224, 27, 36)',
+    ])
+    expect(rows.map((r) => r.count)).toEqual(['0', '1', '1', '0', '0'])
+  })
+
+  /** Rows of the year statistics bar (permits group), in displayed order. */
+  function permitRows(container: HTMLElement) {
+    const items = [
+      ...container.querySelectorAll('.stats:not(.zoom__stats) .stats__list--permits .stats__item'),
+    ]
+    return items.map((li) => ({
+      label: li.querySelector('.stats__label')?.textContent,
+      count: li.querySelector('.stats__count')?.textContent,
+    }))
+  }
+
+  it('permit tags stay in their own group after the regular tags, in the editor order, with the year "X de Y · Restantes Z" text', () => {
+    const { container } = renderApp()
+
+    // Two permit tags: "Permiso uno" (max 10) and "Permiso dos" (max 4).
+    for (const [label, max] of [
+      ['Permiso uno', '10'],
+      ['Permiso dos', '4'],
+    ] as const) {
+      fireEvent.click(container.querySelector('.chip--add')!)
+      fireEvent.change(container.querySelector('.tag-form input[type="text"]')!, {
+        target: { value: label },
+      })
+      fireEvent.click(formCheckbox(container, 'Permiso de trabajo')!)
+      fireEvent.change(formNumber(container, 'Máximo por año')!, { target: { value: max } })
+      fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+    }
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close editor
+
+    // One application each, so the year text has real numbers.
+    const paletteChip = (label: string) =>
+      [...container.querySelectorAll('.palette .chip')].find((c) => c.textContent?.includes(label))!
+    fireEvent.click(paletteChip('Permiso uno'))
+    fillDay(container, firstIso())
+    fireEvent.click(paletteChip('Permiso dos'))
+    fillDay(container, isoDate(daysOfYear(YEAR)[1]))
+
+    // Swap the two permits in the editor: the group must follow that order.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    fireEvent.click(container.querySelector('[aria-label="Subir Permiso dos"]')!)
+    fireEvent.click(container.querySelector('.modal__head .btn')!)
+
+    // Regular tags first, untouched, then the permits group in editor order.
+    expect(
+      [...container.querySelectorAll('.stats__list:not(.stats__list--permits) .stats__item')].map(
+        (li) => li.querySelector('.stats__label')?.textContent,
+      ),
+    ).toEqual(['Guardia 24h', 'Guardia 17h', 'Diurno 12h', 'Nocturno 12h', 'Turno 24h'])
+    expect(permitRows(container).map((r) => r.label)).toEqual(['Permiso dos', 'Permiso uno'])
+    expect(permitRows(container).map((r) => r.count)).toEqual([
+      '1 de 4 · Restantes 3',
+      '1 de 10 · Restantes 9',
+    ])
+  })
+
+  it('the month zoom bar shows the same order as the year bar with plain permit counts', () => {
+    const { container } = renderApp()
+
+    // Two permits: "Permiso uno" (max 10, applied twice) and "Permiso dos"
+    // (max 4, applied once), so their counts differ.
+    for (const [label, max] of [
+      ['Permiso uno', '10'],
+      ['Permiso dos', '4'],
+    ] as const) {
+      fireEvent.click(container.querySelector('.chip--add')!)
+      fireEvent.change(container.querySelector('.tag-form input[type="text"]')!, {
+        target: { value: label },
+      })
+      fireEvent.click(formCheckbox(container, 'Permiso de trabajo')!)
+      fireEvent.change(formNumber(container, 'Máximo por año')!, { target: { value: max } })
+      fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+    }
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close editor
+
+    const paletteChip = (label: string) =>
+      [...container.querySelectorAll('.palette .chip')].find((c) => c.textContent?.includes(label))!
+    fireEvent.click(paletteChip('Permiso uno'))
+    fillDay(container, firstIso())
+    fillDay(container, isoDate(daysOfYear(YEAR)[1]))
+    fireEvent.click(paletteChip('Permiso dos'))
+    fillDay(container, isoDate(daysOfYear(YEAR)[2]))
+
+    // A non-default order: Guardia 17h up, the two permits swapped.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    fireEvent.click(container.querySelector('[aria-label="Subir Guardia 17h"]')!)
+    fireEvent.click(container.querySelector('[aria-label="Subir Permiso dos"]')!)
+    fireEvent.click(container.querySelector('.modal__head .btn')!)
+
+    // The year bar (the reference order)…
+    expect(yearRows(container).map((r) => r.label)).toEqual([
+      'Guardia 17h',
+      'Guardia 24h',
+      'Diurno 12h',
+      'Nocturno 12h',
+      'Turno 24h',
+    ])
+    expect(permitRows(container).map((r) => r.label)).toEqual(['Permiso dos', 'Permiso uno'])
+
+    // …and the month zoom shows both groups in that same order, with the
+    // permits' plain monthly count instead of the year's "X de Y · Restantes".
+    fireEvent.click(container.querySelectorAll('.month-col__zoom')[0]) // Enero
+    const zoomItems = [...container.querySelectorAll('.zoom__stats .stats__item')]
+    expect(zoomItems.map((li) => li.querySelector('.stats__label')?.textContent)).toEqual([
+      'Guardia 17h',
+      'Guardia 24h',
+      'Diurno 12h',
+      'Nocturno 12h',
+      'Turno 24h',
+      'Permiso dos',
+      'Permiso uno',
+    ])
+    const zoomPermits = [
+      ...container.querySelectorAll('.zoom__stats .stats__list--permits .stats__item'),
+    ]
+    expect(zoomPermits.map((li) => li.querySelector('.stats__count')?.textContent)).toEqual([
+      '1',
+      '2',
+    ])
+  })
+})
+
 describe('persistence', () => {
   it('keeps filled days across a remount (localStorage)', () => {
     const first = renderApp()

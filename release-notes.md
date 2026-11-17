@@ -4,6 +4,33 @@ All notable changes to the Annual Planner webapp.
 Format based on [Keep a Changelog](https://keepachangelog.com/), versioning
 following [SemVer](https://semver.org/).
 
+## [0.9.0] - 2026-11-17
+
+You can now arrange your tags in your own order: the editor, the day palette
+and both statistics bars follow the list you set.
+
+### Added
+
+- **Manual tag order**: every row of the tags editor carries ⬆️ / ⬇️ buttons
+  (after ✏️/🗑️, disabled at both ends, with a Spanish name for screen readers)
+  that swap the tag with its neighbour, and the list updates at once. The
+  position in the list **is** the order — no new data field — so it is saved
+  with every other change and survives a reload. A move only rewrites the open
+  planner: a global tag keeps its old position in the other planners.
+- **Day palette in that order**: the palette chips follow the editor list (the
+  ✏️ Etiquetas button stays last), per planner and across reloads.
+- **Statistics in that order**: the year bar and the month zoom list the
+  regular tags and the permits group in the same order, each row keeping its
+  color, label and count. The permits stay in their own group after the
+  regular tags, and the year keeps its "X de Y · Restantes Z" text (the month
+  bar keeps its plain count). Locked by component and end-to-end checks.
+
+### Changed
+
+- **Tags editor list back to one column**: with the two new buttons the
+  two-column cards squeezed the tag names, so each row now spans the full
+  width of the modal.
+
 ## [0.8.1] - 2026-11-15
 
 The tightened day rows of the A4 export now apply on screen too.
