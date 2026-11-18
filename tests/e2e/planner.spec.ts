@@ -721,3 +721,57 @@ test('stats order follows the editor: reorder, read the year bar, reload, read a
   await page.reload({ waitUntil: 'networkidle' })
   expect(await readYearBar()).toEqual(expected)
 })
+
+test('the today cell stands out with its own background and border', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'networkidle' })
+
+  const todayIso = await page.evaluate(() => {
+    const d = new Date()
+    const p = (n: number) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
+  })
+
+  await test.step('year view: exactly one highlighted cell, its own background', async () => {
+    await expect(page.locator('.day--today')).toHaveCount(1)
+    const today = page.locator(`.day--today[data-iso="${todayIso}"]`)
+    await expect(today).toHaveCount(1)
+
+    const styles = await today.evaluate((el) => {
+      const other = document.querySelector('.day[data-iso]:not(.day--today)')!
+      return {
+        background: getComputedStyle(el).backgroundColor,
+        otherBackground: getComputedStyle(other).backgroundColor,
+        shadow: getComputedStyle(el).boxShadow,
+        otherShadow: getComputedStyle(other).boxShadow,
+      }
+    })
+    expect(styles.background).not.toBe(styles.otherBackground)
+    expect(styles.background).not.toBe('rgba(0, 0, 0, 0)')
+    expect(styles.shadow).not.toBe('none')
+    expect(styles.otherShadow).toBe('none')
+  })
+
+  await test.step('month zoom: a real border in the accent colour', async () => {
+    const month = Number(todayIso.slice(5, 7)) - 1
+    await page.locator('.month-col__zoom').nth(month).click()
+
+    const today = page.locator(`.zoom .day--today[data-iso="${todayIso}"]`)
+    await expect(today).toHaveCount(1)
+
+    const styles = await today.evaluate((el) => {
+      const other = document.querySelector('.zoom .day[data-iso]:not(.day--today)')!
+      const mine = getComputedStyle(el)
+      const theirs = getComputedStyle(other)
+      return {
+        background: mine.backgroundColor,
+        otherBackground: theirs.backgroundColor,
+        border: mine.borderTopColor,
+        otherBorder: theirs.borderTopColor,
+        width: mine.borderTopWidth,
+      }
+    })
+    expect(styles.background).not.toBe(styles.otherBackground)
+    expect(styles.border).not.toBe(styles.otherBorder)
+    expect(styles.width).toBe('1px')
+  })
+})

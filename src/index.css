@@ -19,6 +19,10 @@
   --ok-bg: #e6f6ec;
   --danger: #d14343;
 
+  /* Today's cell (year view and month zoom) */
+  --today: #2f6fed;
+  --today-bg: #e8f0fe;
+
   /* Default tag colors (also stored per planner, these are fallbacks) */
   --guardia24: #facc15;
   --guardia17: #a16207;
@@ -375,6 +379,21 @@ button {
 
 .day--readonly {
   cursor: pointer;
+}
+
+/* Today: tinted background + accent ring. The ring is an inset shadow instead
+   of a border so the row keeps its exact height (a real border would make
+   this one row 1px taller than the rest of the year). It must come after the
+   hover rule above: same specificity, so the source order wins. */
+.day--today {
+  background: var(--today-bg);
+  box-shadow: inset 0 0 0 1px var(--today);
+  /* The border paints over the inset shadow: keep the bottom edge accent. */
+  border-bottom-color: var(--today);
+}
+
+.day--today:hover:not(.day--readonly):not(.day--empty) {
+  background: var(--today-bg);
 }
 
 /* The number is a button (opens the day detail): strip the UA button look. */
@@ -738,6 +757,15 @@ button {
 .zoom .day:hover:not(.day--readonly):not(.day--empty) {
   border-color: var(--line-strong);
   background: #fafbfd;
+}
+
+/* Today inside the month zoom: the cell already carries a real border, so it
+   only changes colour. The hover variant (same specificity as the rule above,
+   later in the file) keeps the highlight while the cell is hovered. */
+.zoom .day--today,
+.zoom .day--today:hover:not(.day--readonly):not(.day--empty) {
+  border-color: var(--today);
+  background: var(--today-bg);
 }
 
 .zoom .day--empty {

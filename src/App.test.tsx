@@ -104,6 +104,19 @@ describe('render', () => {
     ])
     expect(items.some((li) => li.textContent?.includes('Sin etiqueta'))).toBe(false)
   })
+
+  it('highlights only today, in the year view and in its month zoom', () => {
+    const { container } = renderApp()
+    const today = isoDate(new Date())
+
+    const highlighted = container.querySelectorAll('.day--today')
+    expect(highlighted).toHaveLength(1)
+    expect(highlighted[0].getAttribute('data-iso')).toBe(today)
+
+    fireEvent.click(container.querySelectorAll('.month-col__zoom')[new Date().getMonth()])
+    const zoomToday = container.querySelector('.zoom .day--today')
+    expect(zoomToday?.getAttribute('data-iso')).toBe(today)
+  })
 })
 
 describe('filling days', () => {

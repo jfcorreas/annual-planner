@@ -4,6 +4,22 @@ All notable changes to the Annual Planner webapp.
 Format based on [Keep a Changelog](https://keepachangelog.com/), versioning
 following [SemVer](https://semver.org/).
 
+## [0.10.0] - 2026-11-18
+
+Today's date now stands out in the planner.
+
+### Added
+
+- **Today's cell highlighted**: the day matching the current date carries an
+  accent border and a tinted background — in the year view and inside its
+  month zoom, on screen and on the printed A4 export. Only that one cell is
+  marked, it works in archived (read-only) planners too, and the highlight
+  survives hovering. The year view draws its ring as an inset shadow, so the
+  row keeps exactly the same height as every other row (a real border would
+  have made it 1px taller and shifted the rest of the year). Locked by a
+  component test and by an end-to-end check that compares the rendered
+  colours of the highlighted cell with a normal one at 1460px.
+
 ## [0.9.1] - 2026-11-17
 
 The statistics counters now turn grey exactly when a work permit runs out.

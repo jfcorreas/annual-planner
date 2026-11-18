@@ -13,6 +13,10 @@ export interface DayEntry {
 
 /** Delay before the detail modal opens, so a double click can be detected. */
 const OPEN_DELAY = 250
+/** Today's date key, fixed when the module loads: the cell it matches is
+ *  highlighted (a page left open across midnight keeps yesterday's mark
+ *  until it reloads, which avoids an impure `new Date()` while rendering). */
+const TODAY_ISO = isoDate(new Date())
 /** Press-and-hold duration that removes the tag directly (touch friendly). */
 const HOLD_DELAY = 600
 /** Pointer movement (px) that turns the press into a drag (e.g. a month swipe). */
@@ -50,6 +54,7 @@ export function DayCell({
   const iso = isoDate(date)
   const full = entries.length >= MAX_TAGS_PER_DAY
   const weekend = isWeekend(date)
+  const today = iso === TODAY_ISO
 
   function handleDayClick() {
     onDayClick(iso)
@@ -69,7 +74,7 @@ export function DayCell({
 
   return (
     <div
-      className={`day${weekend ? ' day--weekend' : ''}${readOnly ? ' day--readonly' : ''}`}
+      className={`day${weekend ? ' day--weekend' : ''}${today ? ' day--today' : ''}${readOnly ? ' day--readonly' : ''}`}
       data-iso={iso}
       title={title}
       onClick={handleDayClick}
