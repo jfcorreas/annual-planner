@@ -2448,3 +2448,125 @@ describe('previous version', () => {
     vi.restoreAllMocks()
   })
 })
+
+describe('new planner palette copy', () => {
+  /** Text of the palette tag chips in order (the ✏️ button excluded). */
+  const palette = (container: HTMLElement) =>
+    [...container.querySelectorAll('.palette .chip')]
+      .filter((el) => !el.classList.contains('chip--add'))
+      .map((el) => el.textContent?.trim())
+
+  it('create form shows the palette-copy option only when the previous year\'s planner exists', () => {
+    const { container } = renderApp()
+    const option = () => container.querySelector('.panel__create input[type="checkbox"]')
+
+    // Only the current-year planner exists → its successor has a previous year.
+    fireEvent.click(container.querySelector('.panel__new')!)
+    expect(option()).not.toBeNull()
+
+    // A year whose predecessor has no planner → no option.
+    fireEvent.change(container.querySelector('.panel__create input[type="number"]')!, {
+      target: { value: '2000' },
+    })
+    expect(option()).toBeNull()
+
+    // Back to a year whose predecessor exists → option again.
+    fireEvent.change(container.querySelector('.panel__create input[type="number"]')!, {
+      target: { value: String(YEAR + 1) },
+    })
+    expect(option()).not.toBeNull()
+  })
+
+  it('creating a planner with the copy option checked copies the previous palette in order and starts with empty days', () => {
+    const { container } = renderApp()
+
+    // Previous year: add a custom tag and move it up, so its palette is not the default one.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    fireEvent.change(container.querySelector('.tag-form input[type="text"]')!, {
+      target: { value: 'Personalizada' },
+    })
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+    fireEvent.click(container.querySelector('[aria-label="Subir Personalizada"]')!)
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close editor
+
+    // The previous palette is the expected result: same tags, same order.
+    const previousPalette = palette(container)
+    fillDay(container, firstIso()) // day data that must NOT travel
+
+    // Create the next year with the copy option checked.
+    fireEvent.click(container.querySelector('.panel__new')!)
+    fireEvent.click(container.querySelector('.panel__create input[type="checkbox"]')!)
+    fireEvent.click(container.querySelector('.panel__create button[type="submit"]')!)
+
+    expect(palette(container)).toEqual(previousPalette)
+
+    // The stored new planner carries no day data at all.
+    const stored = JSON.parse(localStorage.getItem('annual-planner:v2')!)
+    const created = stored.planners.find((p: { year: number }) => p.year === YEAR + 1)
+    expect(created.days).toEqual({})
+  })
+
+  it('creating a planner with the copy option unchecked starts with the standard tags', () => {
+    const { container } = renderApp()
+
+    // Previous year with a custom tag, so a copy would be visible.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    fireEvent.change(container.querySelector('.tag-form input[type="text"]')!, {
+      target: { value: 'Personalizada' },
+    })
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close editor
+
+    // Create the next year leaving the copy option unchecked (the default).
+    fireEvent.click(container.querySelector('.panel__new')!)
+    fireEvent.click(container.querySelector('.panel__create button[type="submit"]')!)
+
+    expect(palette(container)).toEqual([
+      'Guardia 24h',
+      'Guardia 17h',
+      'Diurno 12h',
+      'Nocturno 12h',
+      'Turno 24h',
+      '🏖️ Festivo local',
+      '🏖️ Festivo regional',
+      '🏖️ Festivo nacional',
+    ])
+  })
+
+  it('creating a planner with no previous-year planner starts with the standard tags', () => {
+    const { container } = renderApp()
+
+    // The current planner holds custom data that must not travel to a year
+    // whose predecessor does not exist.
+    fireEvent.click(container.querySelector('.chip--add')!)
+    fireEvent.change(container.querySelector('.tag-form input[type="text"]')!, {
+      target: { value: 'Personalizada' },
+    })
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close editor
+    fillDay(container, firstIso())
+
+    // 1999 has no planner → the copy option is not even offered for the year 2000.
+    fireEvent.click(container.querySelector('.panel__new')!)
+    fireEvent.change(container.querySelector('.panel__create input[type="number"]')!, {
+      target: { value: '2000' },
+    })
+    expect(container.querySelector('.panel__create input[type="checkbox"]')).toBeNull()
+    fireEvent.click(container.querySelector('.panel__create button[type="submit"]')!)
+
+    expect(palette(container)).toEqual([
+      'Guardia 24h',
+      'Guardia 17h',
+      'Diurno 12h',
+      'Nocturno 12h',
+      'Turno 24h',
+      '🏖️ Festivo local',
+      '🏖️ Festivo regional',
+      '🏖️ Festivo nacional',
+    ])
+    // No previous-year data of any kind was copied.
+    const stored = JSON.parse(localStorage.getItem('annual-planner:v2')!)
+    const created = stored.planners.find((p: { year: number }) => p.year === 2000)
+    expect(created.days).toEqual({})
+  })
+})

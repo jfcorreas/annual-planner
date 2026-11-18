@@ -47,10 +47,15 @@ export function useAppData() {
   )
 
   const addPlanner = useCallback(
-    (year: number): Planner => {
-      // New planners start with the defaults plus the current global tags.
+    (year: number, options: { copyPalette?: boolean } = {}): Planner => {
+      // New planners start with the defaults plus the current global tags,
+      // or with the previous year's palette when the copy option is checked.
       const globals = data.planners.flatMap((p) => p.tags.filter((t) => t.global === true))
+      const previous = data.planners.find((p) => p.year === year - 1)
       const planner = createPlanner(year, globals)
+      if (options.copyPalette && previous) {
+        planner.tags = previous.tags.map((tag) => ({ ...tag }))
+      }
       setData((prev) => ({ ...prev, planners: [...prev.planners, planner] }))
       setActivePlannerId(planner.id)
       return planner

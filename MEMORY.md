@@ -12,6 +12,18 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
   worker serves the previous build once). LAN: `python3 -m http.server 4831
   --bind 0.0.0.0 --directory dist`.
 
+## Backlog context — new-planner copy options
+- Two opt-in checkboxes in the create form: copy the previous year's palette tags;
+  copy its holiday chips onto the same month/day (only when a planner for the
+  previous year exists). Stack reaffirmed: existing Vite/React/TS + local storage,
+  Spanish UI; no new multi-tenant, roles, sync or i18n decisions.
+- Slicing: #1 palette copy (smallest end-to-end), #2 holiday-chip copy (also copies
+  the holiday tag definitions so chips render); independent, no `Requires`.
+  Saved in `backlog.md`. Not implemented yet.
+- Story #1 refined and approved: 3 criteria (previous palette copied exactly with
+  order and exclusions, days stay empty, unchecked/no-previous-year keeps current
+  defaults). Ready to build; saved to `current-plan.md`.
+
 ## Decisions (and why)
 - Tag = {id, label, color, inStats?, holiday?, permit?, maxPerYear?, global?};
   flat list; order = position in `planner.tags` (palette + stats follow it);

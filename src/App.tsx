@@ -347,8 +347,8 @@ export default function App() {
           setTagDetail(null)
           setDayDetail(null)
         }}
-        onCreate={(year) => {
-          store.addPlanner(year)
+        onCreate={(year, options) => {
+          store.addPlanner(year, options)
           setActiveTagId(null)
           setZoomMonth(null)
           setTagDetail(null)

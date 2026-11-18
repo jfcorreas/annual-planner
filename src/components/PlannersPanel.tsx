@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import type { Planner, PlannerStatus } from '../types'
 
@@ -8,7 +8,7 @@ interface PlannersPanelProps {
   planners: Planner[]
   activePlannerId: string | null
   onSelect: (id: string) => void
-  onCreate: (year: number) => void
+  onCreate: (year: number, options: { copyPalette: boolean }) => void
   onToggleStatus: (id: string, status: PlannerStatus) => void
   onDelete: (id: string) => void
 }
@@ -26,11 +26,16 @@ export function PlannersPanel({
   const [year, setYear] = useState(String(nextYear))
   const [open, setOpen] = useState(false)
 
+  const targetYear = Number(year)
+  // The copy option exists only when the immediately preceding year has a planner.
+  const previousExists = Number.isInteger(targetYear) && planners.some((p) => p.year === targetYear - 1)
+  const copyPaletteRef = useRef<HTMLInputElement>(null)
+
   function handleCreate(event: FormEvent) {
     event.preventDefault()
     const value = Number(year)
     if (!Number.isInteger(value) || value < 1900 || value > 2200) return
-    onCreate(value)
+    onCreate(value, { copyPalette: copyPaletteRef.current?.checked === true })
     setOpen(false)
     setYear(String(value + 1))
   }
@@ -94,6 +99,12 @@ export function PlannersPanel({
               autoFocus
             />
           </label>
+          {previousExists && (
+            <label className="field field--inline">
+              <input type="checkbox" ref={copyPaletteRef} />
+              <span>Copiar las etiquetas de {targetYear - 1}</span>
+            </label>
+          )}
           <button type="submit" className="btn btn--primary">Crear</button>
           <button type="button" className="btn" onClick={() => setOpen(false)}>Cancelar</button>
         </form>
