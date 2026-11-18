@@ -2,9 +2,10 @@
 Project Memory between sessions. Maximum ~50 lines: summarize or remove anything that no longer adds value.
 
 ## Current Status
-- v0.10.0: today's cell highlighted (accent border + tinted background) in the
-  year view and the month zoom. Release notes in `release-notes.md`.
-- Green: `tsc -b`, oxlint, `npm test` (188), `npm run test:e2e` (5: full flow,
+- v0.10.0 + **story #1** (copy previous palette on create, cb92607): checkbox
+  only when the previous year exists; exact tag copy, days never copied.
+  Release notes pending a version bump in `release-notes.md`.
+- Green: `tsc -b`, oxlint, `npm test` (192), `npm run test:e2e` (5: full flow,
   phone portrait/landscape, palette order, stats order, today cell).
 - Nothing since v0.9.0 is pushed: **never push without asking the user**.
 - Installed Omarchy web app (:4830, systemd `annual-planner`): after a build
@@ -13,16 +14,12 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
   --bind 0.0.0.0 --directory dist`.
 
 ## Backlog context — new-planner copy options
-- Two opt-in checkboxes in the create form: copy the previous year's palette tags;
-  copy its holiday chips onto the same month/day (only when a planner for the
-  previous year exists). Stack reaffirmed: existing Vite/React/TS + local storage,
-  Spanish UI; no new multi-tenant, roles, sync or i18n decisions.
-- Slicing: #1 palette copy (smallest end-to-end), #2 holiday-chip copy (also copies
-  the holiday tag definitions so chips render); independent, no `Requires`.
-  Saved in `backlog.md`. Not implemented yet.
-- Story #1 refined and approved: 3 criteria (previous palette copied exactly with
-  order and exclusions, days stay empty, unchecked/no-previous-year keeps current
-  defaults). Ready to build; saved to `current-plan.md`.
+- #2 holiday-chip copy still open: also copies the holiday tag definitions so
+  the chips render; independent, no `Requires`. #1 shipped in `backlog.md`.
+- Copy option travels explicitly: form → `onCreate(year, options)` →
+  `addPlanner(year, options)`; story #2 adds `copyHolidays` to that object.
+- Stack reaffirmed: existing Vite/React/TS + local storage, Spanish UI; no new
+  multi-tenant, roles, sync or i18n decisions.
 
 ## Decisions (and why)
 - Tag = {id, label, color, inStats?, holiday?, permit?, maxPerYear?, global?};
