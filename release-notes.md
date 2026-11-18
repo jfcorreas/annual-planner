@@ -14,11 +14,12 @@ Today's date now stands out in the planner.
   accent border and a tinted background — in the year view and inside its
   month zoom, on screen and on the printed A4 export. Only that one cell is
   marked, it works in archived (read-only) planners too, and the highlight
-  survives hovering. The year view draws its ring as an inset shadow, so the
-  row keeps exactly the same height as every other row (a real border would
-  have made it 1px taller and shifted the rest of the year). Locked by a
-  component test and by an end-to-end check that compares the rendered
-  colours of the highlighted cell with a normal one at 1460px.
+  survives hovering. The year view draws its ring with an out-of-flow
+  pseudo-element placed 1px outside the cell, so the row keeps exactly the
+  same height as every other row and the tag chips — which reach the row's
+  edges — can never paint over the line. Locked by a component test and by an
+  end-to-end check that compares the rendered colours of the highlighted cell
+  with a normal one at 1460px.
 
 ## [0.9.1] - 2026-11-17
 

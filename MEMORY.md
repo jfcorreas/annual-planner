@@ -29,9 +29,12 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
   (stopPropagation on click/Enter/Space, NOT on Escape).
 - **Today (0.10.0)**: `TODAY_ISO` fixed at module load in `DayCell` (oxlint
   purity: no `new Date()` in render) → `.day--today`, colours `--today` /
-  `--today-bg`. The year view draws the ring with `box-shadow: inset 0 0 0 1px`
-  (a border would make that row 1px taller), the zoom recolours its own border;
-  hover repeats the tint (same specificity, later wins). It also prints.
+  `--today-bg`. Its ring is a `::after` with `inset: -1px` (the cell needs
+  `position: relative`): drawn 1px OUTSIDE the box, over both row separators,
+  so it keeps the row height and the chips (which reach the row edge) can
+  never cover it — an inset shadow is painted under the content and was.
+  The zoom's real border and that ring land on the same line. Hover repeats
+  the tint (same specificity, later wins). It also prints.
 - No tag selected by default (the active chip deselects itself; a day click
   then opens the detail modal). Storage v2 under `annual-planner:v2`.
 - PDF: A4 landscape only, `printPlanner()` injects `@page` + `body[data-paper]`;

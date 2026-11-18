@@ -381,15 +381,30 @@ button {
   cursor: pointer;
 }
 
-/* Today: tinted background + accent ring. The ring is an inset shadow instead
-   of a border so the row keeps its exact height (a real border would make
-   this one row 1px taller than the rest of the year). It must come after the
+/* Today: tinted background + accent ring. The ring is a pseudo-element drawn
+   1px OUTSIDE the cell, not an inset shadow: day rows have no side padding,
+   so their chips reach the row edge and would paint over a shadow (which is
+   painted under the content). Being out of flow it also keeps the row height,
+   and being outside the box no chip can ever cover it. It must come after the
    hover rule above: same specificity, so the source order wins. */
 .day--today {
+  /* Containing block of the ring below (no layout change). */
+  position: relative;
   background: var(--today-bg);
-  box-shadow: inset 0 0 0 1px var(--today);
-  /* The border paints over the inset shadow: keep the bottom edge accent. */
+  /* The ring covers this border; keep the colour at the rounded corners. */
   border-bottom-color: var(--today);
+}
+
+/* The accent only ever lands on the today cell. `inset: -1px` puts the ring
+   exactly on the border box: over the separator of the row above and over the
+   cell's own bottom border, and 1px into the gaps at both sides. */
+.day--today::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border: 1px solid var(--today);
+  border-radius: inherit;
+  pointer-events: none;
 }
 
 .day--today:hover:not(.day--readonly):not(.day--empty) {
@@ -760,8 +775,10 @@ button {
 }
 
 /* Today inside the month zoom: the cell already carries a real border, so it
-   only changes colour. The hover variant (same specificity as the rule above,
-   later in the file) keeps the highlight while the cell is hovered. */
+   only changes colour — and the ring of `.day--today::after` lands exactly on
+   that border (`inset: -1px` of a 1px-bordered box), drawing the same line
+   twice. The hover variant (same specificity as the rule above, later in the
+   file) keeps the highlight while the cell is hovered. */
 .zoom .day--today,
 .zoom .day--today:hover:not(.day--readonly):not(.day--empty) {
   border-color: var(--today);

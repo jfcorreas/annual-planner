@@ -738,17 +738,26 @@ test('the today cell stands out with its own background and border', async ({ pa
 
     const styles = await today.evaluate((el) => {
       const other = document.querySelector('.day[data-iso]:not(.day--today)')!
+      const ring = getComputedStyle(el, '::after')
       return {
         background: getComputedStyle(el).backgroundColor,
         otherBackground: getComputedStyle(other).backgroundColor,
-        shadow: getComputedStyle(el).boxShadow,
-        otherShadow: getComputedStyle(other).boxShadow,
+        ringContent: ring.content,
+        ringPosition: ring.position,
+        ringWidth: ring.borderTopWidth,
+        ringColor: ring.borderTopColor,
+        bottomColor: getComputedStyle(el).borderBottomColor,
       }
     })
     expect(styles.background).not.toBe(styles.otherBackground)
     expect(styles.background).not.toBe('rgba(0, 0, 0, 0)')
-    expect(styles.shadow).not.toBe('none')
-    expect(styles.otherShadow).toBe('none')
+    // The ring is a pseudo-element: out of flow (the row keeps its height)
+    // and drawn outside the cell, where no chip can reach it.
+    expect(styles.ringContent).not.toBe('none')
+    expect(styles.ringPosition).toBe('absolute')
+    expect(styles.ringWidth).toBe('1px')
+    expect(styles.ringColor).not.toBe('rgba(0, 0, 0, 0)')
+    expect(styles.ringColor).toBe(styles.bottomColor)
   })
 
   await test.step('month zoom: a real border in the accent colour', async () => {
