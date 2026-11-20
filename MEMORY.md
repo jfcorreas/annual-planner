@@ -2,27 +2,20 @@
 Project Memory between sessions. Maximum ~50 lines: summarize or remove anything that no longer adds value.
 
 ## Current Status
-- v0.10.0 + **story #1** (copy previous palette on create, cb92607): checkbox
-  only when the previous year exists; exact tag copy, days never copied.
-  Release notes pending a version bump in `release-notes.md`.
-- Green: `tsc -b`, oxlint, `npm test` (192), `npm run test:e2e` (5: full flow,
-  phone portrait/landscape, palette order, stats order, today cell).
+- **v1.0.0** (2026-11-20): story #1 copy previous palette (cb92607) + story #2
+  copy holiday chips same month/day shipped; `release-notes.md` covers both.
+- Green: `tsc -b`, oxlint, `npm test` (197), `npm run test:e2e` (5).
 - Nothing since v0.9.0 is pushed: **never push without asking the user**.
 - Installed Omarchy web app (:4830, systemd `annual-planner`): after a build
   `cp -a dist/. ~/.local/share/annual-planner/` and reload twice (the PWA
   worker serves the previous build once). LAN: `python3 -m http.server 4831
   --bind 0.0.0.0 --directory dist`.
 
-## Backlog context — new-planner copy options
-- #2 holiday-chip copy refined and approved, saved to `current-plan.md`:
-  same month/day (29 Feb → 28 Feb), subtitles copied, only holiday tags used
-  by those chips added to the palette, independent of #1. Not implemented yet.
-- Copy options travel explicitly: form → `onCreate(year, options)` →
-  `addPlanner(year, options)`; story #2 adds `copyHolidays` to that object.
-- Stack reaffirmed: existing Vite/React/TS + local storage, Spanish UI; no new
-  multi-tenant, roles, sync or i18n decisions.
-
 ## Decisions (and why)
+- Create options travel explicitly: form → `onCreate(year, options)` →
+  `addPlanner(year, options)` with independent `copyPalette` / `copyHolidays`.
+  Holiday copy maps chips by month/day (29 Feb → 28 Feb via `isoDate` + clamp),
+  imports only the holiday tags those chips use (previous wins on id clash).
 - Tag = {id, label, color, inStats?, holiday?, permit?, maxPerYear?, global?};
   flat list; order = position in `planner.tags` (palette + stats follow it);
   delete blocked while used. Flags: holiday (stats off, 🏖️), permit (own group,
@@ -38,13 +31,9 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
   remove; drag >10px cancels the hold. Day number = button → DayDetailModal
   (stopPropagation on click/Enter/Space, NOT on Escape).
 - **Today (0.10.0)**: `TODAY_ISO` fixed at module load in `DayCell` (oxlint
-  purity: no `new Date()` in render) → `.day--today`, colours `--today` /
-  `--today-bg`. Its ring is a `::after` with `inset: -1px` (the cell needs
-  `position: relative`): drawn 1px OUTSIDE the box, over both row separators,
-  so it keeps the row height and the chips (which reach the row edge) can
-  never cover it — an inset shadow is painted under the content and was.
-  The zoom's real border and that ring land on the same line. Hover repeats
-  the tint (same specificity, later wins). It also prints.
+  purity: no `new Date()` in render) → `.day--today`, `--today`/`--today-bg`.
+  Its ring is a `::after` with `inset: -1px` over both row separators: keeps
+  the row height, the chips can never cover it, and it prints.
 - No tag selected by default (the active chip deselects itself; a day click
   then opens the detail modal). Storage v2 under `annual-planner:v2`.
 - PDF: A4 landscape only, `printPlanner()` injects `@page` + `body[data-paper]`;

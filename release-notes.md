@@ -4,6 +4,34 @@ All notable changes to the Annual Planner webapp.
 Format based on [Keep a Changelog](https://keepachangelog.com/), versioning
 following [SemVer](https://semver.org/).
 
+## [1.0.0] - 2026-11-20
+
+Starting a new year no longer means starting from zero: the create form can
+now carry last year's palette and its fixed holidays over.
+
+### Added
+
+- **Copy the previous year's palette**: the "Nuevo planificador" form shows a
+  "Copiar las etiquetas de {año}" checkbox — only when the immediately
+  preceding year has a planner — that fills the new planner with the previous
+  year's tags exactly as they were: same ids, labels, colours, flags and
+  order, defaults included. Day data is never copied, and leaving the box
+  unchecked (the default) keeps the standard tags. Locked by component tests
+  for the visible, checked, unchecked and no-previous-year cases.
+- **Copy the previous year's holiday chips**: a second opt-in checkbox,
+  "Copiar los festivos de {año}", shown under the same previous-year
+  condition and fully independent of the palette one, places every holiday
+  chip of the previous planner on the same month and day of the new year —
+  subtitle included — while every other chip stays behind. 29 February lands
+  on 28 February when the new year is not a leap year. The holiday tags those
+  chips actually use are added to the new palette even when the palette copy
+  is off, so each chip keeps its original label and colour (on an id clash
+  the previous year's tag wins over the default). With the option unchecked,
+  or with no previous-year planner, nothing is copied and the palette follows
+  the existing behaviour. Locked by five component tests covering copied days
+  with subtitles, the leap-day mapping, palette availability and both
+  unchecked/no-previous branches.
+
 ## [0.10.0] - 2026-11-18
 
 Today's date now stands out in the planner.
