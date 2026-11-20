@@ -14,9 +14,10 @@ Project Memory between sessions. Maximum ~50 lines: summarize or remove anything
   --bind 0.0.0.0 --directory dist`.
 
 ## Backlog context — new-planner copy options
-- #2 holiday-chip copy still open: also copies the holiday tag definitions so
-  the chips render; independent, no `Requires`. #1 shipped in `backlog.md`.
-- Copy option travels explicitly: form → `onCreate(year, options)` →
+- #2 holiday-chip copy refined and approved, saved to `current-plan.md`:
+  same month/day (29 Feb → 28 Feb), subtitles copied, only holiday tags used
+  by those chips added to the palette, independent of #1. Not implemented yet.
+- Copy options travel explicitly: form → `onCreate(year, options)` →
   `addPlanner(year, options)`; story #2 adds `copyHolidays` to that object.
 - Stack reaffirmed: existing Vite/React/TS + local storage, Spanish UI; no new
   multi-tenant, roles, sync or i18n decisions.

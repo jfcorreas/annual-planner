@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { AppData, DayTag, Planner, PlannerStatus, Tag } from '../types'
 import { MAX_TAGS_PER_DAY, SUBTITLE_MAX_LENGTH } from '../types'
 import { createPlanner, newId } from '../defaults'
+import { isoDate } from '../utils/dates'
 import { hasPreviousVersionData, loadData, saveData } from '../storage'
 
 const CURRENT_YEAR = new Date().getFullYear()
@@ -47,7 +48,7 @@ export function useAppData() {
   )
 
   const addPlanner = useCallback(
-    (year: number, options: { copyPalette?: boolean } = {}): Planner => {
+    (year: number, options: { copyPalette?: boolean; copyHolidays?: boolean } = {}): Planner => {
       // New planners start with the defaults plus the current global tags,
       // or with the previous year's palette when the copy option is checked.
       const globals = data.planners.flatMap((p) => p.tags.filter((t) => t.global === true))
@@ -55,6 +56,33 @@ export function useAppData() {
       const planner = createPlanner(year, globals)
       if (options.copyPalette && previous) {
         planner.tags = previous.tags.map((tag) => ({ ...tag }))
+      }
+      // Holiday chips travel to the same month and day (29 Feb → 28 Feb in a
+      // common year); every other chip stays behind.
+      if (options.copyHolidays && previous) {
+        const holidayIds = new Set(previous.tags.filter((t) => t.holiday === true).map((t) => t.id))
+        const usedIds = new Set<string>()
+        for (const [iso, entries] of Object.entries(previous.days)) {
+          const month = Number(iso.slice(5, 7))
+          const day = Number(iso.slice(8, 10))
+          const target = new Date(year, month - 1, day)
+          // Date normalizes 29 Feb in a common year to 1 Mar: back to 28 Feb.
+          if (target.getMonth() !== month - 1) target.setDate(0)
+          const key = isoDate(target)
+          const holidays = entries.filter((entry) => holidayIds.has(entry.tagId))
+          if (holidays.length > 0) {
+            planner.days[key] = holidays.map((entry) => ({ ...entry }))
+            for (const entry of holidays) usedIds.add(entry.tagId)
+          }
+        }
+        // The chips keep their original label and color: bring over exactly
+        // the holiday tags they use (the previous copy wins on an id clash).
+        for (const tag of previous.tags) {
+          if (!usedIds.has(tag.id)) continue
+          const index = planner.tags.findIndex((t) => t.id === tag.id)
+          if (index >= 0) planner.tags[index] = { ...tag }
+          else planner.tags.push({ ...tag })
+        }
       }
       setData((prev) => ({ ...prev, planners: [...prev.planners, planner] }))
       setActivePlannerId(planner.id)

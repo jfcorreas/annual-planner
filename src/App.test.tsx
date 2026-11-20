@@ -2570,3 +2570,171 @@ describe('new planner palette copy', () => {
     expect(created.days).toEqual({})
   })
 })
+
+describe('new planner holiday copy', () => {
+  /** The holiday-copy checkbox of the create form (null when not offered). */
+  const holidayOption = (container: HTMLElement) =>
+    [...container.querySelectorAll('.panel__create label')]
+      .find((l) => l.textContent?.includes('festivos'))
+      ?.querySelector('input[type="checkbox"]') ?? null
+
+  /** Text of the palette tag chips in order (the ✏️ button excluded). */
+  const palette = (container: HTMLElement) =>
+    [...container.querySelectorAll('.palette .chip')]
+      .filter((el) => !el.classList.contains('chip--add'))
+      .map((el) => el.textContent?.trim())
+
+  it('create form shows the holiday-copy option only when the previous year\'s planner exists', () => {
+    const { container } = renderApp()
+
+    // Only the current-year planner exists → its successor has a previous year.
+    fireEvent.click(container.querySelector('.panel__new')!)
+    expect(holidayOption(container)).not.toBeNull()
+
+    // A year whose predecessor has no planner → no option.
+    fireEvent.change(container.querySelector('.panel__create input[type="number"]')!, {
+      target: { value: '2000' },
+    })
+    expect(holidayOption(container)).toBeNull()
+
+    // Back to a year whose predecessor exists → option again.
+    fireEvent.change(container.querySelector('.panel__create input[type="number"]')!, {
+      target: { value: String(YEAR + 1) },
+    })
+    expect(holidayOption(container)).not.toBeNull()
+  })
+
+  it('creating a planner with the holiday option checked copies holiday chips to the same month and day with their subtitles, and no other chips', async () => {
+    const { container } = renderApp()
+    const sourceHoliday = `${YEAR}-07-15`
+    const sourceWork = `${YEAR}-08-20`
+
+    // Previous year: a holiday chip with a subtitle…
+    selectTag(container, 6) // 🏖️ Festivo local
+    fireEvent.click(dayCell(container, sourceHoliday))
+    fireEvent.click(chipsOf(dayCell(container, sourceHoliday))[0])
+    await waitFor(() => expect(container.querySelector('.modal--tag-detail')).not.toBeNull())
+    const modal = container.querySelector('.modal--tag-detail')!
+    fireEvent.change(modal.querySelector('.tag-detail__form input')!, {
+      target: { value: 'puente local' },
+    })
+    fireEvent.click(modal.querySelector('.tag-detail__form button[type="submit"]')!)
+    await waitFor(() => expect(container.querySelector('.modal--tag-detail')).toBeNull())
+
+    // …and a regular chip on another day: it must not travel.
+    selectTag(container, 1) // Guardia 24h (not a holiday)
+    fireEvent.click(dayCell(container, sourceWork))
+
+    // Create the next year with only the holiday option checked.
+    fireEvent.click(container.querySelector('.panel__new')!)
+    fireEvent.click(holidayOption(container)!)
+    fireEvent.click(container.querySelector('.panel__create button[type="submit"]')!)
+
+    const stored = JSON.parse(localStorage.getItem('annual-planner:v2')!)
+    const created = stored.planners.find((p: { year: number }) => p.year === YEAR + 1)
+    expect(created.days).toEqual({
+      [`${YEAR + 1}-07-15`]: [{ tagId: 'festivo-local', subtitle: 'puente local' }],
+    })
+  })
+
+  it('a 29 February holiday chip lands on 28 February when the new year is not a leap year', () => {
+    const { container } = renderApp()
+
+    // A leap-year planner (2028) with a holiday chip on 29 February.
+    fireEvent.click(container.querySelector('.panel__new')!)
+    fireEvent.change(container.querySelector('.panel__create input[type="number"]')!, {
+      target: { value: '2028' },
+    })
+    fireEvent.click(container.querySelector('.panel__create button[type="submit"]')!)
+    selectTag(container, 6) // 🏖️ Festivo local
+    fireEvent.click(dayCell(container, '2028-02-29'))
+
+    // Create 2029 (not a leap year) with the holiday option checked.
+    fireEvent.click(container.querySelector('.panel__new')!)
+    fireEvent.click(holidayOption(container)!)
+    fireEvent.click(container.querySelector('.panel__create button[type="submit"]')!)
+
+    const stored = JSON.parse(localStorage.getItem('annual-planner:v2')!)
+    const created = stored.planners.find((p: { year: number }) => p.year === 2029)
+    expect(created.days).toEqual({
+      '2029-02-28': [{ tagId: 'festivo-local' }],
+    })
+  })
+
+  it('creating a planner with the holiday option checked brings the used holiday tags into the palette when palette copy is off', () => {
+    const { container } = renderApp()
+
+    // Previous year: a custom holiday tag applied on a day…
+    fireEvent.click(container.querySelector('.chip--add')!)
+    fireEvent.change(container.querySelector('.tag-form input[type="text"]')!, {
+      target: { value: 'Puente' },
+    })
+    fireEvent.click(formCheckbox(container, 'Día Festivo')!)
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close editor
+    // …and a custom regular tag that must NOT travel (palette copy stays off).
+    fireEvent.click(container.querySelector('.chip--add')!)
+    fireEvent.change(container.querySelector('.tag-form input[type="text"]')!, {
+      target: { value: 'Personalizada' },
+    })
+    fireEvent.click(container.querySelector('.tag-form button[type="submit"]')!)
+    fireEvent.click(container.querySelector('.modal__head .btn')!) // close editor
+
+    const puente = [...container.querySelectorAll('.palette .chip')].find((c) =>
+      c.textContent?.includes('Puente'),
+    )!
+    fireEvent.click(puente)
+    fireEvent.click(dayCell(container, `${YEAR}-10-12`))
+
+    // Create the next year with only the holiday option checked.
+    fireEvent.click(container.querySelector('.panel__new')!)
+    fireEvent.click(holidayOption(container)!)
+    fireEvent.click(container.querySelector('.panel__create button[type="submit"]')!)
+
+    // The tag used by the copied chip is in the new palette, unchanged.
+    const stored = JSON.parse(localStorage.getItem('annual-planner:v2')!)
+    const previous = stored.planners.find((p: { year: number }) => p.year === YEAR)
+    const created = stored.planners.find((p: { year: number }) => p.year === YEAR + 1)
+    const customHoliday = previous.tags.find((t: { label: string }) => t.label === 'Puente')
+    expect(created.tags).toContainEqual(customHoliday)
+
+    // Palette copy stayed off: defaults + that holiday tag, nothing else.
+    expect(palette(container)).toEqual([
+      'Guardia 24h',
+      'Guardia 17h',
+      'Diurno 12h',
+      'Nocturno 12h',
+      'Turno 24h',
+      '🏖️ Festivo local',
+      '🏖️ Festivo regional',
+      '🏖️ Festivo nacional',
+      '🏖️ Puente',
+    ])
+  })
+
+  it('creating a planner with the holiday option unchecked copies no days and keeps the standard palette', () => {
+    const { container } = renderApp()
+
+    // Previous year with a holiday chip: it must stay behind.
+    selectTag(container, 6) // 🏖️ Festivo local
+    fireEvent.click(dayCell(container, `${YEAR}-12-25`))
+
+    // Create the next year leaving both options unchecked (the default).
+    fireEvent.click(container.querySelector('.panel__new')!)
+    fireEvent.click(container.querySelector('.panel__create button[type="submit"]')!)
+
+    expect(palette(container)).toEqual([
+      'Guardia 24h',
+      'Guardia 17h',
+      'Diurno 12h',
+      'Nocturno 12h',
+      'Turno 24h',
+      '🏖️ Festivo local',
+      '🏖️ Festivo regional',
+      '🏖️ Festivo nacional',
+    ])
+    const stored = JSON.parse(localStorage.getItem('annual-planner:v2')!)
+    const created = stored.planners.find((p: { year: number }) => p.year === YEAR + 1)
+    expect(created.days).toEqual({})
+  })
+})

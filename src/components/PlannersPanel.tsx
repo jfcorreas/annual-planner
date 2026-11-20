@@ -8,7 +8,7 @@ interface PlannersPanelProps {
   planners: Planner[]
   activePlannerId: string | null
   onSelect: (id: string) => void
-  onCreate: (year: number, options: { copyPalette: boolean }) => void
+  onCreate: (year: number, options: { copyPalette: boolean; copyHolidays: boolean }) => void
   onToggleStatus: (id: string, status: PlannerStatus) => void
   onDelete: (id: string) => void
 }
@@ -30,12 +30,16 @@ export function PlannersPanel({
   // The copy option exists only when the immediately preceding year has a planner.
   const previousExists = Number.isInteger(targetYear) && planners.some((p) => p.year === targetYear - 1)
   const copyPaletteRef = useRef<HTMLInputElement>(null)
+  const copyHolidaysRef = useRef<HTMLInputElement>(null)
 
   function handleCreate(event: FormEvent) {
     event.preventDefault()
     const value = Number(year)
     if (!Number.isInteger(value) || value < 1900 || value > 2200) return
-    onCreate(value, { copyPalette: copyPaletteRef.current?.checked === true })
+    onCreate(value, {
+      copyPalette: copyPaletteRef.current?.checked === true,
+      copyHolidays: copyHolidaysRef.current?.checked === true,
+    })
     setOpen(false)
     setYear(String(value + 1))
   }
@@ -103,6 +107,12 @@ export function PlannersPanel({
             <label className="field field--inline">
               <input type="checkbox" ref={copyPaletteRef} />
               <span>Copiar las etiquetas de {targetYear - 1}</span>
+            </label>
+          )}
+          {previousExists && (
+            <label className="field field--inline">
+              <input type="checkbox" ref={copyHolidaysRef} />
+              <span>Copiar los festivos de {targetYear - 1}</span>
             </label>
           )}
           <button type="submit" className="btn btn--primary">Crear</button>
